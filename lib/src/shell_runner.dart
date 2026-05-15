@@ -2,26 +2,46 @@ import 'dart:io';
 
 import 'logger.dart';
 
-class ShellRunner {
-  ShellRunner._();
+class ShellResult {
+  final int exitCode;
+  final String stdout;
+  final String stderr;
 
-  static Map<String, String> get _environment => {
-    ...Platform.environment,
-    'PATH':
-        '${Platform.environment['HOME']}/.pub-cache/bin:/opt/homebrew/bin:${Platform.environment['PATH']}',
-  };
+  const ShellResult({
+    required this.exitCode,
+    required this.stdout,
+    required this.stderr,
+  });
+}
 
-  static Future<void> run(String executable, List<String> args) async {
+abstract class ShellRunner {
+  static ShellRunner instance = DefaultShellRunner();
+
+  Future<void> run(String executable, List<String> args);
+  Future<ShellResult> runAndCapture(String executable, List<String> args);
+}
+
+class DefaultShellRunner implements ShellRunner {
+  static Map<String, String> get environment => {
+        ...Platform.environment,
+        'PATH':
+            '${Platform.environment['HOME']}/.pub-cache/bin:/opt/homebrew/bin:${Platform.environment['PATH']}',
+      };
+
+  @override
+  Future<void> run(String executable, List<String> args) async {
     Logger.command('$executable ${args.join(' ')}');
     final process = await Process.start(
       executable,
       args,
-      environment: _environment,
+      environment: environment,
       runInShell: true,
     );
 
-    final stdoutSubscription = process.stdout.listen((data) => stdout.add(data));
-    final stderrSubscription = process.stderr.listen((data) => stderr.add(data));
+    final stdoutSubscription =
+        process.stdout.listen((data) => stdout.add(data));
+    final stderrSubscription =
+        process.stderr.listen((data) => stderr.add(data));
 
     final exitCode = await process.exitCode;
 
@@ -30,19 +50,24 @@ class ShellRunner {
     await stderrSubscription.cancel();
 
     if (exitCode != 0) {
-      throw 'Command failed with exit code $exitCode';
+      throw StateError('Command failed with exit code $exitCode');
     }
   }
 
-  static Future<ProcessResult> runAndCapture(
+  @override
+  Future<ShellResult> runAndCapture(
     String executable,
     List<String> args,
   ) async {
     final result = await Process.run(
       executable,
       args,
-      environment: _environment,
+      environment: environment,
     );
-    return result;
+    return ShellResult(
+      exitCode: result.exitCode,
+      stdout: result.stdout.toString(),
+      stderr: result.stderr.toString(),
+    );
   }
 }
