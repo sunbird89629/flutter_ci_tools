@@ -15,21 +15,18 @@ class BuildMetadata {
     required this.commitBody,
   });
 
-  static Future<BuildMetadata> collect() async {
-    final git = GitManager.instance;
-    final results = await Future.wait([
-      git.getBranch(),
-      git.getCurrentUser(),
-      git.getShortHash(),
-      git.getRecentCommits(count: 15),
-      git.getLatestCommitBody(),
-    ]);
+  static Future<BuildMetadata> collect(GitManager git) async {
+    final branch = await git.getBranch();
+    final gitUser = await git.getCurrentUser();
+    final gitHash = await git.getShortHash();
+    final recentCommits = await git.getRecentCommits(count: 15);
+    final commitBody = await git.getLatestCommitBody();
     return BuildMetadata(
-      branch: results[0],
-      gitUser: results[1],
-      gitHash: results[2],
-      recentCommits: results[3],
-      commitBody: results[4],
+      branch: branch,
+      gitUser: gitUser,
+      gitHash: gitHash,
+      recentCommits: recentCommits,
+      commitBody: commitBody,
     );
   }
 }

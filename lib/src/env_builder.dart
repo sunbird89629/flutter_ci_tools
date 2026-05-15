@@ -173,7 +173,10 @@ abstract class EnvBuilder {
       );
       Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
     });
-    metadata = await runStep('Collect Build Metadata', BuildMetadata.collect);
+    metadata = await runStep(
+      'Collect Build Metadata',
+      () => BuildMetadata.collect(GitManager.instance),
+    );
     try {
       await runStep('Check Git Status', GitManager.instance.checkClean);
       await buildPrepare();
