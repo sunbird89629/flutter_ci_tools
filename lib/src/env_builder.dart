@@ -5,7 +5,7 @@ import 'config.dart';
 import 'deploy_service.dart';
 import 'git_manager.dart';
 import 'logger.dart';
-import 'shell_runner.dart' show ShellRunner;
+import 'shell_runner.dart';
 import 'version_manager.dart';
 
 enum AppPlatform {
@@ -41,9 +41,22 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 }
 
 abstract class EnvBuilder {
-  EnvBuilder(this.config);
+  EnvBuilder(
+    this.config, {
+    VersionManager? versionManager,
+    GitManager? gitManager,
+    DeployService? deployService,
+    ShellRunner? shellRunner,
+  })  : _versionManager = versionManager ?? DefaultVersionManager(),
+        _gitManager = gitManager ?? DefaultGitManager(),
+        _deployService = deployService ?? DefaultDeployService(),
+        _shellRunner = shellRunner ?? DefaultShellRunner();
 
   final CIToolsConfig config;
+  final VersionManager _versionManager;
+  final GitManager _gitManager;
+  final DeployService _deployService;
+  final ShellRunner _shellRunner;
 
   late int buildNumber;
 
@@ -63,7 +76,7 @@ abstract class EnvBuilder {
   Future<void> processArtifacts(File androidFile, File iosFile);
 
   Future<File> buildIOS() async {
-    await ShellRunner.instance.run('fvm', [
+    await _shellRunner.run('fvm', [
       'flutter',
       'build',
       'ipa',
@@ -84,13 +97,13 @@ abstract class EnvBuilder {
       metadata.recentCommits,
     ].join('\n');
 
-    final url = await DeployService.instance.uploadToPgyer(
+    final url = await _deployService.uploadToPgyer(
       file.path,
       config.pgyerApiKey!,
       updateDescription: description,
     );
 
-    await DeployService.instance.sendFeishuNotification(
+    await _deployService.sendFeishuNotification(
       config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: platform,
@@ -101,12 +114,12 @@ abstract class EnvBuilder {
   }
 
   List<String> _coreInfoLines() => [
-    'versionName: $buildName',
-    'versionCode: $buildNumber',
-    'env:         $envName',
-    'api_host:    $apiHost',
-    'git_hash:    ${metadata.gitHash}',
-  ];
+        'versionName: $buildName',
+        'versionCode: $buildNumber',
+        'env:         $envName',
+        'api_host:    $apiHost',
+        'git_hash:    ${metadata.gitHash}',
+      ];
 
   String buildFeishuMessage({
     required AppPlatform platform,
@@ -139,8 +152,8 @@ abstract class EnvBuilder {
   }
 
   Future<void> cleanProject() async {
-    await ShellRunner.instance.run('fvm', ['flutter', 'clean']);
-    await ShellRunner.instance.run('fvm', ['flutter', 'pub', 'get']);
+    await _shellRunner.run('fvm', ['flutter', 'clean']);
+    await _shellRunner.run('fvm', ['flutter', 'pub', 'get']);
   }
 
   Future<void> buildPrepare() async {
@@ -154,31 +167,35 @@ abstract class EnvBuilder {
   File findIpaFile() {
     final ipaDir = Directory('build/ios/ipa');
     if (!ipaDir.existsSync()) {
-      throw 'IPA build failed: Directory not found at ${ipaDir.path}';
+      throw StateError(
+        'IPA build failed: Directory not found at ${ipaDir.path}',
+      );
     }
     final ipaList = ipaDir
         .listSync()
         .where((e) => e.path.endsWith('.ipa'))
         .toList();
     if (ipaList.isEmpty) {
-      throw 'IPA build failed: No .ipa file found in ${ipaDir.path}';
+      throw StateError(
+        'IPA build failed: No .ipa file found in ${ipaDir.path}',
+      );
     }
     return ipaList.first as File;
   }
 
   Future<void> run() async {
     await runStep('Resolve Build Version', () async {
-      buildNumber = await VersionManager.instance.computeNextBuildNumber(
+      buildNumber = await _versionManager.computeNextBuildNumber(
         config.seedBuildNumber,
       );
       Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
     });
     metadata = await runStep(
       'Collect Build Metadata',
-      () => BuildMetadata.collect(GitManager.instance),
+      () => BuildMetadata.collect(_gitManager),
     );
     try {
-      await runStep('Check Git Status', GitManager.instance.checkClean);
+      await runStep('Check Git Status', _gitManager.checkClean);
       await buildPrepare();
       Logger.section('Starting Build and Upload Pipeline');
       await runStep('Clean Project', cleanProject);
@@ -190,10 +207,10 @@ abstract class EnvBuilder {
       );
       await runStep(
         'Push Build Tag',
-        () => VersionManager.instance.pushNewBuildTag(buildNumber),
+        () => _versionManager.pushNewBuildTag(buildNumber),
       );
     } finally {
-      await GitManager.instance.restoreWorkspace();
+      await _gitManager.restoreWorkspace();
     }
   }
 }
