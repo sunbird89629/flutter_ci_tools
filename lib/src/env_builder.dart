@@ -84,14 +84,13 @@ abstract class EnvBuilder {
       metadata.recentCommits,
     ].join('\n');
 
-    final url = await DeployService.uploadToPgyer(
+    final url = await DeployService.instance.uploadToPgyer(
       file.path,
       config.pgyerApiKey!,
       updateDescription: description,
     );
-    if (url == null) throw '${platform.label} upload failed';
 
-    await DeployService.sendFeishuNotification(
+    await DeployService.instance.sendFeishuNotification(
       config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: platform,

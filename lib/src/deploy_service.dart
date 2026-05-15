@@ -1,13 +1,43 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'exceptions.dart';
 import 'logger.dart';
-import 'shell_runner.dart' show ShellRunner, ShellResult;
+import 'shell_runner.dart';
 
-class DeployService {
-  DeployService._();
+abstract class DeployService {
+  static DeployService instance = DefaultDeployService();
 
-  static Future<String?> uploadToPgyer(
+  Future<String> uploadToPgyer(
+    String filePath,
+    String apiKey, {
+    String? updateDescription,
+  });
+
+  Future<void> sendFeishuNotification(String webhookUrl, String text);
+
+  Future<void> uploadToGooglePlay(
+    File aabFile, {
+    required String packageName,
+    required String jsonKeyPath,
+  });
+
+  Future<void> uploadToAppStore(
+    File ipaFile, {
+    required String issuerId,
+    required String apiKeyId,
+    required String apiKeyPath,
+  });
+}
+
+class DefaultDeployService implements DeployService {
+  DefaultDeployService({ShellRunner? shellRunner})
+      : _shellRunner = shellRunner ?? DefaultShellRunner();
+
+  final ShellRunner _shellRunner;
+
+  @override
+  Future<String> uploadToPgyer(
     String filePath,
     String apiKey, {
     String? updateDescription,
@@ -21,7 +51,7 @@ class DeployService {
         Logger.info('Retrying upload (attempt $attempt/$maxAttempts)...');
         await Future.delayed(const Duration(seconds: 5));
       }
-      result = await ShellRunner.instance.runAndCapture('curl', [
+      result = await _shellRunner.runAndCapture('curl', [
         '--http1.1',
         '-F', 'file=@$filePath',
         '-F', '_api_key=$apiKey',
@@ -35,29 +65,29 @@ class DeployService {
     }
 
     if (result!.exitCode != 0) {
-      Logger.error('Upload failed after $maxAttempts attempts');
-      return null;
+      throw DeployException('Upload failed after $maxAttempts attempts');
     }
 
     try {
-      final response = jsonDecode(result.stdout.toString());
+      final response = jsonDecode(result.stdout);
       if (response['code'] == 0) {
         final buildKey = response['data']['buildKey'];
         final fullUrl = 'https://www.pgyer.com/$buildKey';
         Logger.success('Upload successful! Download URL: $fullUrl');
         return fullUrl;
       } else {
-        Logger.error('Upload failed with API error: ${response['message']}');
-        return null;
+        throw DeployException(
+          'Upload failed with API error: ${response['message']}',
+        );
       }
     } catch (e) {
-      Logger.error('Failed to parse upload response', e);
-      Logger.info('Raw response: ${result.stdout}');
-      return null;
+      if (e is DeployException) rethrow;
+      throw DeployException('Failed to parse upload response: $e');
     }
   }
 
-  static Future<void> sendFeishuNotification(
+  @override
+  Future<void> sendFeishuNotification(
     String webhookUrl,
     String text,
   ) async {
@@ -66,7 +96,7 @@ class DeployService {
       "msg_type": "text",
       "content": {"text": text},
     });
-    final result = await ShellRunner.instance.runAndCapture('curl', [
+    final result = await _shellRunner.runAndCapture('curl', [
       '-X', 'POST',
       '-H', 'Content-Type: application/json',
       '-d', jsonMessage,
@@ -79,7 +109,8 @@ class DeployService {
     }
   }
 
-  static Future<void> uploadToGooglePlay(
+  @override
+  Future<void> uploadToGooglePlay(
     File aabFile, {
     required String packageName,
     required String jsonKeyPath,
@@ -88,9 +119,11 @@ class DeployService {
     Logger.info('AAB: ${aabFile.path}');
     Logger.info('Package: $packageName');
     if (!File(jsonKeyPath).existsSync()) {
-      throw 'Google Play Service Account JSON not found at $jsonKeyPath';
+      throw DeployException(
+        'Google Play Service Account JSON not found at $jsonKeyPath',
+      );
     }
-    await ShellRunner.instance.run('fastlane', [
+    await _shellRunner.run('fastlane', [
       'supply',
       '--aab', aabFile.path,
       '--package_name', packageName,
@@ -103,7 +136,8 @@ class DeployService {
     Logger.success('Google Play upload successful!');
   }
 
-  static Future<void> uploadToAppStore(
+  @override
+  Future<void> uploadToAppStore(
     File ipaFile, {
     required String issuerId,
     required String apiKeyId,
@@ -113,7 +147,9 @@ class DeployService {
     Logger.info('IPA: ${ipaFile.path}');
     Logger.info('API Key: $apiKeyId');
     if (!File(apiKeyPath).existsSync()) {
-      throw 'App Store API Key (.p8) not found at $apiKeyPath';
+      throw DeployException(
+        'App Store API Key (.p8) not found at $apiKeyPath',
+      );
     }
     final p8Content = File(apiKeyPath).readAsStringSync().trim();
     final apiKeyJson = jsonEncode({
@@ -125,7 +161,7 @@ class DeployService {
     final apiKeyJsonFile = File('ci/api_key_tmp.json');
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
-      await ShellRunner.instance.run('fastlane', [
+      await _shellRunner.run('fastlane', [
         'pilot', 'upload',
         '--ipa', ipaFile.path,
         '--api_key_path', apiKeyJsonFile.path,
