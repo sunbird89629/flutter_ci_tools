@@ -1,1 +1,8 @@
+export 'src/build_metadata.dart';
 export 'src/config.dart';
+export 'src/deploy_service.dart';
+export 'src/env_builder.dart';
+export 'src/git_manager.dart';
+export 'src/logger.dart';
+export 'src/shell_runner.dart';
+export 'src/version_manager.dart';
