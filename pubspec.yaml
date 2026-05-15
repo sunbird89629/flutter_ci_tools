@@ -2,6 +2,7 @@ name: flutter_ci_tools
 description: Reusable CI tooling for Flutter apps — build orchestration, git versioning, deploy services, and structured logging.
 version: 0.1.0
 publish_to: https://pub.dev
+repository: https://github.com/sunbird89629/flutter_ci_tools
 
 environment:
   sdk: ^3.4.0
