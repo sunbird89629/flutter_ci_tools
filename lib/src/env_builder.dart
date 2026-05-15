@@ -169,7 +169,7 @@ abstract class EnvBuilder {
 
   Future<void> run() async {
     await runStep('Resolve Build Version', () async {
-      buildNumber = await VersionManager.computeNextBuildNumber(
+      buildNumber = await VersionManager.instance.computeNextBuildNumber(
         config.seedBuildNumber,
       );
       Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
@@ -188,7 +188,7 @@ abstract class EnvBuilder {
       );
       await runStep(
         'Push Build Tag',
-        () => VersionManager.pushNewBuildTag(buildNumber),
+        () => VersionManager.instance.pushNewBuildTag(buildNumber),
       );
     } finally {
       await GitManager.instance.restoreWorkspace();

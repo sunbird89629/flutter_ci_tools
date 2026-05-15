@@ -1,17 +1,29 @@
 import 'dart:io';
 
 import 'logger.dart';
-import 'shell_runner.dart' show ShellRunner;
+import 'shell_runner.dart';
 
-class VersionManager {
-  VersionManager._();
+abstract class VersionManager {
+  static VersionManager instance = DefaultVersionManager();
 
+  Future<int?> fetchLatestBuildNumber();
+  Future<int> computeNextBuildNumber(int seedBuildNumber);
+  Future<void> pushNewBuildTag(int buildNumber);
+  Future<void> interactiveBumpAndPush(int seedBuildNumber);
+}
+
+class DefaultVersionManager implements VersionManager {
+  DefaultVersionManager({ShellRunner? shellRunner})
+      : _shellRunner = shellRunner ?? DefaultShellRunner();
+
+  final ShellRunner _shellRunner;
   static const _tagPrefix = 'builds/';
   static const _bumpGranularity = 100;
 
-  static Future<int?> fetchLatestBuildNumber() async {
-    await ShellRunner.instance.runAndCapture('git', ['fetch', '--tags', '--force']);
-    final res = await ShellRunner.instance.runAndCapture('git', [
+  @override
+  Future<int?> fetchLatestBuildNumber() async {
+    await _shellRunner.runAndCapture('git', ['fetch', '--tags', '--force']);
+    final res = await _shellRunner.runAndCapture('git', [
       'tag', '--list', '$_tagPrefix*',
     ]);
     final nums = res.stdout
@@ -25,7 +37,8 @@ class VersionManager {
     return nums.isEmpty ? null : nums.reduce((a, b) => a > b ? a : b);
   }
 
-  static Future<int> computeNextBuildNumber(int seedBuildNumber) async {
+  @override
+  Future<int> computeNextBuildNumber(int seedBuildNumber) async {
     final latest = await fetchLatestBuildNumber();
     if (latest == null) {
       Logger.warning(
@@ -36,17 +49,19 @@ class VersionManager {
     return latest + 1;
   }
 
-  static Future<void> pushNewBuildTag(int buildNumber) async {
+  @override
+  Future<void> pushNewBuildTag(int buildNumber) async {
     final tag = '$_tagPrefix$buildNumber';
     Logger.info('Tagging $tag ...');
-    await ShellRunner.instance.run('git', [
+    await _shellRunner.run('git', [
       'tag', '-a', '-f', tag, '-m', 'CI build $buildNumber',
     ]);
-    await ShellRunner.instance.run('git', ['push', '--force', 'origin', tag]);
+    await _shellRunner.run('git', ['push', '--force', 'origin', tag]);
     Logger.success('Pushed tag $tag');
   }
 
-  static Future<void> interactiveBumpAndPush(int seedBuildNumber) async {
+  @override
+  Future<void> interactiveBumpAndPush(int seedBuildNumber) async {
     final latest = await fetchLatestBuildNumber();
     final floor = latest ?? (seedBuildNumber - 1);
     final base = latest ?? seedBuildNumber;
