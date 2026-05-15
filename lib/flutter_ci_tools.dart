@@ -1,5 +1,6 @@
 export 'src/build_metadata.dart';
 export 'src/config.dart';
+export 'src/exceptions.dart';
 export 'src/deploy_service.dart';
 export 'src/env_builder.dart';
 export 'src/git_manager.dart';
