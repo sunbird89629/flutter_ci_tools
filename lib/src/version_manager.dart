@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'logger.dart';
-import 'shell_runner.dart';
+import 'shell_runner.dart' show ShellRunner;
 
 class VersionManager {
   VersionManager._();
@@ -10,8 +10,8 @@ class VersionManager {
   static const _bumpGranularity = 100;
 
   static Future<int?> fetchLatestBuildNumber() async {
-    await ShellRunner.runAndCapture('git', ['fetch', '--tags', '--force']);
-    final res = await ShellRunner.runAndCapture('git', [
+    await ShellRunner.instance.runAndCapture('git', ['fetch', '--tags', '--force']);
+    final res = await ShellRunner.instance.runAndCapture('git', [
       'tag', '--list', '$_tagPrefix*',
     ]);
     final nums = res.stdout
@@ -39,10 +39,10 @@ class VersionManager {
   static Future<void> pushNewBuildTag(int buildNumber) async {
     final tag = '$_tagPrefix$buildNumber';
     Logger.info('Tagging $tag ...');
-    await ShellRunner.run('git', [
+    await ShellRunner.instance.run('git', [
       'tag', '-a', '-f', tag, '-m', 'CI build $buildNumber',
     ]);
-    await ShellRunner.run('git', ['push', '--force', 'origin', tag]);
+    await ShellRunner.instance.run('git', ['push', '--force', 'origin', tag]);
     Logger.success('Pushed tag $tag');
   }
 

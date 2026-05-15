@@ -5,7 +5,7 @@ import 'config.dart';
 import 'deploy_service.dart';
 import 'git_manager.dart';
 import 'logger.dart';
-import 'shell_runner.dart';
+import 'shell_runner.dart' show ShellRunner;
 import 'version_manager.dart';
 
 enum AppPlatform {
@@ -63,7 +63,7 @@ abstract class EnvBuilder {
   Future<void> processArtifacts(File androidFile, File iosFile);
 
   Future<File> buildIOS() async {
-    await ShellRunner.run('fvm', [
+    await ShellRunner.instance.run('fvm', [
       'flutter',
       'build',
       'ipa',
@@ -140,8 +140,8 @@ abstract class EnvBuilder {
   }
 
   Future<void> cleanProject() async {
-    await ShellRunner.run('fvm', ['flutter', 'clean']);
-    await ShellRunner.run('fvm', ['flutter', 'pub', 'get']);
+    await ShellRunner.instance.run('fvm', ['flutter', 'clean']);
+    await ShellRunner.instance.run('fvm', ['flutter', 'pub', 'get']);
   }
 
   Future<void> buildPrepare() async {
@@ -176,7 +176,7 @@ abstract class EnvBuilder {
     });
     metadata = await runStep('Collect Build Metadata', BuildMetadata.collect);
     try {
-      await runStep('Check Git Status', GitManager.checkClean);
+      await runStep('Check Git Status', GitManager.instance.checkClean);
       await buildPrepare();
       Logger.section('Starting Build and Upload Pipeline');
       await runStep('Clean Project', cleanProject);
@@ -191,7 +191,7 @@ abstract class EnvBuilder {
         () => VersionManager.pushNewBuildTag(buildNumber),
       );
     } finally {
-      await GitManager.restoreWorkspace();
+      await GitManager.instance.restoreWorkspace();
     }
   }
 }

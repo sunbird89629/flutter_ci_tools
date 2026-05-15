@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'logger.dart';
-import 'shell_runner.dart';
+import 'shell_runner.dart' show ShellRunner, ShellResult;
 
 class DeployService {
   DeployService._();
@@ -14,14 +14,14 @@ class DeployService {
   }) async {
     Logger.info('Uploading $filePath ...');
     const maxAttempts = 3;
-    ProcessResult? result;
+    ShellResult? result;
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       if (attempt > 1) {
         Logger.info('Retrying upload (attempt $attempt/$maxAttempts)...');
         await Future.delayed(const Duration(seconds: 5));
       }
-      result = await ShellRunner.runAndCapture('curl', [
+      result = await ShellRunner.instance.runAndCapture('curl', [
         '--http1.1',
         '-F', 'file=@$filePath',
         '-F', '_api_key=$apiKey',
@@ -66,7 +66,7 @@ class DeployService {
       "msg_type": "text",
       "content": {"text": text},
     });
-    final result = await ShellRunner.runAndCapture('curl', [
+    final result = await ShellRunner.instance.runAndCapture('curl', [
       '-X', 'POST',
       '-H', 'Content-Type: application/json',
       '-d', jsonMessage,
@@ -90,7 +90,7 @@ class DeployService {
     if (!File(jsonKeyPath).existsSync()) {
       throw 'Google Play Service Account JSON not found at $jsonKeyPath';
     }
-    await ShellRunner.run('fastlane', [
+    await ShellRunner.instance.run('fastlane', [
       'supply',
       '--aab', aabFile.path,
       '--package_name', packageName,
@@ -125,7 +125,7 @@ class DeployService {
     final apiKeyJsonFile = File('ci/api_key_tmp.json');
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
-      await ShellRunner.run('fastlane', [
+      await ShellRunner.instance.run('fastlane', [
         'pilot', 'upload',
         '--ipa', ipaFile.path,
         '--api_key_path', apiKeyJsonFile.path,

@@ -16,12 +16,13 @@ class BuildMetadata {
   });
 
   static Future<BuildMetadata> collect() async {
+    final git = GitManager.instance;
     final results = await Future.wait([
-      GitManager.getBranch(),
-      GitManager.getCurrentUser(),
-      GitManager.getShortHash(),
-      GitManager.getRecentCommits(count: 15),
-      GitManager.getLatestCommitBody(),
+      git.getBranch(),
+      git.getCurrentUser(),
+      git.getShortHash(),
+      git.getRecentCommits(count: 15),
+      git.getLatestCommitBody(),
     ]);
     return BuildMetadata(
       branch: results[0],
