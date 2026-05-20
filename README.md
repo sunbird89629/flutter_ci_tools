@@ -67,3 +67,9 @@ dart run ci/build.dart test
 | `DeployService` | Upload to Pgyer, Google Play, App Store; send Feishu messages |
 | `AppPlatform` | `android` / `ios` |
 | `DeployTarget` | `pgyer` / `googlePlay` / `appStore` |
+
+## Example
+
+A complete consumer demo lives in [`example/`](./example/) — two-env CI
+pipeline, all four deploy targets, and a Flutter app that displays its own
+build metadata at runtime.
