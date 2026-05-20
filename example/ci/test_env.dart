@@ -12,7 +12,7 @@ class TestEnvBuilder extends EnvBuilder {
   String get envName => 'test';
 
   @override
-  String get iosExportMethod => 'ad-hoc';
+  String get iosExportMethod => 'development';
 
   @override
   String get apiHost => 'https://api.test.example.com';
