@@ -17,9 +17,10 @@ flutter pub get
 flutter run
 ```
 
-The **Counter** tab works immediately. The **About** tab shows the message
-*"build_info.json not populated — run `dart run ci/build.dart <env>` first"*
-until the CI pipeline has been executed at least once.
+The **Counter** tab works immediately. The **About** tab shows placeholder
+build metadata ("dev", "0.0.0", "unknown", etc.) from the committed
+`assets/build_info.json`. After the CI pipeline runs, real build info
+(branch, git hash, recent commits) replaces the placeholder.
 
 ## Run the CI pipeline
 
