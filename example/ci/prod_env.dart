@@ -1,8 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_ci_tools/flutter_ci_tools.dart'
-    hide AppPlatform, DeployTarget;
-import 'package:flutter_ci_tools/src/pipeline.dart';
+import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import 'app_config.dart';
 import 'build_info_writer.dart';
