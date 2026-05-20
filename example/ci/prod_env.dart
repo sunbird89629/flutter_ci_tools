@@ -35,12 +35,12 @@ class ProdPipeline extends BuildPipeline {
 
   @override
   Future<void> deployAndroid(File aab) async {
-    await DeployService.instance.uploadToGooglePlay(
+    await deployService.uploadToGooglePlay(
       aab,
       packageName: ProdCredentials.googlePlayPackageName,
       jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
     );
-    await DeployService.instance.sendFeishuNotification(
+    await deployService.sendFeishuNotification(
       config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: AppPlatform.android,
@@ -51,13 +51,13 @@ class ProdPipeline extends BuildPipeline {
 
   @override
   Future<void> deployIOS(File ipa) async {
-    await DeployService.instance.uploadToAppStore(
+    await deployService.uploadToAppStore(
       ipa,
       issuerId: ProdCredentials.appStoreIssuerId,
       apiKeyId: ProdCredentials.appStoreApiKeyId,
       apiKeyPath: ProdCredentials.appStoreApiKeyPath,
     );
-    await DeployService.instance.sendFeishuNotification(
+    await deployService.sendFeishuNotification(
       config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: AppPlatform.ios,

@@ -69,6 +69,9 @@ abstract class BuildPipeline {
   final AndroidBuilder _androidBuilder;
   final IOSBuilder _iosBuilder;
 
+  /// Exposed for subclasses that need direct control over deploy operations.
+  DeployService get deployService => _deployService;
+
   late int buildNumber;
 
   String get buildName {
