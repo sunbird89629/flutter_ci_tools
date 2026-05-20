@@ -17,6 +17,7 @@ Future<void> writeBuildInfo({
     'branch': metadata.branch,
     'recentCommits': metadata.recentCommits,
   };
-  await File('assets/build_info.json')
-      .writeAsString(const JsonEncoder.withIndent('  ').convert(json));
+  await File('assets/build_info.json').writeAsString(
+    const JsonEncoder.withIndent('  ').convert(json),
+  );
 }
