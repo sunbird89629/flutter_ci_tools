@@ -8,5 +8,6 @@ export 'src/exceptions.dart';
 export 'src/git_manager.dart';
 export 'src/logger.dart';
 export 'src/pipeline.dart';
+export 'src/pipeline_registry.dart';
 export 'src/shell_runner.dart';
 export 'src/version_manager.dart';
