@@ -14,6 +14,13 @@ class Logger {
   static void success(String msg) => stdout.writeln('$_green✅ $msg$_reset');
   static void warning(String msg) => stdout.writeln('$_yellow⚠️  $msg$_reset');
 
+  static String _pad(int n) => n.toString().padLeft(2, '0');
+
+  static String get timeStamp {
+    final t = DateTime.now();
+    return '[${_pad(t.hour)}:${_pad(t.minute)}:${_pad(t.second)}]';
+  }
+
   static void error(String msg, [Object? e]) {
     stderr.writeln('$_red❌ $msg$_reset');
     if (e != null) stderr.writeln('$_red   Error: $e$_reset');
@@ -24,7 +31,10 @@ class Logger {
     stdout.writeln('$_gray${'—' * 40}$_reset');
   }
 
-  static void command(String cmd) => stdout.writeln('$_gray   $cmd$_reset');
+  static void command(String cmd) {
+    final content = '$timeStamp$_green$cmd$_reset';
+    stdout.writeln(content);
+  }
 
   static void print(String msg, {String color = _reset}) =>
       stdout.writeln('$color$msg$_reset');

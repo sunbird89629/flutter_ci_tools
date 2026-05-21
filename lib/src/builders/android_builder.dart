@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+
 import '../shell_runner.dart';
 
 class AndroidBuilder {

@@ -22,7 +22,11 @@ class _FakeShellRunner implements ShellRunner {
     final key = '$executable ${args.join(' ')}';
     runCalls.add(key);
     return _responses[key] ??
-        ShellResult(exitCode: 0, stdout: '', stderr: '');
+        ShellResult(
+          exitCode: 0,
+          stdout: '',
+          stderr: '',
+        );
   }
 }
 
@@ -48,8 +52,13 @@ void main() {
     test('fetchLatestBuildNumber returns max from tag list', () async {
       shell.stub('git', ['fetch', '--tags', '--force'],
           ShellResult(exitCode: 0, stdout: '', stderr: ''));
-      shell.stub('git', ['tag', '--list', 'builds/*'],
-          ShellResult(exitCode: 0, stdout: 'builds/10050\nbuilds/10099\nbuilds/10001\n', stderr: ''));
+      shell.stub(
+          'git',
+          ['tag', '--list', 'builds/*'],
+          ShellResult(
+              exitCode: 0,
+              stdout: 'builds/10050\nbuilds/10099\nbuilds/10001\n',
+              stderr: ''));
 
       expect(await version.fetchLatestBuildNumber(), 10099);
     });
@@ -57,8 +66,13 @@ void main() {
     test('fetchLatestBuildNumber ignores non-builds tags', () async {
       shell.stub('git', ['fetch', '--tags', '--force'],
           ShellResult(exitCode: 0, stdout: '', stderr: ''));
-      shell.stub('git', ['tag', '--list', 'builds/*'],
-          ShellResult(exitCode: 0, stdout: 'v1.0.0\nbuilds/10050\nrelease\n', stderr: ''));
+      shell.stub(
+          'git',
+          ['tag', '--list', 'builds/*'],
+          ShellResult(
+              exitCode: 0,
+              stdout: 'v1.0.0\nbuilds/10050\nrelease\n',
+              stderr: ''));
 
       expect(await version.fetchLatestBuildNumber(), 10050);
     });
@@ -75,8 +89,11 @@ void main() {
     test('computeNextBuildNumber returns max + 1', () async {
       shell.stub('git', ['fetch', '--tags', '--force'],
           ShellResult(exitCode: 0, stdout: '', stderr: ''));
-      shell.stub('git', ['tag', '--list', 'builds/*'],
-          ShellResult(exitCode: 0, stdout: 'builds/10050\nbuilds/10099\n', stderr: ''));
+      shell.stub(
+          'git',
+          ['tag', '--list', 'builds/*'],
+          ShellResult(
+              exitCode: 0, stdout: 'builds/10050\nbuilds/10099\n', stderr: ''));
 
       expect(await version.computeNextBuildNumber(12000), 10100);
     });

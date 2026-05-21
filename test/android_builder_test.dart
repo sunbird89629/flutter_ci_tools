@@ -38,7 +38,8 @@ void main() {
       expect(file.path, 'build/app/outputs/flutter-apk/app-release.apk');
     });
 
-    test('buildAppBundle runs correct flutter build appbundle command', () async {
+    test('buildAppBundle runs correct flutter build appbundle command',
+        () async {
       final builder = AndroidBuilder(shellRunner: shell);
       final file = await builder.buildAppBundle(
         buildName: '1.0.0',

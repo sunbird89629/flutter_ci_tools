@@ -2,6 +2,7 @@ export 'src/build_metadata.dart';
 export 'src/builders/android_builder.dart';
 export 'src/builders/ios_builder.dart';
 export 'src/config.dart';
+export 'src/default_shell_runner.dart';
 export 'src/deploy_service.dart';
 export 'src/exceptions.dart';
 export 'src/git_manager.dart';

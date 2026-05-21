@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+
 import 'exceptions.dart';
 import 'logger.dart';
 import 'shell_runner.dart';

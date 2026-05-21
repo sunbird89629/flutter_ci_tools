@@ -1,6 +1,8 @@
 // lib/src/pipeline.dart
 import 'dart:io';
 
+import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+
 import 'build_metadata.dart';
 import 'builders/android_builder.dart';
 import 'builders/ios_builder.dart';
