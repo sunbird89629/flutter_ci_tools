@@ -132,6 +132,15 @@ class _TestPipeline extends BuildPipeline {
   });
 
   @override
+  String get name => 'test';
+
+  @override
+  String get description => 'Test pipeline';
+
+  @override
+  String get help => 'Test pipeline help';
+
+  @override
   String get envName => 'test';
 
   @override

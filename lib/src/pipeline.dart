@@ -83,6 +83,9 @@ abstract class BuildPipeline {
 
   late final BuildMetadata metadata;
 
+  String get name;
+  String get description;
+  String get help;
   String get envName;
   String get iosExportMethod;
   String get apiHost;
