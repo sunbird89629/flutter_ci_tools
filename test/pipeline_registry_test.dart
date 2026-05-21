@@ -216,5 +216,55 @@ void main() {
 
       expect(registry.pipelines, [p1, p2]);
     });
+
+    test('run shows interactive prompt and selects pipeline by number',
+        () async {
+      final registry = PipelineRegistry();
+      final pipeline = createPipeline('test');
+      registry.register(pipeline);
+
+      await registry.run([], readLine: () => '1');
+      expect(pipeline.didRun, isTrue);
+    });
+
+    test('run interactive exits on 0', () async {
+      final registry = PipelineRegistry();
+      registry.register(createPipeline('test'));
+
+      var exitCode = -1;
+      await registry.run([], readLine: () => '0',
+          onExit: (code) => exitCode = code);
+      expect(exitCode, 0);
+    });
+
+    test('run interactive re-prompts on invalid input', () async {
+      final registry = PipelineRegistry();
+      final pipeline = createPipeline('test');
+      registry.register(pipeline);
+
+      var callCount = 0;
+      await registry.run([], readLine: () {
+        callCount++;
+        if (callCount == 1) return 'invalid';
+        return '1';
+      });
+      expect(pipeline.didRun, isTrue);
+      expect(callCount, 2);
+    });
+
+    test('run interactive re-prompts on out-of-range number', () async {
+      final registry = PipelineRegistry();
+      final pipeline = createPipeline('test');
+      registry.register(pipeline);
+
+      var callCount = 0;
+      await registry.run([], readLine: () {
+        callCount++;
+        if (callCount == 1) return '99';
+        return '1';
+      });
+      expect(pipeline.didRun, isTrue);
+      expect(callCount, 2);
+    });
   });
 }
