@@ -3,6 +3,12 @@ description: Reusable CI tooling for Flutter apps — build orchestration, git v
 version: 0.1.0
 publish_to: https://pub.dev
 repository: https://github.com/sunbird89629/flutter_ci_tools
+topics:
+  - ci
+  - flutter
+  - build
+  - deploy
+  - devops
 
 environment:
   sdk: ^3.4.0

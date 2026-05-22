@@ -2,11 +2,19 @@ import 'dart:io';
 
 import 'pipeline.dart';
 
+/// Manages a collection of named pipelines and handles CLI routing.
+///
+/// Supports three invocation styles:
+/// - `dart run ci/build.dart <name>` — run a specific pipeline
+/// - `dart run ci/build.dart <name> android|ios` — run for one platform
+/// - `dart run ci/build.dart` — interactive selection menu
 class PipelineRegistry {
   final Map<String, BuildPipeline> _pipelines = {};
 
+  /// All registered pipelines in registration order.
   List<BuildPipeline> get pipelines => _pipelines.values.toList();
 
+  /// Registers a [pipeline]. Throws [ArgumentError] if a pipeline with the same name exists.
   void register(BuildPipeline pipeline) {
     if (_pipelines.containsKey(pipeline.name)) {
       throw ArgumentError(
@@ -16,6 +24,13 @@ class PipelineRegistry {
     _pipelines[pipeline.name] = pipeline;
   }
 
+  /// Parses [args] and runs the appropriate pipeline.
+  ///
+  /// - No args: interactive selection
+  /// - `--help` / `-h`: print pipeline help
+  /// - `android` / `ios` as second arg: platform-only build
+  ///
+  /// [readLine] and [onExit] are injectable for testing.
   Future<void> run(
     List<String> args, {
     String? Function()? readLine,

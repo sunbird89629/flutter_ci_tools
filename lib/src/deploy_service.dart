@@ -7,23 +7,31 @@ import 'exceptions.dart';
 import 'logger.dart';
 import 'shell_runner.dart';
 
+/// Interface for deploying build artifacts and sending notifications.
+///
+/// Implementations can be swapped for testing via dependency injection.
 abstract class DeployService {
+  /// Default singleton instance.
   static DeployService instance = DefaultDeployService();
 
+  /// Uploads a build file to Pgyer and returns the download URL.
   Future<String> uploadToPgyer(
     String filePath,
     String apiKey, {
     String? updateDescription,
   });
 
+  /// Sends a text message to a Feishu (Lark) webhook.
   Future<void> sendFeishuNotification(String webhookUrl, String text);
 
+  /// Uploads an AAB file to Google Play via Fastlane Supply.
   Future<void> uploadToGooglePlay(
     File aabFile, {
     required String packageName,
     required String jsonKeyPath,
   });
 
+  /// Uploads an IPA file to App Store Connect via Fastlane Pilot.
   Future<void> uploadToAppStore(
     File ipaFile, {
     required String issuerId,
@@ -32,7 +40,9 @@ abstract class DeployService {
   });
 }
 
+/// Default [DeployService] implementation using [ShellRunner] for external commands.
 class DefaultDeployService implements DeployService {
+  /// Creates a [DefaultDeployService] with an optional [shellRunner].
   DefaultDeployService({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();
 

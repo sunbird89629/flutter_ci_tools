@@ -4,12 +4,15 @@ import 'package:flutter_ci_tools/src/default_shell_runner.dart';
 
 import '../shell_runner.dart';
 
+/// Builds iOS IPA artifacts using `fvm flutter build ipa`.
 class IOSBuilder {
+  /// Creates an [IOSBuilder] with an optional [shellRunner].
   IOSBuilder({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();
 
   final ShellRunner _shellRunner;
 
+  /// Builds a release IPA and returns the output file.
   Future<File> buildIpa({
     required String buildName,
     required int buildNumber,

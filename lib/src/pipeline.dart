@@ -13,26 +13,48 @@ import 'logger.dart';
 import 'shell_runner.dart';
 import 'version_manager.dart';
 
+/// The target platform for a build.
 enum AppPlatform {
+  /// Android platform.
   android('Android'),
+
+  /// iOS platform.
   ios('iOS');
 
+  /// Human-readable label for the platform.
   final String label;
   const AppPlatform(this.label);
 }
 
+/// The destination where a build artifact will be uploaded.
 enum DeployTarget {
+  /// [Pgyer](https://www.pgyer.com) beta distribution platform.
   pgyer('Pgyer'),
+
+  /// Google Play Console.
   googlePlay('Google Play'),
+
+  /// Apple App Store Connect.
   appStore('App Store');
 
+  /// Human-readable label for the deploy target.
   final String label;
   const DeployTarget(this.label);
 }
 
-enum AndroidBuildType { apk, appbundle }
+/// The Android build output format.
+enum AndroidBuildType {
+  /// Standard APK package.
+  apk,
 
-/// Executes a step with standardized logging and error handling.
+  /// Android App Bundle for Play Store upload.
+  appbundle,
+}
+
+/// Executes [action] with standardized section logging and error handling.
+///
+/// Prints a section header before running [action], and logs the duration
+/// on success or the error on failure. Rethrows any exception from [action].
 Future<T> runStep<T>(String name, Future<T> Function() action) async {
   final startTime = DateTime.now();
   Logger.section(name);
@@ -47,7 +69,16 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
   }
 }
 
+/// Base class for CI build pipelines.
+///
+/// Subclasses define environment-specific configuration by overriding the
+/// abstract getters and deploy methods. The [run], [runAndroidOnly], and
+/// [runIOSOnly] methods execute the full or platform-specific build flow.
+///
+/// All dependencies are injected via the constructor with sensible defaults,
+/// making pipelines easy to test with fakes.
 abstract class BuildPipeline {
+  /// Creates a pipeline with the given [config] and optional dependencies.
   BuildPipeline(
     this.config, {
     VersionManager? versionManager,
@@ -63,6 +94,7 @@ abstract class BuildPipeline {
         _androidBuilder = androidBuilder ?? AndroidBuilder(),
         _iosBuilder = iosBuilder ?? IOSBuilder();
 
+  /// Application-level configuration (name, API keys, seed build number).
   final CIToolsConfig config;
   final VersionManager _versionManager;
   final GitManager _gitManager;
@@ -74,34 +106,62 @@ abstract class BuildPipeline {
   /// Exposed for subclasses that need direct control over deploy operations.
   DeployService get deployService => _deployService;
 
+  /// The resolved build number, set during [run] / [runAndroidOnly] / [runIOSOnly].
   late int buildNumber;
 
+  /// The human-readable build name derived from [buildNumber] (e.g. `"1.2.0"`).
   String get buildName {
     final str = buildNumber.toString();
     return '${str[0]}.${str[1]}.${str[2]}';
   }
 
+  /// Git and build metadata collected at the start of the pipeline run.
   late final BuildMetadata metadata;
 
+  /// Unique identifier for this pipeline (e.g. `"test"`, `"prod"`).
   String get name;
+  /// Short description shown in the interactive pipeline selector.
   String get description;
+
+  /// Extended help text printed when the user passes `--help`.
   String get help;
+
+  /// Environment identifier passed to `--dart-define=ENV=` (e.g. `"test"`, `"prod"`).
   String get envName;
+
+  /// iOS export method used by `xcodebuild` (e.g. `"development"`, `"ad-hoc"`, `"app-store"`).
   String get iosExportMethod;
+
+  /// Backend API host URL for this environment.
   String get apiHost;
+
+  /// Whether to build an APK or an App Bundle for Android.
   AndroidBuildType get androidBuildType;
+
+  /// Whether to swap `Info.plist` with the product variant before building.
+  ///
+  /// Defaults to `false`. Override to `true` to rename `Info.plist.product`
+  /// to `Info.plist` during [buildPrepare].
   bool get shouldSwapInfoPlist => false;
 
+  /// Hook called after git check and before the build starts.
+  ///
+  /// Override to run environment-specific preparation (e.g. writing build info files).
   Future<void> beforeBuild() async {}
 
+  /// Deploys the Android build artifact ([file]) to the configured target.
   Future<void> deployAndroid(File file);
+
+  /// Deploys the iOS build artifact ([file]) to the configured target.
   Future<void> deployIOS(File file);
 
+  /// Runs `fvm flutter clean` followed by `fvm flutter pub get`.
   Future<void> cleanProject() async {
     await _shellRunner.run('fvm', ['flutter', 'clean']);
     await _shellRunner.run('fvm', ['flutter', 'pub', 'get']);
   }
 
+  /// Pre-build step that handles Info.plist swapping when [shouldSwapInfoPlist] is true.
   Future<void> buildPrepare() async {
     if (shouldSwapInfoPlist) {
       Logger.info('Swapping Info.plist for product environment');
@@ -136,6 +196,9 @@ abstract class BuildPipeline {
     );
   }
 
+  /// Convenience method that uploads [file] to Pgyer and sends a Feishu notification.
+  ///
+  /// Typically called from [deployAndroid] or [deployIOS] in test/staging pipelines.
   Future<void> uploadToPgyerAndNotify(AppPlatform platform, File file) async {
     Logger.info('Processing ${platform.label}...');
     final description = [
@@ -169,6 +232,7 @@ abstract class BuildPipeline {
         'git_hash:    ${metadata.gitHash}',
       ];
 
+  /// Builds a formatted Feishu notification message for the given [platform] and [target].
   String buildFeishuMessage({
     required AppPlatform platform,
     required DeployTarget target,
@@ -199,6 +263,11 @@ abstract class BuildPipeline {
     return lines.join('\n');
   }
 
+  /// Executes the full build pipeline for both Android and iOS.
+  ///
+  /// Steps: resolve version → collect metadata → git check → beforeBuild →
+  /// buildPrepare → clean → build Android → build iOS → deploy both → push tag.
+  /// Restores the workspace in a `finally` block regardless of success or failure.
   Future<void> run() async {
     await runStep('Resolve Build Version', () async {
       buildNumber = await _versionManager.computeNextBuildNumber(
@@ -229,6 +298,7 @@ abstract class BuildPipeline {
     }
   }
 
+  /// Executes the build pipeline for Android only.
   Future<void> runAndroidOnly() async {
     await runStep('Resolve Build Version', () async {
       buildNumber = await _versionManager.computeNextBuildNumber(
@@ -257,6 +327,7 @@ abstract class BuildPipeline {
     }
   }
 
+  /// Executes the build pipeline for iOS only.
   Future<void> runIOSOnly() async {
     await runStep('Resolve Build Version', () async {
       buildNumber = await _versionManager.computeNextBuildNumber(
