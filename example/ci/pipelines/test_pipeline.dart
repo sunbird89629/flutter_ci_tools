@@ -40,9 +40,9 @@ Usage: dart run ci/build.dart test [android|ios]
   Future<void> beforeBuild() async {
     await writeBuildInfo(
       env: envName,
-      buildName: buildName,
-      buildNumber: buildNumber,
-      metadata: metadata,
+      buildName: context.buildName,
+      buildNumber: context.buildNumber,
+      metadata: context.metadata,
     );
   }
 

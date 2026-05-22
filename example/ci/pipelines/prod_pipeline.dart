@@ -43,9 +43,9 @@ Usage: dart run ci/build.dart prod [android|ios]
   Future<void> beforeBuild() async {
     await writeBuildInfo(
       env: envName,
-      buildName: buildName,
-      buildNumber: buildNumber,
-      metadata: metadata,
+      buildName: context.buildName,
+      buildNumber: context.buildNumber,
+      metadata: context.metadata,
     );
   }
 
@@ -57,7 +57,7 @@ Usage: dart run ci/build.dart prod [android|ios]
       jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
     );
     await deployService.sendFeishuNotification(
-      config.feishuWebhookUrl!,
+      context.config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: AppPlatform.android,
         target: DeployTarget.googlePlay,
@@ -74,7 +74,7 @@ Usage: dart run ci/build.dart prod [android|ios]
       apiKeyPath: ProdCredentials.appStoreApiKeyPath,
     );
     await deployService.sendFeishuNotification(
-      config.feishuWebhookUrl!,
+      context.config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: AppPlatform.ios,
         target: DeployTarget.appStore,

@@ -24,9 +24,9 @@ class AndroidTestPipeline extends BuildPipeline {
   Future<void> beforeBuild() async {
     await writeBuildInfo(
       env: envName,
-      buildName: buildName,
-      buildNumber: buildNumber,
-      metadata: metadata,
+      buildName: context.buildName,
+      buildNumber: context.buildNumber,
+      metadata: context.metadata,
     );
   }
 
@@ -39,7 +39,7 @@ class AndroidTestPipeline extends BuildPipeline {
       uploadToPgyerAndNotify(AppPlatform.ios, ipa);
 
   @override
-  String get description => "android 测试环境版本构建，用于测试脚本的功能";
+  String get description => "android 测试环境版本构建，用于开发期间调试脚本的功能";
 
   @override
   String get help => "this is help text";
