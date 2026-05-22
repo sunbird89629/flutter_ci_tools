@@ -4,7 +4,6 @@ import 'package:flutter_ci_tools/src/build_metadata.dart';
 import 'package:flutter_ci_tools/src/builders/android_builder.dart';
 import 'package:flutter_ci_tools/src/builders/ios_builder.dart';
 import 'package:flutter_ci_tools/src/config.dart';
-import 'package:flutter_ci_tools/src/deploy_service.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
 import 'package:flutter_ci_tools/src/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart';
@@ -68,26 +67,6 @@ class _FakeGitManager implements GitManager {
   Future<String> getLatestCommitBody() async => '';
 }
 
-class _FakeDeployService implements DeployService {
-  @override
-  Future<String> uploadToPgyer(String fp, String key,
-      {String? updateDescription}) async => 'https://pgyer.com/test';
-
-  @override
-  Future<void> sendFeishuNotification(String url, String text) async {}
-
-  @override
-  Future<void> uploadToGooglePlay(File aab,
-      {required String packageName,
-      required String jsonKeyPath}) async {}
-
-  @override
-  Future<void> uploadToAppStore(File ipa,
-      {required String issuerId,
-      required String apiKeyId,
-      required String apiKeyPath}) async {}
-}
-
 class _FakeShellRunner implements ShellRunner {
   final List<String> runCalls = [];
 
@@ -125,7 +104,6 @@ class _TestPipeline extends BuildPipeline {
     super.config, {
     super.versionManager,
     super.gitManager,
-    super.deployService,
     super.shellRunner,
     super.androidBuilder,
     super.iosBuilder,
@@ -162,7 +140,6 @@ class _TestPipeline extends BuildPipeline {
 void main() {
   late _FakeVersionManager version;
   late _FakeGitManager git;
-  late _FakeDeployService deploy;
   late _FakeShellRunner shell;
   late CIToolsConfig config;
 
@@ -170,7 +147,6 @@ void main() {
         config,
         versionManager: version,
         gitManager: git,
-        deployService: deploy,
         shellRunner: shell,
         androidBuilder: _FakeAndroidBuilder(),
         iosBuilder: _FakeIOSBuilder(),
@@ -179,7 +155,6 @@ void main() {
   setUp(() {
     version = _FakeVersionManager();
     git = _FakeGitManager();
-    deploy = _FakeDeployService();
     shell = _FakeShellRunner();
     config = const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000);
   });
