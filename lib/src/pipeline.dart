@@ -7,7 +7,6 @@ import 'build_metadata.dart';
 import 'builders/android_builder.dart';
 import 'builders/ios_builder.dart';
 import 'config.dart';
-import 'deploy_service.dart';
 import 'git_manager.dart';
 import 'logger.dart';
 import 'shell_runner.dart';
@@ -84,14 +83,12 @@ abstract class BuildPipeline {
     CIToolsConfig config, {
     VersionManager? versionManager,
     GitManager? gitManager,
-    DeployService? deployService,
     ShellRunner? shellRunner,
     AndroidBuilder? androidBuilder,
     IOSBuilder? iosBuilder,
   })  : context = PipelineContext(config: config),
         _versionManager = versionManager ?? DefaultVersionManager(),
         _gitManager = gitManager ?? DefaultGitManager(),
-        _deployService = deployService ?? DefaultDeployService(),
         _shellRunner = shellRunner ?? DefaultShellRunner(),
         _androidBuilder = androidBuilder ?? AndroidBuilder(),
         _iosBuilder = iosBuilder ?? IOSBuilder();
@@ -101,13 +98,9 @@ abstract class BuildPipeline {
 
   final VersionManager _versionManager;
   final GitManager _gitManager;
-  final DeployService _deployService;
   final ShellRunner _shellRunner;
   final AndroidBuilder _androidBuilder;
   final IOSBuilder _iosBuilder;
-
-  /// Exposed for subclasses that need direct control over deploy operations.
-  DeployService get deployService => _deployService;
 
   /// The human-readable build name derived from [buildNumber] (e.g. `"1.2.0"`).
   String get buildName => context.buildName;
@@ -187,34 +180,6 @@ abstract class BuildPipeline {
       buildNumber: context.buildNumber,
       envName: envName,
       exportMethod: iosExportMethod,
-    );
-  }
-
-  /// Convenience method that uploads [file] to Pgyer and sends a Feishu notification.
-  ///
-  /// Typically called from [deployAndroid] or [deployIOS] in test/staging pipelines.
-  Future<void> uploadToPgyerAndNotify(AppPlatform platform, File file) async {
-    Logger.info('Processing ${platform.label}...');
-    final description = [
-      ..._coreInfoLines(),
-      '',
-      'recent commits:',
-      context.metadata.recentCommits,
-    ].join('\n');
-
-    final url = await _deployService.uploadToPgyer(
-      file.path,
-      context.config.pgyerApiKey!,
-      updateDescription: description,
-    );
-
-    await _deployService.sendFeishuNotification(
-      context.config.feishuWebhookUrl!,
-      buildFeishuMessage(
-        platform: platform,
-        target: DeployTarget.pgyer,
-        downloadUrl: url,
-      ),
     );
   }
 
