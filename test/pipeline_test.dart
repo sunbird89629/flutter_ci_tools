@@ -187,13 +187,13 @@ void main() {
   group('BuildPipeline', () {
     test('buildName formats buildNumber correctly', () {
       final pipeline = createPipeline();
-      pipeline.buildNumber = 12001;
+      pipeline.context.buildNumber = 12001;
       expect(pipeline.buildName, '1.2.0');
     });
 
     test('buildName handles zeros', () {
       final pipeline = createPipeline();
-      pipeline.buildNumber = 10000;
+      pipeline.context.buildNumber = 10000;
       expect(pipeline.buildName, '1.0.0');
     });
 
@@ -201,7 +201,7 @@ void main() {
       final pipeline = createPipeline();
       await pipeline.run();
 
-      expect(pipeline.buildNumber, 12001);
+      expect(pipeline.context.buildNumber, 12001);
       expect(version.pushedTags, contains(12001));
     });
 
@@ -220,8 +220,8 @@ void main() {
 
     test('buildFeishuMessage includes core info', () {
       final pipeline = createPipeline();
-      pipeline.buildNumber = 12001;
-      pipeline.metadata = BuildMetadata(
+      pipeline.context.buildNumber = 12001;
+      pipeline.context.metadata = BuildMetadata(
         branch: 'main',
         gitUser: 'Alice',
         gitHash: 'abc1234',
@@ -246,7 +246,7 @@ void main() {
       final pipeline = createPipeline();
       await pipeline.runAndroidOnly();
 
-      expect(pipeline.buildNumber, 12001);
+      expect(pipeline.context.buildNumber, 12001);
       expect(version.pushedTags, contains(12001));
     });
 
@@ -254,7 +254,7 @@ void main() {
       final pipeline = createPipeline();
       await pipeline.runIOSOnly();
 
-      expect(pipeline.buildNumber, 12001);
+      expect(pipeline.context.buildNumber, 12001);
       expect(version.pushedTags, contains(12001));
     });
 
