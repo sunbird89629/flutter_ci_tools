@@ -11,6 +11,7 @@ import 'deploy_service.dart';
 import 'git_manager.dart';
 import 'logger.dart';
 import 'shell_runner.dart';
+import 'pipeline_context.dart';
 import 'version_manager.dart';
 
 /// The target platform for a build.
@@ -80,22 +81,24 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 abstract class BuildPipeline {
   /// Creates a pipeline with the given [config] and optional dependencies.
   BuildPipeline(
-    this.config, {
+    CIToolsConfig config, {
     VersionManager? versionManager,
     GitManager? gitManager,
     DeployService? deployService,
     ShellRunner? shellRunner,
     AndroidBuilder? androidBuilder,
     IOSBuilder? iosBuilder,
-  })  : _versionManager = versionManager ?? DefaultVersionManager(),
+  })  : context = PipelineContext(config: config),
+        _versionManager = versionManager ?? DefaultVersionManager(),
         _gitManager = gitManager ?? DefaultGitManager(),
         _deployService = deployService ?? DefaultDeployService(),
         _shellRunner = shellRunner ?? DefaultShellRunner(),
         _androidBuilder = androidBuilder ?? AndroidBuilder(),
         _iosBuilder = iosBuilder ?? IOSBuilder();
 
-  /// Application-level configuration (name, API keys, seed build number).
-  final CIToolsConfig config;
+  /// Shared context holding config, build state, and inter-step store.
+  final PipelineContext context;
+
   final VersionManager _versionManager;
   final GitManager _gitManager;
   final DeployService _deployService;
@@ -106,17 +109,8 @@ abstract class BuildPipeline {
   /// Exposed for subclasses that need direct control over deploy operations.
   DeployService get deployService => _deployService;
 
-  /// The resolved build number, set during [run] / [runAndroidOnly] / [runIOSOnly].
-  late int buildNumber;
-
   /// The human-readable build name derived from [buildNumber] (e.g. `"1.2.0"`).
-  String get buildName {
-    final str = buildNumber.toString();
-    return '${str[0]}.${str[1]}.${str[2]}';
-  }
-
-  /// Git and build metadata collected at the start of the pipeline run.
-  late final BuildMetadata metadata;
+  String get buildName => context.buildName;
 
   /// Unique identifier for this pipeline (e.g. `"test"`, `"prod"`).
   String get name;
@@ -174,14 +168,14 @@ abstract class BuildPipeline {
     switch (androidBuildType) {
       case AndroidBuildType.apk:
         return _androidBuilder.buildApk(
-          buildName: buildName,
-          buildNumber: buildNumber,
+          buildName: context.buildName,
+          buildNumber: context.buildNumber,
           envName: envName,
         );
       case AndroidBuildType.appbundle:
         return _androidBuilder.buildAppBundle(
-          buildName: buildName,
-          buildNumber: buildNumber,
+          buildName: context.buildName,
+          buildNumber: context.buildNumber,
           envName: envName,
         );
     }
@@ -189,8 +183,8 @@ abstract class BuildPipeline {
 
   Future<File> _buildIOS() async {
     return _iosBuilder.buildIpa(
-      buildName: buildName,
-      buildNumber: buildNumber,
+      buildName: context.buildName,
+      buildNumber: context.buildNumber,
       envName: envName,
       exportMethod: iosExportMethod,
     );
@@ -205,17 +199,17 @@ abstract class BuildPipeline {
       ..._coreInfoLines(),
       '',
       'recent commits:',
-      metadata.recentCommits,
+      context.metadata.recentCommits,
     ].join('\n');
 
     final url = await _deployService.uploadToPgyer(
       file.path,
-      config.pgyerApiKey!,
+      context.config.pgyerApiKey!,
       updateDescription: description,
     );
 
     await _deployService.sendFeishuNotification(
-      config.feishuWebhookUrl!,
+      context.config.feishuWebhookUrl!,
       buildFeishuMessage(
         platform: platform,
         target: DeployTarget.pgyer,
@@ -225,11 +219,11 @@ abstract class BuildPipeline {
   }
 
   List<String> _coreInfoLines() => [
-        'versionName: $buildName',
-        'versionCode: $buildNumber',
+        'versionName: ${context.buildName}',
+        'versionCode: ${context.buildNumber}',
         'env:         $envName',
         'api_host:    $apiHost',
-        'git_hash:    ${metadata.gitHash}',
+        'git_hash:    ${context.metadata.gitHash}',
       ];
 
   /// Builds a formatted Feishu notification message for the given [platform] and [target].
@@ -240,8 +234,8 @@ abstract class BuildPipeline {
   }) {
     const sep = '──────────────────────────';
     final lines = <String>[
-      '🚀 ${config.appName} 新版本 $buildNumber (${platform.label} · ${target.label})',
-      'branch: ${metadata.branch}  by: ${metadata.gitUser}',
+      '🚀 ${context.config.appName} 新版本 ${context.buildNumber} (${platform.label} · ${target.label})',
+      'branch: ${context.metadata.branch}  by: ${context.metadata.gitUser}',
       sep,
       ..._coreInfoLines(),
     ];
@@ -253,12 +247,12 @@ abstract class BuildPipeline {
     lines
       ..add(sep)
       ..add('最近提交:')
-      ..add(metadata.recentCommits);
-    if (metadata.commitBody.isNotEmpty) {
+      ..add(context.metadata.recentCommits);
+    if (context.metadata.commitBody.isNotEmpty) {
       lines
         ..add(sep)
         ..add('版本说明:')
-        ..add(metadata.commitBody);
+        ..add(context.metadata.commitBody);
     }
     return lines.join('\n');
   }
@@ -270,12 +264,12 @@ abstract class BuildPipeline {
   /// Restores the workspace in a `finally` block regardless of success or failure.
   Future<void> run() async {
     await runStep('Resolve Build Version', () async {
-      buildNumber = await _versionManager.computeNextBuildNumber(
-        config.seedBuildNumber,
+      context.buildNumber = await _versionManager.computeNextBuildNumber(
+        context.config.seedBuildNumber,
       );
-      Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
+      Logger.info('Resolved buildNumber=${context.buildNumber}  buildName=${context.buildName}');
     });
-    metadata = await runStep(
+    context.metadata = await runStep(
       'Collect Build Metadata',
       () => BuildMetadata.collect(_gitManager),
     );
@@ -291,7 +285,7 @@ abstract class BuildPipeline {
       await runStep('Deploy iOS', () => deployIOS(iosFile));
       await runStep(
         'Push Build Tag',
-        () => _versionManager.pushNewBuildTag(buildNumber),
+        () => _versionManager.pushNewBuildTag(context.buildNumber),
       );
     } finally {
       await _gitManager.restoreWorkspace();
@@ -301,12 +295,12 @@ abstract class BuildPipeline {
   /// Executes the build pipeline for Android only.
   Future<void> runAndroidOnly() async {
     await runStep('Resolve Build Version', () async {
-      buildNumber = await _versionManager.computeNextBuildNumber(
-        config.seedBuildNumber,
+      context.buildNumber = await _versionManager.computeNextBuildNumber(
+        context.config.seedBuildNumber,
       );
-      Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
+      Logger.info('Resolved buildNumber=${context.buildNumber}  buildName=${context.buildName}');
     });
-    metadata = await runStep(
+    context.metadata = await runStep(
       'Collect Build Metadata',
       () => BuildMetadata.collect(_gitManager),
     );
@@ -320,7 +314,7 @@ abstract class BuildPipeline {
       await runStep('Deploy Android', () => deployAndroid(androidFile));
       await runStep(
         'Push Build Tag',
-        () => _versionManager.pushNewBuildTag(buildNumber),
+        () => _versionManager.pushNewBuildTag(context.buildNumber),
       );
     } finally {
       await _gitManager.restoreWorkspace();
@@ -330,12 +324,12 @@ abstract class BuildPipeline {
   /// Executes the build pipeline for iOS only.
   Future<void> runIOSOnly() async {
     await runStep('Resolve Build Version', () async {
-      buildNumber = await _versionManager.computeNextBuildNumber(
-        config.seedBuildNumber,
+      context.buildNumber = await _versionManager.computeNextBuildNumber(
+        context.config.seedBuildNumber,
       );
-      Logger.info('Resolved buildNumber=$buildNumber  buildName=$buildName');
+      Logger.info('Resolved buildNumber=${context.buildNumber}  buildName=${context.buildName}');
     });
-    metadata = await runStep(
+    context.metadata = await runStep(
       'Collect Build Metadata',
       () => BuildMetadata.collect(_gitManager),
     );
@@ -349,7 +343,7 @@ abstract class BuildPipeline {
       await runStep('Deploy iOS', () => deployIOS(iosFile));
       await runStep(
         'Push Build Tag',
-        () => _versionManager.pushNewBuildTag(buildNumber),
+        () => _versionManager.pushNewBuildTag(context.buildNumber),
       );
     } finally {
       await _gitManager.restoreWorkspace();
