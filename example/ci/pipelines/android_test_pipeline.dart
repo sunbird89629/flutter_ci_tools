@@ -33,48 +33,58 @@ class AndroidTestPipeline extends BuildPipeline {
   @override
   Future<void> deployAndroid(File apk) async {
     context.set<String>('artifact_path', apk.path);
-    context.set<String>('pgyer_description', [
-      'versionName: ${context.buildName}',
-      'versionCode: ${context.buildNumber}',
-      'env:         $envName',
-      'api_host:    $apiHost',
-      'git_hash:    ${context.metadata.gitHash}',
-      '',
-      'recent commits:',
-      context.metadata.recentCommits,
-    ].join('\n'));
+    context.set<String>(
+        'pgyer_description',
+        [
+          'versionName: ${context.buildName}',
+          'versionCode: ${context.buildNumber}',
+          'env:         $envName',
+          'api_host:    $apiHost',
+          'git_hash:    ${context.metadata.gitHash}',
+          '',
+          'recent commits:',
+          context.metadata.recentCommits,
+        ].join('\n'));
 
     await PgyerUploadAction().run(context);
 
-    context.set<String>('notification_message', buildFeishuMessage(
-      platform: AppPlatform.android,
-      target: DeployTarget.pgyer,
-      downloadUrl: context.get<String>('pgyer_url'),
-    ));
+    context.set<String>(
+      'notification_message',
+      buildFeishuMessage(
+        platform: AppPlatform.android,
+        target: DeployTarget.pgyer,
+        downloadUrl: context.get<String>('pgyer_url'),
+      ),
+    );
+
     await FeishuNotifyAction().run(context);
   }
 
   @override
   Future<void> deployIOS(File ipa) async {
     context.set<String>('artifact_path', ipa.path);
-    context.set<String>('pgyer_description', [
-      'versionName: ${context.buildName}',
-      'versionCode: ${context.buildNumber}',
-      'env:         $envName',
-      'api_host:    $apiHost',
-      'git_hash:    ${context.metadata.gitHash}',
-      '',
-      'recent commits:',
-      context.metadata.recentCommits,
-    ].join('\n'));
+    context.set<String>(
+        'pgyer_description',
+        [
+          'versionName: ${context.buildName}',
+          'versionCode: ${context.buildNumber}',
+          'env:         $envName',
+          'api_host:    $apiHost',
+          'git_hash:    ${context.metadata.gitHash}',
+          '',
+          'recent commits:',
+          context.metadata.recentCommits,
+        ].join('\n'));
 
     await PgyerUploadAction().run(context);
 
-    context.set<String>('notification_message', buildFeishuMessage(
-      platform: AppPlatform.ios,
-      target: DeployTarget.pgyer,
-      downloadUrl: context.get<String>('pgyer_url'),
-    ));
+    context.set<String>(
+        'notification_message',
+        buildFeishuMessage(
+          platform: AppPlatform.ios,
+          target: DeployTarget.pgyer,
+          downloadUrl: context.get<String>('pgyer_url'),
+        ));
     await FeishuNotifyAction().run(context);
   }
 
