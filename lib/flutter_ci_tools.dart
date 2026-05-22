@@ -1,3 +1,8 @@
+export 'src/actions/app_store_action.dart';
+export 'src/actions/feishu_notify_action.dart';
+export 'src/actions/google_play_action.dart';
+export 'src/actions/pgyer_upload_action.dart';
+export 'src/actions/pipeline_action.dart';
 export 'src/build_metadata.dart';
 export 'src/builders/android_builder.dart';
 export 'src/builders/ios_builder.dart';

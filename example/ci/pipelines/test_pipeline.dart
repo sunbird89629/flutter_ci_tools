@@ -48,9 +48,32 @@ Usage: dart run ci/build.dart test [android|ios]
 
   @override
   Future<void> deployAndroid(File apk) async =>
-      uploadToPgyerAndNotify(AppPlatform.android, apk);
+      _deployToPgyer(AppPlatform.android, apk);
 
   @override
   Future<void> deployIOS(File ipa) async =>
-      uploadToPgyerAndNotify(AppPlatform.ios, ipa);
+      _deployToPgyer(AppPlatform.ios, ipa);
+
+  Future<void> _deployToPgyer(AppPlatform platform, File file) async {
+    context.set<String>('artifact_path', file.path);
+    context.set<String>('pgyer_description', [
+      'versionName: ${context.buildName}',
+      'versionCode: ${context.buildNumber}',
+      'env:         $envName',
+      'api_host:    $apiHost',
+      'git_hash:    ${context.metadata.gitHash}',
+      '',
+      'recent commits:',
+      context.metadata.recentCommits,
+    ].join('\n'));
+
+    await PgyerUploadAction().run(context);
+
+    context.set<String>('notification_message', buildFeishuMessage(
+      platform: platform,
+      target: DeployTarget.pgyer,
+      downloadUrl: context.get<String>('pgyer_url'),
+    ));
+    await FeishuNotifyAction().run(context);
+  }
 }

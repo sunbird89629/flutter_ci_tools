@@ -51,34 +51,32 @@ Usage: dart run ci/build.dart prod [android|ios]
 
   @override
   Future<void> deployAndroid(File aab) async {
-    await deployService.uploadToGooglePlay(
-      aab,
-      packageName: ProdCredentials.googlePlayPackageName,
-      jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
-    );
-    await deployService.sendFeishuNotification(
-      context.config.feishuWebhookUrl!,
-      buildFeishuMessage(
-        platform: AppPlatform.android,
-        target: DeployTarget.googlePlay,
-      ),
-    );
+    context.set<String>('artifact_path', aab.path);
+    context.set<String>('google_play_package_name', ProdCredentials.googlePlayPackageName);
+    context.set<String>('google_play_json_key_path', ProdCredentials.googlePlayJsonKeyPath);
+
+    await GooglePlayUploadAction().run(context);
+
+    context.set<String>('notification_message', buildFeishuMessage(
+      platform: AppPlatform.android,
+      target: DeployTarget.googlePlay,
+    ));
+    await FeishuNotifyAction().run(context);
   }
 
   @override
   Future<void> deployIOS(File ipa) async {
-    await deployService.uploadToAppStore(
-      ipa,
-      issuerId: ProdCredentials.appStoreIssuerId,
-      apiKeyId: ProdCredentials.appStoreApiKeyId,
-      apiKeyPath: ProdCredentials.appStoreApiKeyPath,
-    );
-    await deployService.sendFeishuNotification(
-      context.config.feishuWebhookUrl!,
-      buildFeishuMessage(
-        platform: AppPlatform.ios,
-        target: DeployTarget.appStore,
-      ),
-    );
+    context.set<String>('artifact_path', ipa.path);
+    context.set<String>('app_store_issuer_id', ProdCredentials.appStoreIssuerId);
+    context.set<String>('app_store_api_key_id', ProdCredentials.appStoreApiKeyId);
+    context.set<String>('app_store_api_key_path', ProdCredentials.appStoreApiKeyPath);
+
+    await AppStoreUploadAction().run(context);
+
+    context.set<String>('notification_message', buildFeishuMessage(
+      platform: AppPlatform.ios,
+      target: DeployTarget.appStore,
+    ));
+    await FeishuNotifyAction().run(context);
   }
 }
