@@ -9,7 +9,7 @@ import 'pipeline_action.dart';
 /// Sends a text message to a Feishu (Lark) webhook.
 ///
 /// Reads: `config.feishuWebhookUrl`, `notification_message` (String)
-class FeishuNotifyAction extends PipelineAction {
+class FeishuNotifyAction extends PipelineAction<void> {
   /// Creates a Feishu notify action with an optional [shellRunner] for testing.
   FeishuNotifyAction({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();

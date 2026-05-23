@@ -11,7 +11,7 @@ import 'pipeline_action.dart';
 ///
 /// Reads: `artifact_path` (String), `config.pgyerApiKey`, `pgyer_description` (String?)
 /// Writes: `pgyer_url` (String)
-class PgyerUploadAction extends PipelineAction {
+class PgyerUploadAction extends PipelineAction<void> {
   /// Creates a Pgyer upload action with an optional [shellRunner] for testing.
   PgyerUploadAction({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();

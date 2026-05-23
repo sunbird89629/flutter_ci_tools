@@ -12,7 +12,7 @@ import 'pipeline_action.dart';
 ///
 /// Reads: `artifact_path` (String), `app_store_issuer_id` (String),
 ///        `app_store_api_key_id` (String), `app_store_api_key_path` (String)
-class AppStoreUploadAction extends PipelineAction {
+class AppStoreUploadAction extends PipelineAction<void> {
   /// Creates an App Store upload action with an optional [shellRunner] for testing.
   AppStoreUploadAction({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();

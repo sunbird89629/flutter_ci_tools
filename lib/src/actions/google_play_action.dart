@@ -11,7 +11,7 @@ import 'pipeline_action.dart';
 ///
 /// Reads: `artifact_path` (String), `google_play_package_name` (String),
 ///        `google_play_json_key_path` (String)
-class GooglePlayUploadAction extends PipelineAction {
+class GooglePlayUploadAction extends PipelineAction<void> {
   /// Creates a Google Play upload action with an optional [shellRunner] for testing.
   GooglePlayUploadAction({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();
