@@ -14,6 +14,9 @@ enum AndroidBuildType {
 }
 
 /// Builds an Android artifact (APK or AAB) and returns the output file.
+///
+/// Reads `context.buildName` and `context.buildNumber` — requires
+/// `ResolveBuildVersionAction` earlier in the pipeline body.
 class BuildAndroidAction extends PipelineAction<File> {
   BuildAndroidAction({
     required this.envName,

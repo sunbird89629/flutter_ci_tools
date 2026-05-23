@@ -3,6 +3,9 @@ import '../version_manager.dart';
 import 'pipeline_action.dart';
 
 /// Creates and force-pushes a `builds/<buildNumber>` tag for this build.
+///
+/// Reads `context.buildNumber` — requires `ResolveBuildVersionAction`
+/// earlier in the pipeline body.
 class PushBuildTagAction extends PipelineAction<void> {
   PushBuildTagAction({VersionManager? versionManager})
       : _versionManager = versionManager ?? DefaultVersionManager();

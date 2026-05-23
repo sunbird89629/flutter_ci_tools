@@ -5,6 +5,9 @@ import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 
 /// Builds an iOS IPA and returns the output file.
+///
+/// Reads `context.buildName` and `context.buildNumber` — requires
+/// `ResolveBuildVersionAction` earlier in the pipeline body.
 class BuildIOSAction extends PipelineAction<File> {
   BuildIOSAction({
     required this.envName,
