@@ -21,22 +21,18 @@ Usage: dart run ci/build.dart prod [android|ios]
 不指定平台时同时构建两个平台。''';
 
   @override
-  Future<void> beforeBuild() async {
-    await writeBuildInfo(
-      env: 'prod',
-      buildName: context.buildName,
-      buildNumber: context.buildNumber,
-      metadata: context.metadata,
-    );
-  }
-
-  @override
   Future<void> body() async {
     await runAction(ResolveBuildVersionAction());
     await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(SwapInfoPlistAction());
     await runAction(CleanProjectAction());
+    await writeBuildInfo(
+      env: 'prod',
+      buildName: context.buildName,
+      buildNumber: context.buildNumber,
+      metadata: context.metadata,
+    );
 
     if (context.platforms.contains(AppPlatform.android)) {
       final aab = await runAction(BuildAndroidAction(

@@ -23,21 +23,17 @@ Usage: dart run ci/build.dart test [android|ios]
 不指定平台时同时构建两个平台。''';
 
   @override
-  Future<void> beforeBuild() async {
+  Future<void> body() async {
+    await runAction(ResolveBuildVersionAction());
+    await runAction(CollectMetadataAction());
+    await runAction(CheckGitStatusAction());
+    await runAction(CleanProjectAction());
     await writeBuildInfo(
       env: 'test',
       buildName: context.buildName,
       buildNumber: context.buildNumber,
       metadata: context.metadata,
     );
-  }
-
-  @override
-  Future<void> body() async {
-    await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
-    await runAction(CheckGitStatusAction());
-    await runAction(CleanProjectAction());
 
     if (context.platforms.contains(AppPlatform.android)) {
       final apk = await runAction(BuildAndroidAction(

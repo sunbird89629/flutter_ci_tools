@@ -14,21 +14,17 @@ class AndroidTestPipeline extends BuildPipeline {
   String get help => 'android-only test pipeline';
 
   @override
-  Future<void> beforeBuild() async {
+  Future<void> body() async {
+    await runAction(ResolveBuildVersionAction());
+    await runAction(CollectMetadataAction());
+    await runAction(CheckGitStatusAction());
+    await runAction(CleanProjectAction());
     await writeBuildInfo(
       env: 'test',
       buildName: context.buildName,
       buildNumber: context.buildNumber,
       metadata: context.metadata,
     );
-  }
-
-  @override
-  Future<void> body() async {
-    await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
-    await runAction(CheckGitStatusAction());
-    await runAction(CleanProjectAction());
 
     final apk = await runAction(BuildAndroidAction(
       envName: 'test',
