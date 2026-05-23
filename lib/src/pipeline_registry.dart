@@ -59,22 +59,25 @@ class PipelineRegistry {
       return;
     }
 
-    if (args.length > 1) {
-      final platform = args[1];
-      if (platform == 'android') {
-        await pipeline.runAndroidOnly();
-        return;
-      }
-      if (platform == 'ios') {
-        await pipeline.runIOSOnly();
-        return;
-      }
-      stderr.writeln('Unknown platform: $platform');
+    final platforms = _parsePlatforms(args);
+    if (platforms == null) {
+      stderr.writeln('Unknown platform: ${args[1]}');
       exitFn(64);
       return;
     }
+    await pipeline.run(platforms);
+  }
 
-    await pipeline.run();
+  Set<AppPlatform>? _parsePlatforms(List<String> args) {
+    if (args.length <= 1) return AppPlatform.values.toSet();
+    switch (args[1]) {
+      case 'android':
+        return {AppPlatform.android};
+      case 'ios':
+        return {AppPlatform.ios};
+      default:
+        return null;
+    }
   }
 
   Future<void> _interactiveSelect(
@@ -106,7 +109,7 @@ class PipelineRegistry {
         return;
       }
       if (choice != null && choice >= 1 && choice <= list.length) {
-        await list[choice - 1].run();
+        await list[choice - 1].run(AppPlatform.values.toSet());
         return;
       }
 
