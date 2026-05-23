@@ -53,12 +53,15 @@ class DefaultDeployService implements DeployService {
       }
       result = await _shellRunner.runAndCapture('curl', [
         '--http1.1',
-        '-F', 'file=@$filePath',
-        '-F', '_api_key=$apiKey',
+        '-F',
+        'file=@$filePath',
+        '-F',
+        '_api_key=$apiKey',
         if (updateDescription != null) ...[
-          '-F', 'buildUpdateDescription=$updateDescription',
+          '-F',
+          'buildUpdateDescription=$updateDescription',
         ],
-        'https://www.pgyer.com/apiv2/app/upload',
+        'https://api.xcxwo.com/apiv2/app/upload',
       ]);
       if (result.exitCode == 0) break;
       Logger.error('Upload attempt $attempt failed: ${result.stderr}');
@@ -97,9 +100,12 @@ class DefaultDeployService implements DeployService {
       "content": {"text": text},
     });
     final result = await _shellRunner.runAndCapture('curl', [
-      '-X', 'POST',
-      '-H', 'Content-Type: application/json',
-      '-d', jsonMessage,
+      '-X',
+      'POST',
+      '-H',
+      'Content-Type: application/json',
+      '-d',
+      jsonMessage,
       webhookUrl,
     ]);
     if (result.exitCode == 0) {
@@ -125,10 +131,14 @@ class DefaultDeployService implements DeployService {
     }
     await _shellRunner.run('fastlane', [
       'supply',
-      '--aab', aabFile.path,
-      '--package_name', packageName,
-      '--json_key', jsonKeyPath,
-      '--track', 'internal',
+      '--aab',
+      aabFile.path,
+      '--package_name',
+      packageName,
+      '--json_key',
+      jsonKeyPath,
+      '--track',
+      'internal',
       '--skip_upload_metadata',
       '--skip_upload_images',
       '--skip_upload_screenshots',
@@ -162,9 +172,12 @@ class DefaultDeployService implements DeployService {
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
       await _shellRunner.run('fastlane', [
-        'pilot', 'upload',
-        '--ipa', ipaFile.path,
-        '--api_key_path', apiKeyJsonFile.path,
+        'pilot',
+        'upload',
+        '--ipa',
+        ipaFile.path,
+        '--api_key_path',
+        apiKeyJsonFile.path,
         '--skip_waiting_for_build_processing',
       ]);
     } finally {
