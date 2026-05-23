@@ -12,30 +12,6 @@ enum AppPlatform {
   const AppPlatform(this.label);
 }
 
-/// The destination where a build artifact will be uploaded.
-///
-/// Retained here temporarily for backward compatibility with the
-/// existing FeishuNotifyAction string-store contract; removed in
-/// Task 16 when all callers have migrated to FeishuBuildNotifyAction's
-/// own DeployTarget enum.
-enum DeployTarget {
-  pgyer('Pgyer'),
-  googlePlay('Google Play'),
-  appStore('App Store');
-
-  final String label;
-  const DeployTarget(this.label);
-}
-
-/// Android build output format.
-///
-/// Retained here temporarily; removed in Task 16 when callers have
-/// migrated to BuildAndroidAction's own AndroidBuildType enum.
-enum AndroidBuildType {
-  apk,
-  appbundle,
-}
-
 /// Executes [action] with standardized section logging and error handling.
 Future<T> runStep<T>(String name, Future<T> Function() action) async {
   final startTime = DateTime.now();
