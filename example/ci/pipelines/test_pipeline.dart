@@ -1,6 +1,25 @@
 import 'dart:io';
 
-import 'package:flutter_ci_tools/flutter_ci_tools.dart';
+import 'package:flutter_ci_tools/flutter_ci_tools.dart'
+    hide AndroidBuildType, DeployTarget;
+import 'package:flutter_ci_tools/src/actions/build_android_action.dart'
+    show AndroidBuildType, BuildAndroidAction;
+import 'package:flutter_ci_tools/src/actions/build_ios_action.dart'
+    show BuildIOSAction;
+import 'package:flutter_ci_tools/src/actions/check_git_status_action.dart'
+    show CheckGitStatusAction;
+import 'package:flutter_ci_tools/src/actions/clean_project_action.dart'
+    show CleanProjectAction;
+import 'package:flutter_ci_tools/src/actions/collect_metadata_action.dart'
+    show CollectMetadataAction;
+import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart'
+    show DeployTarget, FeishuBuildNotifyAction;
+import 'package:flutter_ci_tools/src/actions/push_build_tag_action.dart'
+    show PushBuildTagAction;
+import 'package:flutter_ci_tools/src/actions/resolve_build_version_action.dart'
+    show ResolveBuildVersionAction;
+import 'package:flutter_ci_tools/src/actions/restore_workspace_action.dart'
+    show RestoreWorkspaceAction;
 
 import '../app_config.dart';
 import '../build_info_writer.dart';
@@ -10,10 +29,8 @@ class TestPipeline extends BuildPipeline {
 
   @override
   String get name => 'test';
-
   @override
   String get description => '构建并部署到测试环境 (Pgyer)';
-
   @override
   String get help => '''
 Test Pipeline
@@ -25,21 +42,9 @@ Usage: dart run ci/build.dart test [android|ios]
 不指定平台时同时构建两个平台。''';
 
   @override
-  String get envName => 'test';
-
-  @override
-  String get iosExportMethod => 'development';
-
-  @override
-  String get apiHost => 'https://api.test.example.com';
-
-  @override
-  AndroidBuildType get androidBuildType => AndroidBuildType.apk;
-
-  @override
   Future<void> beforeBuild() async {
     await writeBuildInfo(
-      env: envName,
+      env: 'test',
       buildName: context.buildName,
       buildNumber: context.buildNumber,
       metadata: context.metadata,
@@ -47,33 +52,57 @@ Usage: dart run ci/build.dart test [android|ios]
   }
 
   @override
-  Future<void> deployAndroid(File apk) async =>
-      _deployToPgyer(AppPlatform.android, apk);
+  Future<void> body() async {
+    await runAction(ResolveBuildVersionAction());
+    await runAction(CollectMetadataAction());
+    await runAction(CheckGitStatusAction());
+    await runAction(CleanProjectAction());
+
+    if (context.platforms.contains(AppPlatform.android)) {
+      final apk = await runAction(BuildAndroidAction(
+        envName: 'test',
+        buildType: AndroidBuildType.apk,
+      ));
+      await _deployToPgyer(AppPlatform.android, apk);
+    }
+
+    if (context.platforms.contains(AppPlatform.ios)) {
+      final ipa = await runAction(BuildIOSAction(
+        envName: 'test',
+        exportMethod: 'development',
+      ));
+      await _deployToPgyer(AppPlatform.ios, ipa);
+    }
+
+    await runAction(PushBuildTagAction());
+  }
 
   @override
-  Future<void> deployIOS(File ipa) async =>
-      _deployToPgyer(AppPlatform.ios, ipa);
+  Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 
-  Future<void> _deployToPgyer(AppPlatform platform, File file) async {
-    context.set<String>('artifact_path', file.path);
-    context.set<String>('pgyer_description', [
-      'versionName: ${context.buildName}',
-      'versionCode: ${context.buildNumber}',
-      'env:         $envName',
-      'api_host:    $apiHost',
-      'git_hash:    ${context.metadata.gitHash}',
-      '',
-      'recent commits:',
-      context.metadata.recentCommits,
-    ].join('\n'));
-
-    await PgyerUploadAction().run(context);
-
-    context.set<String>('notification_message', buildFeishuMessage(
+  Future<void> _deployToPgyer(AppPlatform platform, File artifact) async {
+    final pgyerUrl = await runAction(PgyerUploadAction(
+      artifact: artifact,
+      apiKey: context.config.pgyerApiKey!,
+      description: _pgyerDescription(),
+    ));
+    await runAction(FeishuBuildNotifyAction(
       platform: platform,
       target: DeployTarget.pgyer,
-      downloadUrl: context.get<String>('pgyer_url'),
+      downloadUrl: pgyerUrl,
     ));
-    await FeishuNotifyAction().run(context);
+  }
+
+  String _pgyerDescription() {
+    final m = context.metadata;
+    return [
+      'versionName: ${context.buildName}',
+      'versionCode: ${context.buildNumber}',
+      'env:         test',
+      'git_hash:    ${m.gitHash}',
+      '',
+      'recent commits:',
+      m.recentCommits,
+    ].join('\n');
   }
 }

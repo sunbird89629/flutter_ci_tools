@@ -1,6 +1,25 @@
-import 'dart:io';
-
-import 'package:flutter_ci_tools/flutter_ci_tools.dart';
+import 'package:flutter_ci_tools/flutter_ci_tools.dart'
+    hide AndroidBuildType, DeployTarget;
+import 'package:flutter_ci_tools/src/actions/build_android_action.dart'
+    show AndroidBuildType, BuildAndroidAction;
+import 'package:flutter_ci_tools/src/actions/build_ios_action.dart'
+    show BuildIOSAction;
+import 'package:flutter_ci_tools/src/actions/check_git_status_action.dart'
+    show CheckGitStatusAction;
+import 'package:flutter_ci_tools/src/actions/clean_project_action.dart'
+    show CleanProjectAction;
+import 'package:flutter_ci_tools/src/actions/collect_metadata_action.dart'
+    show CollectMetadataAction;
+import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart'
+    show DeployTarget, FeishuBuildNotifyAction;
+import 'package:flutter_ci_tools/src/actions/push_build_tag_action.dart'
+    show PushBuildTagAction;
+import 'package:flutter_ci_tools/src/actions/resolve_build_version_action.dart'
+    show ResolveBuildVersionAction;
+import 'package:flutter_ci_tools/src/actions/restore_workspace_action.dart'
+    show RestoreWorkspaceAction;
+import 'package:flutter_ci_tools/src/actions/swap_info_plist_action.dart'
+    show SwapInfoPlistAction;
 
 import '../app_config.dart';
 import '../build_info_writer.dart';
@@ -10,10 +29,8 @@ class ProdPipeline extends BuildPipeline {
 
   @override
   String get name => 'prod';
-
   @override
   String get description => '构建并部署到生产环境 (Google Play / App Store)';
-
   @override
   String get help => '''
 Prod Pipeline
@@ -25,24 +42,9 @@ Usage: dart run ci/build.dart prod [android|ios]
 不指定平台时同时构建两个平台。''';
 
   @override
-  String get envName => 'prod';
-
-  @override
-  String get iosExportMethod => 'app-store';
-
-  @override
-  String get apiHost => 'https://api.example.com';
-
-  @override
-  AndroidBuildType get androidBuildType => AndroidBuildType.appbundle;
-
-  @override
-  bool get shouldSwapInfoPlist => true;
-
-  @override
   Future<void> beforeBuild() async {
     await writeBuildInfo(
-      env: envName,
+      env: 'prod',
       buildName: context.buildName,
       buildNumber: context.buildNumber,
       metadata: context.metadata,
@@ -50,33 +52,49 @@ Usage: dart run ci/build.dart prod [android|ios]
   }
 
   @override
-  Future<void> deployAndroid(File aab) async {
-    context.set<String>('artifact_path', aab.path);
-    context.set<String>('google_play_package_name', ProdCredentials.googlePlayPackageName);
-    context.set<String>('google_play_json_key_path', ProdCredentials.googlePlayJsonKeyPath);
+  Future<void> body() async {
+    await runAction(ResolveBuildVersionAction());
+    await runAction(CollectMetadataAction());
+    await runAction(CheckGitStatusAction());
+    await runAction(SwapInfoPlistAction());
+    await runAction(CleanProjectAction());
 
-    await GooglePlayUploadAction().run(context);
+    if (context.platforms.contains(AppPlatform.android)) {
+      final aab = await runAction(BuildAndroidAction(
+        envName: 'prod',
+        buildType: AndroidBuildType.appbundle,
+      ));
+      await runAction(GooglePlayUploadAction(
+        artifact: aab,
+        packageName: ProdCredentials.googlePlayPackageName,
+        jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
+      ));
+      await runAction(FeishuBuildNotifyAction(
+        platform: AppPlatform.android,
+        target: DeployTarget.googlePlay,
+      ));
+    }
 
-    context.set<String>('notification_message', buildFeishuMessage(
-      platform: AppPlatform.android,
-      target: DeployTarget.googlePlay,
-    ));
-    await FeishuNotifyAction().run(context);
+    if (context.platforms.contains(AppPlatform.ios)) {
+      final ipa = await runAction(BuildIOSAction(
+        envName: 'prod',
+        exportMethod: 'app-store',
+      ));
+      await runAction(AppStoreUploadAction(
+        artifact: ipa,
+        issuerId: ProdCredentials.appStoreIssuerId,
+        apiKeyId: ProdCredentials.appStoreApiKeyId,
+        apiKeyPath: ProdCredentials.appStoreApiKeyPath,
+      ));
+      await runAction(FeishuBuildNotifyAction(
+        platform: AppPlatform.ios,
+        target: DeployTarget.appStore,
+      ));
+    }
+
+    await runAction(PushBuildTagAction());
   }
 
   @override
-  Future<void> deployIOS(File ipa) async {
-    context.set<String>('artifact_path', ipa.path);
-    context.set<String>('app_store_issuer_id', ProdCredentials.appStoreIssuerId);
-    context.set<String>('app_store_api_key_id', ProdCredentials.appStoreApiKeyId);
-    context.set<String>('app_store_api_key_path', ProdCredentials.appStoreApiKeyPath);
-
-    await AppStoreUploadAction().run(context);
-
-    context.set<String>('notification_message', buildFeishuMessage(
-      platform: AppPlatform.ios,
-      target: DeployTarget.appStore,
-    ));
-    await FeishuNotifyAction().run(context);
-  }
+  Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 }
