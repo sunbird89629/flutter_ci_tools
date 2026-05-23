@@ -1,6 +1,7 @@
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/shell_runner.dart';
 import 'package:test/test.dart';
@@ -74,6 +75,7 @@ void main() {
           seedBuildNumber: 1000,
           pgyerApiKey: 'test_api_key',
         ),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('artifact_path', 'test.apk');
 
@@ -108,6 +110,7 @@ void main() {
           seedBuildNumber: 1000,
           pgyerApiKey: 'test_api_key',
         ),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('artifact_path', 'test.apk');
       context.set<String>('pgyer_description', 'release notes');
@@ -130,6 +133,7 @@ void main() {
           seedBuildNumber: 1000,
           pgyerApiKey: 'test_api_key',
         ),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('artifact_path', 'test.apk');
 
@@ -149,6 +153,7 @@ void main() {
           seedBuildNumber: 1000,
           pgyerApiKey: 'test_api_key',
         ),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('artifact_path', 'test.apk');
 

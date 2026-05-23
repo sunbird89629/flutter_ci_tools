@@ -1,5 +1,6 @@
 import 'package:flutter_ci_tools/src/actions/feishu_notify_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/shell_runner.dart';
 import 'package:test/test.dart';
@@ -46,6 +47,7 @@ void main() {
           seedBuildNumber: 1000,
           feishuWebhookUrl: 'https://hooks.example.com/webhook',
         ),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('notification_message', 'Hello from CI');
 

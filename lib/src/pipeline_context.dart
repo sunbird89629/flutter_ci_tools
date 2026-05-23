@@ -1,16 +1,22 @@
 import 'build_metadata.dart';
 import 'config.dart';
+import 'pipeline.dart' show AppPlatform;
 
 /// Shared context passed through all pipeline steps.
 ///
-/// Holds immutable configuration, mutable build state, and a generic
-/// key-value store for inter-step data passing.
+/// Holds immutable configuration, the platform filter for this run, and
+/// build-state fields populated by lifecycle actions. A string-keyed
+/// store is retained temporarily for actions that have not yet migrated
+/// to typed constructor params; it will be removed in a follow-up task.
 class PipelineContext {
-  /// Creates a context with the given [config].
-  PipelineContext({required this.config});
+  /// Creates a context with the given [config] and [platforms].
+  PipelineContext({required this.config, required this.platforms});
 
   /// Application-level configuration (name, API keys, seed build number).
   final CIToolsConfig config;
+
+  /// Platforms this pipeline run targets.
+  final Set<AppPlatform> platforms;
 
   /// Git and build metadata collected at the start of the pipeline run.
   late BuildMetadata metadata;

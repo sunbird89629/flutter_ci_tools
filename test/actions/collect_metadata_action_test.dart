@@ -1,6 +1,7 @@
 import 'package:flutter_ci_tools/src/actions/collect_metadata_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/git_manager.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
@@ -21,6 +22,7 @@ void main() {
     final action = CollectMetadataAction(gitManager: _FakeGitManager());
     final context = PipelineContext(
       config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      platforms: <AppPlatform>{},
     );
 
     await action.run(context);

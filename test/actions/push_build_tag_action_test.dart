@@ -1,5 +1,6 @@
 import 'package:flutter_ci_tools/src/actions/push_build_tag_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/version_manager.dart';
 import 'package:test/test.dart';
@@ -27,6 +28,7 @@ void main() {
     final version = _FakeVersionManager();
     final context = PipelineContext(
       config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      platforms: <AppPlatform>{},
     )..buildNumber = 12042;
 
     final action = PushBuildTagAction(versionManager: version);

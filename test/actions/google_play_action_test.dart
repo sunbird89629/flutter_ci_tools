@@ -1,6 +1,7 @@
 import 'package:flutter_ci_tools/src/actions/google_play_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/shell_runner.dart';
 import 'package:test/test.dart';
@@ -40,6 +41,7 @@ void main() {
     test('throws if json key file does not exist', () {
       final context = PipelineContext(
         config: const CIToolsConfig(appName: 'Test', seedBuildNumber: 1000),
+        platforms: <AppPlatform>{},
       );
       context.set<String>('artifact_path', 'nonexistent.aab');
       context.set<String>('google_play_package_name', 'com.example');

@@ -27,6 +27,7 @@ void main() {
         seedBuildNumber: 12000,
         feishuWebhookUrl: 'https://open.feishu.cn/hook',
       ),
+      platforms: <AppPlatform>{},
     )
       ..buildNumber = 12042
       ..metadata = BuildMetadata(

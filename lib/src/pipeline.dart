@@ -86,7 +86,7 @@ abstract class BuildPipeline {
     ShellRunner? shellRunner,
     AndroidBuilder? androidBuilder,
     IOSBuilder? iosBuilder,
-  })  : context = PipelineContext(config: config),
+  })  : context = PipelineContext(config: config, platforms: AppPlatform.values.toSet()),
         _versionManager = versionManager ?? DefaultVersionManager(),
         _gitManager = gitManager ?? DefaultGitManager(),
         _shellRunner = shellRunner ?? DefaultShellRunner(),

@@ -1,5 +1,6 @@
 import 'package:flutter_ci_tools/src/actions/resolve_build_version_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
+import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/version_manager.dart';
 import 'package:test/test.dart';
@@ -30,6 +31,7 @@ void main() {
     final action = ResolveBuildVersionAction(versionManager: version);
     final context = PipelineContext(
       config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      platforms: <AppPlatform>{},
     );
 
     await action.run(context);
