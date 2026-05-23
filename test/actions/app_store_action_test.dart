@@ -53,9 +53,6 @@ void main() {
     final p8 = File('${tmpDir.path}/AuthKey.p8');
     p8.writeAsStringSync('FAKEKEY');
 
-    // Make sure the ci/ directory exists for api_key_tmp.json
-    Directory('ci').createSync(recursive: true);
-
     final shell = _FakeShellRunner();
     final action = AppStoreUploadAction(
       artifact: File('build/ios/ipa/app.ipa'),
@@ -66,14 +63,19 @@ void main() {
     );
     try {
       await action.run(ctx());
-      expect(
-        shell.runCalls.single,
-        contains(
-          'fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path ci/api_key_tmp.json --skip_waiting_for_build_processing',
-        ),
-      );
-      // tmp json file should be cleaned up
-      expect(File('ci/api_key_tmp.json').existsSync(), isFalse);
+      final call = shell.runCalls.single;
+      // The tmp JSON file path is generated at runtime under systemTemp,
+      // so we match the surrounding command shape and verify the path
+      // looks like a system-temp path that has since been cleaned up.
+      expect(call, startsWith('fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path '));
+      expect(call, endsWith(' --skip_waiting_for_build_processing'));
+      final tmpJsonPath = call
+          .replaceFirst('fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path ', '')
+          .replaceFirst(' --skip_waiting_for_build_processing', '');
+      expect(tmpJsonPath, contains(Directory.systemTemp.path));
+      expect(tmpJsonPath, endsWith('.json'));
+      // Cleaned up after the fastlane call returns.
+      expect(File(tmpJsonPath).existsSync(), isFalse);
     } finally {
       tmpDir.deleteSync(recursive: true);
     }

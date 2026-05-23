@@ -43,7 +43,9 @@ class AppStoreUploadAction extends PipelineAction<void> {
       'key': p8Content,
       'in_house': false,
     });
-    final apiKeyJsonFile = File('ci/api_key_tmp.json');
+    final apiKeyJsonFile = File(
+      '${Directory.systemTemp.path}/flutter_ci_api_key_${DateTime.now().microsecondsSinceEpoch}.json',
+    );
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
       await _shellRunner.run('fastlane', [
@@ -53,7 +55,7 @@ class AppStoreUploadAction extends PipelineAction<void> {
         '--skip_waiting_for_build_processing',
       ]);
     } finally {
-      apiKeyJsonFile.deleteSync();
+      if (apiKeyJsonFile.existsSync()) apiKeyJsonFile.deleteSync();
     }
     Logger.success('App Store upload successful!');
   }
