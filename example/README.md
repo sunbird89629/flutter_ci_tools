@@ -42,36 +42,105 @@ validation is performed.
 Then:
 
 ```bash
-# Internal test build → Pgyer + Feishu notification
+# Internal test build → Pgyer + Feishu notification (both platforms)
 dart run ci/build.dart test
 
-# Release build → Google Play + App Store + Feishu notification
+# Release build → Google Play + App Store + Feishu notification (both platforms)
 dart run ci/build.dart prod
+
+# Android-only test build (for debugging the CI scripts themselves)
+dart run ci/build.dart android_test
+
+# Single-platform variants of any pipeline
+dart run ci/build.dart test android
+dart run ci/build.dart prod ios
+
+# Interactive selector (no args)
+dart run ci/build.dart
 ```
+
+## How a pipeline is built
+
+A pipeline subclasses `BuildPipeline` and implements `body()` as an ordered
+list of `PipelineAction`s. The base class provides the lifecycle shell
+(`beforeBuild → body → afterBuild`) and a `runAction(...)` helper that wraps
+each step with logging.
+
+```dart
+class ProdPipeline extends BuildPipeline {
+  ProdPipeline() : super(exampleConfig);
+
+  @override String get name => 'prod';
+  @override String get description => '构建并部署到生产环境';
+  @override String get help => '...';
+
+  @override
+  Future<void> body() async {
+    // Prelude — populates context.buildNumber and context.metadata.
+    await runAction(ResolveBuildVersionAction());
+    await runAction(CollectMetadataAction());
+    await runAction(CheckGitStatusAction());
+
+    await runAction(SwapInfoPlistAction());     // prod-specific
+    await runAction(CleanProjectAction());
+    await writeBuildInfo(env: 'prod', ...);     // bundles build_info.json
+
+    // Per-platform build + deploy. context.platforms is set by the CLI.
+    if (context.platforms.contains(AppPlatform.android)) {
+      final aab = await runAction(BuildAndroidAction(
+        envName: 'prod', buildType: AndroidBuildType.appbundle,
+      ));
+      await runAction(GooglePlayUploadAction(artifact: aab, ...));
+      await runAction(FeishuBuildNotifyAction(
+        platform: AppPlatform.android,
+        target: DeployTarget.googlePlay,
+      ));
+    }
+    // iOS branch is symmetric — see ci/pipelines/prod_pipeline.dart.
+
+    await runAction(PushBuildTagAction());
+  }
+
+  // Always runs, even if body() throws.
+  @override
+  Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
+}
+```
+
+Data flows through Action constructor params (`artifact: aab`) and return
+values (`PgyerUploadAction.run` returns the download URL). `PipelineContext`
+holds only the genuinely shared, read-only state: `config`, `platforms`, and
+the lifecycle-populated `buildNumber` / `metadata`. There is no string-keyed
+context store.
 
 ## What to copy into your own project
 
 - The entire **`ci/`** directory is directly portable. Adjust:
   - `app_config.dart` — your `appName`, `seedBuildNumber`, env-var names
-  - `test_env.dart` / `prod_env.dart` — your `apiHost`, build flavors,
-    artifact paths
+  - `pipelines/*.dart` — pick which prelude / build / upload / notify
+    Actions to compose for each of your environments. Use `test_pipeline.dart`
+    and `prod_pipeline.dart` as starting templates.
+  - `build_info_writer.dart` — optional; emits `assets/build_info.json` so
+    the running app can display its own build metadata.
 - The **`lib/build_info.dart` + About page** pattern is optional but useful
   for support: testers and users can read the exact build their app came
   from.
 
 ## Notes
 
-- **`fvm` is assumed.** Build commands call `Process.run('fvm', ['flutter', ...])`.
-  If you don't use `fvm`, change those calls to `Process.run('flutter', [...])`.
-- **`uploadAndNotify` vs direct `DeployService` calls.** `TestEnvBuilder` uses
-  the convenience `uploadAndNotify` (Pgyer + Feishu in one call).
-  `ProdEnvBuilder` calls `DeployService.instance.uploadToGooglePlay` /
-  `uploadToAppStore` directly, then `sendFeishuNotification` with a message
-  built by `buildFeishuMessage(target: DeployTarget.googlePlay)` (or
-  `appStore`). The helper exists for the common Pgyer case; for store
-  uploads you reach one layer down.
+- **`fvm` is assumed.** `CleanProjectAction`, `BuildAndroidAction`, and
+  `BuildIOSAction` shell out to `fvm flutter ...`. If you don't use `fvm`,
+  inject a custom `ShellRunner` into those actions, or fork the action
+  classes.
 - **`exampleConfig` is `final`, not `const`,** because env vars are read at
   runtime. The main package's `README.md` shows `const myAppConfig` for the
   static case.
-- **AAB output path** assumes the default flavor and release build mode. Adjust
-  in `prod_env.dart`'s `buildAndroid` if you add flavors.
+- **`writeBuildInfo` lives in `body()`, not `beforeBuild()`,** because it
+  reads `context.buildName` / `buildNumber` / `metadata` — fields populated
+  by `ResolveBuildVersionAction` and `CollectMetadataAction`, both of which
+  run inside `body()`. Calling it from `beforeBuild` would throw
+  `LateInitializationError`.
+- **Use `FeishuBuildNotifyAction` for standard build notifications,**
+  `FeishuNotifyAction(message: ...)` for custom messages. The former
+  formats the standard "new build" template internally and delegates to
+  the latter for the actual HTTP call.
