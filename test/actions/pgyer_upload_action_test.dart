@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
@@ -11,25 +13,18 @@ class _FakeShellRunner implements ShellRunner {
   ShellResult? _fallback;
   final List<String> runCalls = [];
 
-  void stub(String executable, List<String> args, ShellResult result) {
-    _responses['$executable ${args.join(' ')}'] = result;
-  }
+  void stub(String exe, List<String> args, ShellResult r) =>
+      _responses['$exe ${args.join(' ')}'] = r;
+  void stubAny(ShellResult r) => _fallback = r;
 
-  void stubAny(ShellResult result) {
-    _fallback = result;
+  @override
+  Future<void> run(String exe, List<String> args) async {
+    runCalls.add('$exe ${args.join(' ')}');
   }
 
   @override
-  Future<void> run(String executable, List<String> args) async {
-    runCalls.add('$executable ${args.join(' ')}');
-  }
-
-  @override
-  Future<ShellResult> runAndCapture(
-    String executable,
-    List<String> args,
-  ) async {
-    final key = '$executable ${args.join(' ')}';
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    final key = '$exe ${args.join(' ')}';
     runCalls.add(key);
     return _responses[key] ??
         _fallback ??
@@ -38,63 +33,40 @@ class _FakeShellRunner implements ShellRunner {
 }
 
 void main() {
-  group('PgyerUploadAction', () {
-    late _FakeShellRunner shell;
-    late PgyerUploadAction action;
-
-    setUp(() {
-      shell = _FakeShellRunner();
-      action = PgyerUploadAction(shellRunner: shell);
-    });
-
-    test('name is correct', () {
-      expect(action.name, 'Upload to Pgyer');
-    });
-
-    test('uploads file and stores pgyer_url in context', () async {
-      shell.stub(
-        'curl',
-        [
-          '--http1.1',
-          '-F',
-          'file=@test.apk',
-          '-F',
-          '_api_key=test_api_key',
-          'https://www.pgyer.com/apiv2/app/upload',
-        ],
-        ShellResult(
-          exitCode: 0,
-          stdout: '{"code":0,"data":{"buildKey":"abc123"}}',
-          stderr: '',
-        ),
-      );
-
-      final context = PipelineContext(
+  PipelineContext ctx() => PipelineContext(
         config: const CIToolsConfig(
           appName: 'TestApp',
           seedBuildNumber: 1000,
-          pgyerApiKey: 'test_api_key',
         ),
-        platforms: <AppPlatform>{},
+        platforms: {AppPlatform.android},
       );
-      context.set<String>('artifact_path', 'test.apk');
 
-      await action.run(context);
+  test('returns download URL on success', () async {
+    final shell = _FakeShellRunner()
+      ..stubAny(ShellResult(
+        exitCode: 0,
+        stdout: '{"code":0,"data":{"buildKey":"abc123"}}',
+        stderr: '',
+      ));
+    final action = PgyerUploadAction(
+      artifact: File('test.apk'),
+      apiKey: 'test_api_key',
+      shellRunner: shell,
+    );
 
-      expect(context.get<String>('pgyer_url'), 'https://www.pgyer.com/abc123');
-    });
+    final url = await action.run(ctx());
+    expect(url, 'https://www.pgyer.com/abc123');
+  });
 
-    test('includes description when pgyer_description is set', () async {
-      shell.stub(
+  test('includes description when provided', () async {
+    final shell = _FakeShellRunner()
+      ..stub(
         'curl',
         [
           '--http1.1',
-          '-F',
-          'file=@test.apk',
-          '-F',
-          '_api_key=test_api_key',
-          '-F',
-          'buildUpdateDescription=release notes',
+          '-F', 'file=@test.apk',
+          '-F', '_api_key=k',
+          '-F', 'buildUpdateDescription=notes',
           'https://www.pgyer.com/apiv2/app/upload',
         ],
         ShellResult(
@@ -103,61 +75,51 @@ void main() {
           stderr: '',
         ),
       );
+    final action = PgyerUploadAction(
+      artifact: File('test.apk'),
+      apiKey: 'k',
+      description: 'notes',
+      shellRunner: shell,
+    );
+    final url = await action.run(ctx());
+    expect(url, 'https://www.pgyer.com/xyz');
+  });
 
-      final context = PipelineContext(
-        config: const CIToolsConfig(
-          appName: 'TestApp',
-          seedBuildNumber: 1000,
-          pgyerApiKey: 'test_api_key',
-        ),
-        platforms: <AppPlatform>{},
-      );
-      context.set<String>('artifact_path', 'test.apk');
-      context.set<String>('pgyer_description', 'release notes');
-
-      await action.run(context);
-
-      expect(context.get<String>('pgyer_url'), 'https://www.pgyer.com/xyz');
-    });
-
-    test('throws DeployException on API error', () async {
-      shell.stubAny(ShellResult(
+  test('throws DeployException on API error', () async {
+    final shell = _FakeShellRunner()
+      ..stubAny(ShellResult(
         exitCode: 0,
-        stdout: '{"code":1,"message":"Invalid API key"}',
+        stdout: '{"code":1,"message":"bad key"}',
         stderr: '',
       ));
+    final action = PgyerUploadAction(
+      artifact: File('test.apk'),
+      apiKey: 'k',
+      shellRunner: shell,
+    );
+    expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
+  });
 
-      final context = PipelineContext(
-        config: const CIToolsConfig(
-          appName: 'TestApp',
-          seedBuildNumber: 1000,
-          pgyerApiKey: 'test_api_key',
-        ),
-        platforms: <AppPlatform>{},
-      );
-      context.set<String>('artifact_path', 'test.apk');
-
-      expect(() => action.run(context), throwsA(isA<DeployException>()));
-    });
-
-    test('throws DeployException on JSON parse failure', () async {
-      shell.stubAny(ShellResult(
+  test('throws DeployException on JSON parse failure', () async {
+    final shell = _FakeShellRunner()
+      ..stubAny(ShellResult(
         exitCode: 0,
         stdout: '<html>502 Bad Gateway</html>',
         stderr: '',
       ));
+    final action = PgyerUploadAction(
+      artifact: File('test.apk'),
+      apiKey: 'k',
+      shellRunner: shell,
+    );
+    expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
+  });
 
-      final context = PipelineContext(
-        config: const CIToolsConfig(
-          appName: 'TestApp',
-          seedBuildNumber: 1000,
-          pgyerApiKey: 'test_api_key',
-        ),
-        platforms: <AppPlatform>{},
-      );
-      context.set<String>('artifact_path', 'test.apk');
-
-      expect(() => action.run(context), throwsA(isA<DeployException>()));
-    });
+  test('name is correct', () {
+    final action = PgyerUploadAction(
+      artifact: File('test.apk'),
+      apiKey: 'k',
+    );
+    expect(action.name, 'Upload to Pgyer');
   });
 }

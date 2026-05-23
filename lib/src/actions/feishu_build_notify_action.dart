@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import '../default_shell_runner.dart';
-import '../logger.dart';
 import '../pipeline.dart' show AppPlatform;
 import '../pipeline_context.dart';
 import '../shell_runner.dart';
+import 'feishu_notify_action.dart';
 import 'pipeline_action.dart';
 
 /// Destination where a build artifact will be uploaded.
@@ -42,23 +40,8 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final message = _formatMessage(context);
-    final webhookUrl = context.config.feishuWebhookUrl!;
-    final jsonMessage = jsonEncode({
-      'msg_type': 'text',
-      'content': {'text': message},
-    });
-    Logger.info('Sending Feishu notification...');
-    final result = await _shellRunner.runAndCapture('curl', [
-      '-X', 'POST',
-      '-H', 'Content-Type: application/json',
-      '-d', jsonMessage,
-      webhookUrl,
-    ]);
-    if (result.exitCode == 0) {
-      Logger.success('Feishu notification sent.');
-    } else {
-      Logger.error('Failed to send Feishu notification: ${result.stderr}');
-    }
+    await FeishuNotifyAction(message: message, shellRunner: _shellRunner)
+        .run(context);
   }
 
   String _formatMessage(PipelineContext context) {

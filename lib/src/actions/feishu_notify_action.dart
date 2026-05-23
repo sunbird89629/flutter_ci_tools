@@ -6,14 +6,16 @@ import '../pipeline_context.dart';
 import '../shell_runner.dart';
 import 'pipeline_action.dart';
 
-/// Sends a text message to a Feishu (Lark) webhook.
+/// Sends an arbitrary text message to a Feishu (Lark) webhook.
 ///
-/// Reads: `config.feishuWebhookUrl`, `notification_message` (String)
+/// For standard build notifications prefer [FeishuBuildNotifyAction].
 class FeishuNotifyAction extends PipelineAction<void> {
-  /// Creates a Feishu notify action with an optional [shellRunner] for testing.
-  FeishuNotifyAction({ShellRunner? shellRunner})
-      : _shellRunner = shellRunner ?? DefaultShellRunner();
+  FeishuNotifyAction({
+    required this.message,
+    ShellRunner? shellRunner,
+  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
+  final String message;
   final ShellRunner _shellRunner;
 
   @override
@@ -22,20 +24,15 @@ class FeishuNotifyAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final webhookUrl = context.config.feishuWebhookUrl!;
-    final message = context.get<String>('notification_message');
-
     Logger.info('Sending Feishu notification...');
     final jsonMessage = jsonEncode({
-      "msg_type": "text",
-      "content": {"text": message},
+      'msg_type': 'text',
+      'content': {'text': message},
     });
     final result = await _shellRunner.runAndCapture('curl', [
-      '-X',
-      'POST',
-      '-H',
-      'Content-Type: application/json',
-      '-d',
-      jsonMessage,
+      '-X', 'POST',
+      '-H', 'Content-Type: application/json',
+      '-d', jsonMessage,
       webhookUrl,
     ]);
     if (result.exitCode == 0) {

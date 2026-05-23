@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_ci_tools/src/actions/google_play_action.dart';
 import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
@@ -8,49 +10,62 @@ import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
   final List<String> runCalls = [];
-
   @override
-  Future<void> run(String executable, List<String> args) async {
-    runCalls.add('$executable ${args.join(' ')}');
+  Future<void> run(String exe, List<String> args) async {
+    runCalls.add('$exe ${args.join(' ')}');
   }
 
   @override
-  Future<ShellResult> runAndCapture(
-    String executable,
-    List<String> args,
-  ) async {
-    runCalls.add('$executable ${args.join(' ')}');
-    return ShellResult(exitCode: 0, stdout: '', stderr: '');
-  }
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async =>
+      ShellResult(exitCode: 0, stdout: '', stderr: '');
 }
 
 void main() {
-  group('GooglePlayUploadAction', () {
-    late _FakeShellRunner shell;
-    late GooglePlayUploadAction action;
-
-    setUp(() {
-      shell = _FakeShellRunner();
-      action = GooglePlayUploadAction(shellRunner: shell);
-    });
-
-    test('name is correct', () {
-      expect(action.name, 'Upload to Google Play');
-    });
-
-    test('throws if json key file does not exist', () {
-      final context = PipelineContext(
-        config: const CIToolsConfig(appName: 'Test', seedBuildNumber: 1000),
-        platforms: <AppPlatform>{},
-      );
-      context.set<String>('artifact_path', 'nonexistent.aab');
-      context.set<String>('google_play_package_name', 'com.example');
-      context.set<String>(
-        'google_play_json_key_path',
-        '/nonexistent/path.json',
+  PipelineContext ctx() => PipelineContext(
+        config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 1000),
+        platforms: {AppPlatform.android},
       );
 
-      expect(() => action.run(context), throwsA(isA<DeployException>()));
-    });
+  test('name is correct', () {
+    final action = GooglePlayUploadAction(
+      artifact: File('build/app-release.aab'),
+      packageName: 'com.example.app',
+      jsonKeyPath: '/some/key.json',
+    );
+    expect(action.name, 'Upload to Google Play');
+  });
+
+  test('throws when json key file does not exist', () async {
+    final action = GooglePlayUploadAction(
+      artifact: File('build/app-release.aab'),
+      packageName: 'com.example.app',
+      jsonKeyPath: '/nonexistent/path/key.json',
+      shellRunner: _FakeShellRunner(),
+    );
+    expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
+  });
+
+  test('runs fastlane supply with expected args when key exists', () async {
+    final tmpKey =
+        File('${Directory.systemTemp.createTempSync().path}/key.json');
+    tmpKey.writeAsStringSync('{}');
+    final shell = _FakeShellRunner();
+    final action = GooglePlayUploadAction(
+      artifact: File('build/app-release.aab'),
+      packageName: 'com.example.app',
+      jsonKeyPath: tmpKey.path,
+      shellRunner: shell,
+    );
+    try {
+      await action.run(ctx());
+      expect(
+        shell.runCalls.single,
+        contains(
+          'fastlane supply --aab build/app-release.aab --package_name com.example.app --json_key ${tmpKey.path} --track internal --skip_upload_metadata --skip_upload_images --skip_upload_screenshots',
+        ),
+      );
+    } finally {
+      tmpKey.parent.deleteSync(recursive: true);
+    }
   });
 }

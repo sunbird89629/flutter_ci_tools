@@ -6,55 +6,42 @@ import 'package:flutter_ci_tools/src/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
-  final List<String> runCalls = [];
-  final List<List<String>> capturedArgs = [];
+  String? lastJson;
+  String? lastUrl;
+  @override
+  Future<void> run(String exe, List<String> args) async {}
 
   @override
-  Future<void> run(String executable, List<String> args) async {
-    runCalls.add('$executable ${args.join(' ')}');
-    capturedArgs.add(args);
-  }
-
-  @override
-  Future<ShellResult> runAndCapture(
-    String executable,
-    List<String> args,
-  ) async {
-    runCalls.add('$executable ${args.join(' ')}');
-    capturedArgs.add(args);
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    final dIdx = args.indexOf('-d');
+    if (dIdx >= 0 && dIdx + 1 < args.length) lastJson = args[dIdx + 1];
+    lastUrl = args.last;
     return ShellResult(exitCode: 0, stdout: '', stderr: '');
   }
 }
 
 void main() {
-  group('FeishuNotifyAction', () {
-    late _FakeShellRunner shell;
-    late FeishuNotifyAction action;
+  test('FeishuNotifyAction posts the given message to the configured webhook',
+      () async {
+    final shell = _FakeShellRunner();
+    final context = PipelineContext(
+      config: const CIToolsConfig(
+        appName: 'TestApp',
+        seedBuildNumber: 1000,
+        feishuWebhookUrl: 'https://open.feishu.cn/hook',
+      ),
+      platforms: {AppPlatform.android},
+    );
 
-    setUp(() {
-      shell = _FakeShellRunner();
-      action = FeishuNotifyAction(shellRunner: shell);
-    });
+    final action = FeishuNotifyAction(
+      message: 'hello world',
+      shellRunner: shell,
+    );
+    await action.run(context);
 
-    test('name is correct', () {
-      expect(action.name, 'Send Feishu Notification');
-    });
-
-    test('sends POST with correct JSON payload', () async {
-      final context = PipelineContext(
-        config: const CIToolsConfig(
-          appName: 'TestApp',
-          seedBuildNumber: 1000,
-          feishuWebhookUrl: 'https://hooks.example.com/webhook',
-        ),
-        platforms: <AppPlatform>{},
-      );
-      context.set<String>('notification_message', 'Hello from CI');
-
-      await action.run(context);
-
-      expect(shell.runCalls, contains(contains('https://hooks.example.com/webhook')));
-      expect(shell.capturedArgs.first.join(' '), contains('Hello from CI'));
-    });
+    expect(action.name, 'Send Feishu Notification');
+    expect(shell.lastUrl, 'https://open.feishu.cn/hook');
+    expect(shell.lastJson, contains('hello world'));
+    expect(shell.lastJson, contains('text'));
   });
 }

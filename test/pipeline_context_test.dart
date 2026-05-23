@@ -61,58 +61,5 @@ void main() {
         expect(ctx.metadata.gitHash, 'abc1234');
       });
     });
-
-    group('store', () {
-      test('set and get with correct type', () {
-        ctx.set<String>('key', 'value');
-        expect(ctx.get<String>('key'), 'value');
-      });
-
-      test('set and get with different types', () {
-        ctx.set<int>('count', 42);
-        ctx.set<bool>('flag', true);
-        expect(ctx.get<int>('count'), 42);
-        expect(ctx.get<bool>('flag'), true);
-      });
-
-      test('get throws on missing key', () {
-        expect(() => ctx.get<String>('missing'), throwsA(isA<TypeError>()));
-      });
-
-      test('tryGet returns value when key exists', () {
-        ctx.set<String>('key', 'value');
-        expect(ctx.tryGet<String>('key'), 'value');
-      });
-
-      test('tryGet returns null when key missing', () {
-        expect(ctx.tryGet<String>('missing'), isNull);
-      });
-
-      test('has returns true when key exists', () {
-        ctx.set<String>('key', 'value');
-        expect(ctx.has('key'), isTrue);
-      });
-
-      test('has returns false when key missing', () {
-        expect(ctx.has('key'), isFalse);
-      });
-
-      test('set overwrites existing key', () {
-        ctx.set<String>('key', 'first');
-        ctx.set<String>('key', 'second');
-        expect(ctx.get<String>('key'), 'second');
-      });
-
-      test('remove returns value and deletes key', () {
-        ctx.set<String>('key', 'value');
-        final removed = ctx.remove<String>('key');
-        expect(removed, 'value');
-        expect(ctx.has('key'), isFalse);
-      });
-
-      test('remove returns null for missing key', () {
-        expect(ctx.remove<String>('missing'), isNull);
-      });
-    });
   });
 }
