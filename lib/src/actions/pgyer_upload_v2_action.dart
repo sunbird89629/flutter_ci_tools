@@ -1,0 +1,204 @@
+import 'dart:convert';
+import 'dart:io';
+
+import '../default_shell_runner.dart';
+import '../exceptions.dart';
+import '../logger.dart';
+import '../pipeline_context.dart';
+import '../shell_runner.dart';
+import 'pipeline_action.dart';
+
+/// Pgyer's official 3-step "fastUploadApp" upload protocol.
+///
+/// In contrast to [PgyerUploadAction] (the legacy single-shot endpoint),
+/// this action:
+/// 1. Probes a list of API domains and picks the first reachable one
+///    (resilient to regional DNS / firewall issues in mainland China).
+/// 2. Requests a Tencent COS upload token from Pgyer.
+/// 3. Uploads the artifact directly to COS (bypassing Pgyer's own servers
+///    — much faster for large files).
+/// 4. Polls `buildInfo` until processing completes and returns the build's
+///    public download URL.
+///
+/// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
+class PgyerUploadV2Action extends PipelineAction<String> {
+  PgyerUploadV2Action({
+    required this.artifact,
+    required this.apiKey,
+    this.description,
+    List<String>? apiDomains,
+    ShellRunner? shellRunner,
+  })  : apiDomains = apiDomains ?? _defaultApiDomains,
+        _shellRunner = shellRunner ?? DefaultShellRunner();
+
+  final File artifact;
+  final String apiKey;
+  final String? description;
+
+  /// Ordered list of API hosts to probe. First reachable one is used.
+  final List<String> apiDomains;
+
+  final ShellRunner _shellRunner;
+
+  @override
+  String get name => 'Upload to Pgyer (V2)';
+
+  @override
+  Future<String> run(PipelineContext context) async {
+    final domain = await _selectReachableDomain();
+    final apiBaseUrl = 'http://$domain/apiv2';
+    final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
+
+    final token = await _getCOSToken(apiBaseUrl);
+    await _uploadToCOS(token);
+    final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key);
+    final downloadUrl = 'https://$webDomain/$shortcutUrl';
+    Logger.success('Pgyer build ready: $downloadUrl');
+    return downloadUrl;
+  }
+
+  Future<String> _selectReachableDomain() async {
+    Logger.info('Probing Pgyer API domains...');
+    for (final domain in apiDomains) {
+      final probeUrl = 'https://$domain/apiv2/app/getCOSToken';
+      final result = await _shellRunner.runAndCapture('curl', [
+        '-s', '-o', '/dev/null', '-w', '%{http_code}',
+        '--connect-timeout', '5', '--max-time', '10',
+        probeUrl,
+      ]);
+      final code = result.stdout.trim();
+      if (code.isNotEmpty && code != '000') {
+        Logger.info('Using domain $domain (HTTP $code)');
+        return domain;
+      }
+    }
+    throw DeployException(
+      'All Pgyer API domains unreachable: ${apiDomains.join(", ")}',
+    );
+  }
+
+  Future<_CosToken> _getCOSToken(String apiBaseUrl) async {
+    Logger.info('Requesting COS upload token...');
+    final buildType = artifact.path.split('.').last;
+    final result = await _shellRunner.runAndCapture('curl', [
+      '-s',
+      '--form-string', '_api_key=$apiKey',
+      '--form-string', 'buildType=$buildType',
+      if (description != null) ...[
+        '--form-string', 'buildUpdateDescription=$description',
+      ],
+      '$apiBaseUrl/app/getCOSToken',
+    ]);
+    if (result.exitCode != 0) {
+      throw DeployException('getCOSToken curl failed: ${result.stderr}');
+    }
+    final dynamic response;
+    try {
+      response = jsonDecode(result.stdout);
+    } catch (_) {
+      throw DeployException('getCOSToken returned non-JSON: ${result.stdout}');
+    }
+    if (response['code'] != 0) {
+      throw DeployException(
+        'getCOSToken failed: ${response['message'] ?? response}',
+      );
+    }
+    final data = response['data'] as Map<String, dynamic>?;
+    final endpoint = data?['endpoint'] as String?;
+    final key = data?['key'] as String?;
+    final signature = data?['signature'] as String?;
+    final securityToken = data?['x-cos-security-token'] as String?;
+    if (endpoint == null ||
+        key == null ||
+        signature == null ||
+        securityToken == null) {
+      throw DeployException(
+        'getCOSToken response missing required fields: ${result.stdout}',
+      );
+    }
+    return _CosToken(
+      endpoint: endpoint,
+      key: key,
+      signature: signature,
+      securityToken: securityToken,
+    );
+  }
+
+  Future<void> _uploadToCOS(_CosToken token) async {
+    final fileName = artifact.path.split('/').last;
+    final size = artifact.lengthSync();
+    Logger.info('Uploading $fileName ($size bytes) to COS...');
+    final result = await _shellRunner.runAndCapture('curl', [
+      '-o', '/dev/null', '-w', '%{http_code}',
+      '-s',
+      '--connect-timeout', '30',
+      '--max-time', '1800',
+      '--form-string', 'key=${token.key}',
+      '--form-string', 'signature=${token.signature}',
+      '--form-string', 'x-cos-security-token=${token.securityToken}',
+      '--form-string', 'x-cos-meta-file-name=$fileName',
+      '-F', 'file=@${artifact.path}',
+      token.endpoint,
+    ]);
+    if (result.exitCode != 0) {
+      throw DeployException('COS upload curl failed: ${result.stderr}');
+    }
+    final httpCode = result.stdout.trim();
+    if (httpCode != '204') {
+      throw DeployException('COS upload returned HTTP $httpCode (expected 204)');
+    }
+    Logger.success('Uploaded to COS.');
+  }
+
+  Future<String> _pollBuildInfo(String apiBaseUrl, String key) async {
+    Logger.info('Waiting for Pgyer to process the build...');
+    const maxAttempts = 60;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      final result = await _shellRunner.runAndCapture('curl', [
+        '-s',
+        '$apiBaseUrl/app/buildInfo?_api_key=$apiKey&buildKey=$key',
+      ]);
+      if (result.exitCode == 0) {
+        try {
+          final response = jsonDecode(result.stdout);
+          if (response['code'] == 0) {
+            final data = response['data'] as Map<String, dynamic>?;
+            final shortcutUrl = data?['buildShortcutUrl'] as String?;
+            if (shortcutUrl == null) {
+              throw DeployException(
+                'buildInfo missing buildShortcutUrl: ${result.stdout}',
+              );
+            }
+            return shortcutUrl;
+          }
+        } catch (e) {
+          if (e is DeployException) rethrow;
+          // Treat JSON parse failures as transient and keep polling.
+        }
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    throw DeployException(
+        'Pgyer build processing timed out after ${maxAttempts}s');
+  }
+}
+
+const _defaultApiDomains = [
+  'api.pgyer.com',
+  'api.xcxwo.com',
+  'api.pgyeraapp.com',
+];
+
+class _CosToken {
+  _CosToken({
+    required this.endpoint,
+    required this.key,
+    required this.signature,
+    required this.securityToken,
+  });
+
+  final String endpoint;
+  final String key;
+  final String signature;
+  final String securityToken;
+}

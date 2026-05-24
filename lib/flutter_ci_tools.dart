@@ -8,6 +8,7 @@ export 'src/actions/feishu_build_notify_action.dart';
 export 'src/actions/feishu_notify_action.dart';
 export 'src/actions/google_play_action.dart';
 export 'src/actions/pgyer_upload_action.dart';
+export 'src/actions/pgyer_upload_v2_action.dart';
 export 'src/actions/pipeline_action.dart';
 export 'src/actions/push_build_tag_action.dart';
 export 'src/actions/resolve_build_version_action.dart';
