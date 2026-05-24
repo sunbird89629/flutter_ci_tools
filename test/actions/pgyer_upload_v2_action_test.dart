@@ -106,7 +106,7 @@ void main() {
         apiKey: 'k',
         shellRunner: shell,
       );
-      expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
+      await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
     });
 
     test('throws when getCOSToken returns non-zero code', () async {
@@ -126,7 +126,7 @@ void main() {
         apiKey: 'k',
         shellRunner: shell,
       );
-      expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
+      await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
     });
 
     test('throws when COS upload returns non-204', () async {
