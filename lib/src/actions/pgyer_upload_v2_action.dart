@@ -27,8 +27,10 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     required this.apiKey,
     this.description,
     List<String>? apiDomains,
+    Future<bool> Function(String domain)? probeDomain,
     ShellRunner? shellRunner,
   })  : apiDomains = apiDomains ?? _defaultApiDomains,
+        _probeDomain = probeDomain ?? _defaultProbeDomain,
         _shellRunner = shellRunner ?? DefaultShellRunner();
 
   final File artifact;
@@ -38,6 +40,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// Ordered list of API hosts to probe. First reachable one is used.
   final List<String> apiDomains;
 
+  final Future<bool> Function(String domain) _probeDomain;
   final ShellRunner _shellRunner;
 
   @override
@@ -60,21 +63,35 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   Future<String> _selectReachableDomain() async {
     Logger.info('Probing Pgyer API domains...');
     for (final domain in apiDomains) {
-      final probeUrl = 'https://$domain/apiv2/app/getCOSToken';
-      final result = await _shellRunner.runAndCapture('curl', [
-        '-s', '-o', '/dev/null', '-w', '%{http_code}',
-        '--connect-timeout', '5', '--max-time', '10',
-        probeUrl,
-      ]);
-      final code = result.stdout.trim();
-      if (code.isNotEmpty && code != '000') {
-        Logger.info('Using domain $domain (HTTP $code)');
+      if (await _probeDomain(domain)) {
+        Logger.info('Using domain $domain');
         return domain;
       }
     }
     throw DeployException(
       'All Pgyer API domains unreachable: ${apiDomains.join(", ")}',
     );
+  }
+
+  /// Default probe: HTTPS GET against `/apiv2/app/getCOSToken` with a
+  /// 5-second connect timeout and 10-second overall timeout. Any HTTP
+  /// response (even an error code) counts as reachable; network/timeout
+  /// errors count as unreachable.
+  static Future<bool> _defaultProbeDomain(String domain) async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 5);
+    try {
+      final req = await client
+          .getUrl(Uri.parse('https://$domain/apiv2/app/getCOSToken'))
+          .timeout(const Duration(seconds: 10));
+      final res = await req.close().timeout(const Duration(seconds: 10));
+      await res.drain<void>();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<_CosToken> _getCOSToken(String apiBaseUrl) async {

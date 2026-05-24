@@ -40,6 +40,19 @@ class _Handler {
   final ShellResult Function() respond;
 }
 
+/// Returns a probe function that records every domain it's asked about and
+/// reports reachability based on [reachable].
+({Future<bool> Function(String) probe, List<String> probed}) probeStub(
+  bool Function(String domain) reachable,
+) {
+  final probed = <String>[];
+  Future<bool> probe(String domain) async {
+    probed.add(domain);
+    return reachable(domain);
+  }
+  return (probe: probe, probed: probed);
+}
+
 void main() {
   PipelineContext ctx() => PipelineContext(
         config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 1000),
@@ -57,36 +70,34 @@ void main() {
 
     test('happy path: probe → token → upload → poll → return URL', () async {
       final shell = _ScriptedShellRunner()
-        // Domain probe: api.pgyer.com responds 200 (probe uses https://)
-        ..on('https://api.pgyer.com/apiv2/app/getCOSToken', () =>
-            ShellResult(exitCode: 0, stdout: '200', stderr: ''))
-        // getCOSToken POST (POST uses http:// base URL, matched by _api_key)
-        ..on('--form-string _api_key=k', () => ShellResult(
-              exitCode: 0,
-              stdout: '{"code":0,"data":{'
-                  '"endpoint":"https://bucket.cos.region.myqcloud.com",'
-                  '"key":"BUILD_KEY",'
-                  '"signature":"SIG",'
-                  '"x-cos-security-token":"TOK"}}',
-              stderr: '',
-            ))
-        // COS upload → 204
-        ..on('bucket.cos.region.myqcloud.com', () =>
-            ShellResult(exitCode: 0, stdout: '204', stderr: ''))
-        // buildInfo poll → success
-        ..on('app/buildInfo?_api_key=k&buildKey=BUILD_KEY', () => ShellResult(
-              exitCode: 0,
-              stdout: '{"code":0,"data":{"buildShortcutUrl":"abcd"}}',
-              stderr: '',
-            ));
+        ..on(
+            '--form-string _api_key=k',
+            () => ShellResult(
+                  exitCode: 0,
+                  stdout: '{"code":0,"data":{'
+                      '"endpoint":"https://bucket.cos.region.myqcloud.com",'
+                      '"key":"BUILD_KEY",'
+                      '"signature":"SIG",'
+                      '"x-cos-security-token":"TOK"}}',
+                  stderr: '',
+                ))
+        ..on('bucket.cos.region.myqcloud.com',
+            () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
+        ..on(
+            'app/buildInfo?_api_key=k&buildKey=BUILD_KEY',
+            () => ShellResult(
+                  exitCode: 0,
+                  stdout: '{"code":0,"data":{"buildShortcutUrl":"abcd"}}',
+                  stderr: '',
+                ));
 
-      // Create a real temp file so artifact.lengthSync() works
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
         final action = PgyerUploadV2Action(
           artifact: apk,
           apiKey: 'k',
+          probeDomain: (d) async => d == 'api.pgyer.com',
           shellRunner: shell,
         );
         final url = await action.run(ctx());
@@ -97,33 +108,29 @@ void main() {
     });
 
     test('throws when all probe domains fail', () async {
-      final shell = _ScriptedShellRunner()
-        ..on('https://', () =>
-            ShellResult(exitCode: 0, stdout: '000', stderr: ''));
-
       final action = PgyerUploadV2Action(
         artifact: File('test.apk'),
         apiKey: 'k',
-        shellRunner: shell,
+        probeDomain: (_) async => false,
+        shellRunner: _ScriptedShellRunner(),
       );
       await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
     });
 
     test('throws when getCOSToken returns non-zero code', () async {
       final shell = _ScriptedShellRunner()
-        // Probe ok
-        ..on('https://api.pgyer.com/apiv2/app/getCOSToken', () =>
-            ShellResult(exitCode: 0, stdout: '200', stderr: ''))
-        // Token request fails
-        ..on('--form-string _api_key=k', () => ShellResult(
-              exitCode: 0,
-              stdout: '{"code":1,"message":"bad key"}',
-              stderr: '',
-            ));
+        ..on(
+            '--form-string _api_key=k',
+            () => ShellResult(
+                  exitCode: 0,
+                  stdout: '{"code":1,"message":"bad key"}',
+                  stderr: '',
+                ));
 
       final action = PgyerUploadV2Action(
         artifact: File('test.apk'),
         apiKey: 'k',
+        probeDomain: (_) async => true,
         shellRunner: shell,
       );
       await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
@@ -134,21 +141,22 @@ void main() {
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
         final shell = _ScriptedShellRunner()
-          ..on('https://api.pgyer.com/apiv2/app/getCOSToken', () =>
-              ShellResult(exitCode: 0, stdout: '200', stderr: ''))
-          ..on('--form-string _api_key=k', () => ShellResult(
-                exitCode: 0,
-                stdout: '{"code":0,"data":{'
-                    '"endpoint":"https://bucket.cos.x.com",'
-                    '"key":"K","signature":"S","x-cos-security-token":"T"}}',
-                stderr: '',
-              ))
-          ..on('bucket.cos.x.com', () =>
-              ShellResult(exitCode: 0, stdout: '500', stderr: ''));
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{'
+                        '"endpoint":"https://bucket.cos.x.com",'
+                        '"key":"K","signature":"S","x-cos-security-token":"T"}}',
+                    stderr: '',
+                  ))
+          ..on('bucket.cos.x.com',
+              () => ShellResult(exitCode: 0, stdout: '500', stderr: ''));
 
         final action = PgyerUploadV2Action(
           artifact: apk,
           apiKey: 'k',
+          probeDomain: (_) async => true,
           shellRunner: shell,
         );
         await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
@@ -161,41 +169,37 @@ void main() {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
+        final stub = probeStub((d) => d == 'api.xcxwo.com');
         final shell = _ScriptedShellRunner()
-          // First domain probe fails
-          ..on('https://api.pgyer.com/apiv2/app/getCOSToken', () =>
-              ShellResult(exitCode: 0, stdout: '000', stderr: ''))
-          // Second domain probe succeeds
-          ..on('https://api.xcxwo.com/apiv2/app/getCOSToken', () =>
-              ShellResult(exitCode: 0, stdout: '200', stderr: ''))
-          // The actual getCOSToken POST uses http:// + api.xcxwo.com — matches '_api_key=k'
-          ..on('--form-string _api_key=k', () => ShellResult(
-                exitCode: 0,
-                stdout: '{"code":0,"data":{'
-                    '"endpoint":"https://bucket.cos.x.com",'
-                    '"key":"BK","signature":"S","x-cos-security-token":"T"}}',
-                stderr: '',
-              ))
-          ..on('bucket.cos.x.com', () =>
-              ShellResult(exitCode: 0, stdout: '204', stderr: ''))
-          ..on('buildInfo?_api_key=k&buildKey=BK', () => ShellResult(
-                exitCode: 0,
-                stdout: '{"code":0,"data":{"buildShortcutUrl":"x"}}',
-                stderr: '',
-              ));
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{'
+                        '"endpoint":"https://bucket.cos.x.com",'
+                        '"key":"BK","signature":"S","x-cos-security-token":"T"}}',
+                    stderr: '',
+                  ))
+          ..on('bucket.cos.x.com',
+              () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
+          ..on(
+              'buildInfo?_api_key=k&buildKey=BK',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{"buildShortcutUrl":"x"}}',
+                    stderr: '',
+                  ));
 
         final action = PgyerUploadV2Action(
           artifact: apk,
           apiKey: 'k',
+          probeDomain: stub.probe,
           shellRunner: shell,
         );
         final url = await action.run(ctx());
         expect(url, 'https://xcxwo.com/x');
-        // Confirm both probes were called
-        expect(
-          shell.calls.where((c) => c.contains('getCOSToken')).length,
-          greaterThanOrEqualTo(2),
-        );
+        // First domain probed and rejected, second probed and accepted.
+        expect(stub.probed, ['api.pgyer.com', 'api.xcxwo.com']);
       } finally {
         tmp.deleteSync(recursive: true);
       }
