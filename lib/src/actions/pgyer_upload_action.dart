@@ -46,7 +46,7 @@ class PgyerUploadAction extends PipelineAction<String> {
           '-F',
           'buildUpdateDescription=$description',
         ],
-        'https://www.pgyer.com/apiv2/app/upload',
+        'https://api.xcxwo.com/apiv2/app/upload',
       ]);
       if (result.exitCode == 0) break;
       Logger.error('Upload attempt $attempt failed: ${result.stderr}');

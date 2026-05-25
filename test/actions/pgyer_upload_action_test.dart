@@ -67,7 +67,7 @@ void main() {
           '_api_key=k',
           '-F',
           'buildUpdateDescription=notes',
-          'https://www.pgyer.com/apiv2/app/upload',
+          'https://api.xcxwo.com/apiv2/app/upload',
         ],
         ShellResult(
           exitCode: 0,
