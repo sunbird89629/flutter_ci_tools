@@ -44,7 +44,7 @@ class TestPipeline extends BuildPipeline {
         envName: 'test', buildType: AndroidBuildType.apk,
       ));
       await runAction(PgyerUploadAction(
-        artifact: apk, apiKey: context.pgyerApiKey!, description: '...',
+        artifact: apk, apiKey: (context as MyAppContext).pgyerApiKey, description: '...',
       ));
     }
 
@@ -66,12 +66,10 @@ credentials, etc.) across all pipelines:
 ```dart
 class MyAppContext extends PipelineContext {
   MyAppContext({required super.platforms})
-      : super(
-          appName: 'MyApp',
-          seedBuildNumber: 10000,
-          pgyerApiKey: Platform.environment['PGYER_API_KEY'],
-          feishuWebhookUrl: Platform.environment['FEISHU_WEBHOOK_URL'],
-        );
+      : super(appName: 'MyApp', seedBuildNumber: 10000);
+
+  String get pgyerApiKey => Platform.environment['PGYER_API_KEY'] ?? '';
+  String get feishuWebhookUrl => Platform.environment['FEISHU_WEBHOOK_URL'] ?? '';
 }
 ```
 
@@ -135,7 +133,8 @@ Built-in actions include `ResolveBuildVersionAction`, `CollectMetadataAction`,
 `CheckGitStatusAction`, `CleanProjectAction`, `BuildAndroidAction`,
 `BuildIOSAction`, `PgyerUploadAction`, `PgyerUploadV2Action`,
 `GooglePlayUploadAction`, `AppStoreUploadAction`, `FeishuBuildNotifyAction`,
-`PushBuildTagAction`, and `RestoreWorkspaceAction`.
+`FeishuNotifyAction`, `SwapInfoPlistAction`, `PushBuildTagAction`,
+and `RestoreWorkspaceAction`.
 
 ## Example
 
