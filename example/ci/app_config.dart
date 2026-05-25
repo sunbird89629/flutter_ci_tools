@@ -13,9 +13,10 @@ class ExampleAppContext extends PipelineContext {
       : super(
           appName: 'FlutterCIToolsExample',
           seedBuildNumber: 10000,
-          pgyerApiKey: _env('PGYER_API_KEY'),
-          feishuWebhookUrl: _env('FEISHU_WEBHOOK_URL'),
         );
+
+  String get pgyerApiKey => _env('PGYER_API_KEY');
+  String get feishuWebhookUrl => _env('FEISHU_WEBHOOK_URL');
 }
 
 class ProdCredentials {
