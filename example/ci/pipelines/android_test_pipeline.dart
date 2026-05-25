@@ -1,10 +1,17 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
-import '../app_config.dart';
 import '../build_info_writer.dart';
 
+final buildConfig = CIToolsConfig(
+  appName: "testAppName",
+  seedBuildNumber: 10000,
+  pgyerApiKey: "1540c89d7f12ade530a14ac4adf9caa2",
+  feishuWebhookUrl:
+      "https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd",
+);
+
 class AndroidTestPipeline extends BuildPipeline {
-  AndroidTestPipeline() : super(exampleConfig);
+  AndroidTestPipeline() : super(buildConfig);
 
   @override
   String get name => 'android_test';
