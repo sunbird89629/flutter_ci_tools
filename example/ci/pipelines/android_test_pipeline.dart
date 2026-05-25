@@ -9,10 +9,11 @@ class AndroidTestContext extends PipelineContext {
       : super(
           appName: 'testAppName',
           seedBuildNumber: 10000,
-          pgyerApiKey: '1540c89d7f12ade530a14ac4adf9caa2',
-          feishuWebhookUrl:
-              'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd',
         );
+
+  final String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
+  final String feishuWebhookUrl =
+      'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd';
 }
 
 class AndroidTestPipeline extends BuildPipeline {
@@ -29,6 +30,8 @@ class AndroidTestPipeline extends BuildPipeline {
 
   @override
   Future<void> body() async {
+    final ctx = context as AndroidTestContext;
+
     await runAction(ResolveBuildVersionAction());
     await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
@@ -46,9 +49,10 @@ class AndroidTestPipeline extends BuildPipeline {
     ));
     final pgyerUrl = await runAction(PgyerUploadAction(
       artifact: apk,
-      apiKey: context.pgyerApiKey!,
+      apiKey: ctx.pgyerApiKey,
     ));
     await runAction(FeishuBuildNotifyAction(
+      webhookUrl: ctx.feishuWebhookUrl,
       platform: AppPlatform.android,
       target: DeployTarget.pgyer,
       downloadUrl: pgyerUrl,
