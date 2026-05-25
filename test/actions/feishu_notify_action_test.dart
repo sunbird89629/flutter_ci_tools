@@ -26,11 +26,11 @@ void main() {
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 1000,
-      feishuWebhookUrl: 'https://open.feishu.cn/hook',
       platforms: {AppPlatform.android},
     );
 
     final action = FeishuNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
       message: 'hello world',
       shellRunner: shell,
     );
