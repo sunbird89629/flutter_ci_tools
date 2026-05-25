@@ -1,0 +1,8 @@
+{
+  "env": "test",
+  "buildName": "1.0.0",
+  "buildNumber": 10000,
+  "gitHash": "d05c427",
+  "branch": "feature/example-app",
+  "recentCommits": "d05c427 feat: add interactive pipeline selection with numbered list\n4f08c77 docs: add interactive pipeline selection implementation plan\n21289e4 docs: add interactive pipeline selection design spec\nc47b47b chore: remove old env files, register AndroidTestPipeline\n3dd230a refactor: rewrite build.dart to use PipelineRegistry\na348eb5 feat: implement name/description/help in example pipelines\nc1fdaf3 feat: export PipelineRegistry from barrel\nde923f5 feat: add PipelineRegistry with CLI parsing and help output\na9cc454 feat: add name/description/help abstract getters to BuildPipeline\n5f1bbd1 docs: add pipeline lifecycle implementation plan\n2ec22f4 docs: add pipeline lifecycle methods + registry design spec\nc30f108 refactor: extract DefaultShellRunner, fix Logger timestamps, improve tests\nb292e32 fix: expose deployService getter so subclasses use injected dependency, not singleton\nf5434a6 chore: remove unnecessary direct builder imports from tests\n3768208 refactor: update barrel exports, entry point, and remove EnvBuilder"
+}

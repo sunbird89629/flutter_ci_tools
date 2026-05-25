@@ -1,0 +1,24 @@
+name: flutter_ci_tools_example
+description: Example app demonstrating flutter_ci_tools usage.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.4.0
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_ci_tools:
+    path: ../
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/build_info.json

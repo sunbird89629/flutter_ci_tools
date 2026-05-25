@@ -8,15 +8,24 @@ class _FakeGitManager implements GitManager {
   String recentCommits = 'commit 1\ncommit 2';
   String commitBody = 'Fix login bug';
 
-  @override Future<String> getBranch() async => branch;
-  @override Future<String> getCurrentUser() async => gitUser;
-  @override Future<String> getShortHash() async => gitHash;
-  @override Future<String> getRecentCommits({int count = 10}) async => recentCommits;
-  @override Future<String> getLatestCommitBody() async => commitBody;
-  @override Future<void> checkClean() async {}
-  @override Future<void> resetHard() async {}
-  @override Future<void> clean() async {}
-  @override Future<void> restoreWorkspace() async {}
+  @override
+  Future<String> getBranch() async => branch;
+  @override
+  Future<String> getCurrentUser() async => gitUser;
+  @override
+  Future<String> getShortHash() async => gitHash;
+  @override
+  Future<String> getRecentCommits({int count = 10}) async => recentCommits;
+  @override
+  Future<String> getLatestCommitBody() async => commitBody;
+  @override
+  Future<void> checkClean() async {}
+  @override
+  Future<void> resetHard() async {}
+  @override
+  Future<void> clean() async {}
+  @override
+  Future<void> restoreWorkspace() async {}
 }
 
 void main() {

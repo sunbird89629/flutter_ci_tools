@@ -21,8 +21,7 @@ class _FakeShellRunner implements ShellRunner {
   ) async {
     final key = '$executable ${args.join(' ')}';
     runCalls.add(key);
-    return _responses[key] ??
-        ShellResult(exitCode: 0, stdout: '', stderr: '');
+    return _responses[key] ?? ShellResult(exitCode: 0, stdout: '', stderr: '');
   }
 }
 
@@ -58,7 +57,8 @@ void main() {
       shell.stub(
         'git',
         ['log', '--oneline', '--no-merges', '-n', '10'],
-        ShellResult(exitCode: 0, stdout: 'abc commit 1\ndef commit 2\n', stderr: ''),
+        ShellResult(
+            exitCode: 0, stdout: 'abc commit 1\ndef commit 2\n', stderr: ''),
       );
       expect(await git.getRecentCommits(), 'abc commit 1\ndef commit 2');
     });

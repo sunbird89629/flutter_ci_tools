@@ -1,24 +1,49 @@
 import 'dart:io';
 
+import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+
 import 'exceptions.dart';
 import 'logger.dart';
 import 'shell_runner.dart';
 
+/// Interface for Git operations used by the build pipeline.
+///
+/// Implementations can be swapped for testing via dependency injection.
 abstract class GitManager {
+  /// Default singleton instance.
   static GitManager instance = DefaultGitManager();
 
+  /// Throws [GitException] if the working tree has uncommitted changes.
   Future<void> checkClean();
+
+  /// Runs `git reset HEAD --hard`.
   Future<void> resetHard();
+
+  /// Runs `git clean -fd` to remove untracked files.
   Future<void> clean();
+
+  /// Restores the workspace by calling [resetHard] then [clean].
   Future<void> restoreWorkspace();
+
+  /// Returns the short hash of HEAD (e.g. `"abc1234"`).
   Future<String> getShortHash();
+
+  /// Returns the last [count] commits in `--oneline` format.
   Future<String> getRecentCommits({int count = 10});
+
+  /// Returns the current branch name.
   Future<String> getBranch();
+
+  /// Returns the Git user name from `git config`, falling back to CI environment variables.
   Future<String> getCurrentUser();
+
+  /// Returns the body of the latest commit message.
   Future<String> getLatestCommitBody();
 }
 
+/// Default [GitManager] implementation using [ShellRunner] to execute Git commands.
 class DefaultGitManager implements GitManager {
+  /// Creates a [DefaultGitManager] with an optional [shellRunner].
   DefaultGitManager({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? DefaultShellRunner();
 
@@ -70,7 +95,11 @@ class DefaultGitManager implements GitManager {
   @override
   Future<String> getRecentCommits({int count = 10}) async {
     final result = await _runGitCommand([
-      'log', '--oneline', '--no-merges', '-n', '$count',
+      'log',
+      '--oneline',
+      '--no-merges',
+      '-n',
+      '$count',
     ]);
     return result.stdout.toString().trim();
   }
@@ -84,7 +113,9 @@ class DefaultGitManager implements GitManager {
   @override
   Future<String> getCurrentUser() async {
     final userResult = await _shellRunner.runAndCapture('git', [
-      'config', '--get', 'user.name',
+      'config',
+      '--get',
+      'user.name',
     ]);
     final name = userResult.stdout.toString().trim();
     if (name.isNotEmpty) return name;
