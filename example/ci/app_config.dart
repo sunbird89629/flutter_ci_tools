@@ -6,12 +6,17 @@ const _placeholder = 'YOUR_VALUE_HERE';
 
 String _env(String key) => Platform.environment[key] ?? _placeholder;
 
-final exampleConfig = CIToolsConfig(
-  appName: 'FlutterCIToolsExample',
-  seedBuildNumber: 10000,
-  pgyerApiKey: _env('PGYER_API_KEY'),
-  feishuWebhookUrl: _env('FEISHU_WEBHOOK_URL'),
-);
+/// Project-wide [PipelineContext] subclass: bundles the configuration shared
+/// by every pipeline in this example app (name, seed build number, API keys).
+class ExampleAppContext extends PipelineContext {
+  ExampleAppContext({required super.platforms})
+      : super(
+          appName: 'FlutterCIToolsExample',
+          seedBuildNumber: 10000,
+          pgyerApiKey: _env('PGYER_API_KEY'),
+          feishuWebhookUrl: _env('FEISHU_WEBHOOK_URL'),
+        );
+}
 
 class ProdCredentials {
   static String get googlePlayPackageName => _env('GOOGLE_PLAY_PACKAGE_NAME');

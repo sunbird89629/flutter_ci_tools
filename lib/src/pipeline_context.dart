@@ -1,16 +1,33 @@
 import 'build_metadata.dart';
-import 'config.dart';
 import 'pipeline.dart' show AppPlatform;
 
-/// Shared, read-only context passed through all pipeline steps.
+/// Shared, mutable context passed through all pipeline steps.
 ///
-/// Holds the config and the platform filter (set at pipeline launch), plus
-/// build-time fields populated by lifecycle actions.
+/// Holds both static configuration (app identity, credentials) provided at
+/// construction time and runtime state (metadata, build number) populated by
+/// lifecycle actions during a single pipeline run.
+///
+/// Subclass this to bundle reusable configuration across multiple pipelines.
 class PipelineContext {
-  PipelineContext({required this.config, required this.platforms});
+  PipelineContext({
+    required this.appName,
+    required this.seedBuildNumber,
+    required this.platforms,
+    this.pgyerApiKey,
+    this.feishuWebhookUrl,
+  });
 
-  /// Application-level configuration (name, API keys, seed build number).
-  final CIToolsConfig config;
+  /// Display name of the application (used in notifications).
+  final String appName;
+
+  /// Starting build number used when no existing `builds/*` tag is found.
+  final int seedBuildNumber;
+
+  /// Pgyer API key for uploading builds. Required for Pgyer deploy target.
+  final String? pgyerApiKey;
+
+  /// Feishu (Lark) webhook URL for sending build notifications.
+  final String? feishuWebhookUrl;
 
   /// Platforms this pipeline run targets.
   final Set<AppPlatform> platforms;

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/build_ios_action.dart';
 import 'package:flutter_ci_tools/src/builders/ios_builder.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
@@ -29,7 +28,8 @@ void main() {
   test('BuildIOSAction returns ipa and forwards export method + env', () async {
     final builder = _FakeIOSBuilder();
     final context = PipelineContext(
-      config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
     )..buildNumber = 12001;
 

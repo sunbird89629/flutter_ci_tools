@@ -1,6 +1,5 @@
 // test/pipeline_context_test.dart
 import 'package:flutter_ci_tools/src/build_metadata.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
@@ -8,25 +7,42 @@ import 'package:test/test.dart';
 void main() {
   group('PipelineContext', () {
     late PipelineContext ctx;
-    late CIToolsConfig config;
 
     setUp(() {
-      config = const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000);
-      ctx = PipelineContext(config: config, platforms: <AppPlatform>{});
+      ctx = PipelineContext(
+        appName: 'TestApp',
+        seedBuildNumber: 12000,
+        platforms: <AppPlatform>{},
+      );
     });
 
     group('construction', () {
-      test('config is accessible', () {
-        expect(ctx.config, same(config));
-        expect(ctx.config.appName, 'TestApp');
+      test('exposes flattened config fields', () {
+        expect(ctx.appName, 'TestApp');
+        expect(ctx.seedBuildNumber, 12000);
+        expect(ctx.pgyerApiKey, isNull);
+        expect(ctx.feishuWebhookUrl, isNull);
       });
 
       test('exposes platforms passed to constructor', () {
         final context = PipelineContext(
-          config: const CIToolsConfig(appName: 'A', seedBuildNumber: 10000),
+          appName: 'A',
+          seedBuildNumber: 10000,
           platforms: {AppPlatform.android},
         );
         expect(context.platforms, {AppPlatform.android});
+      });
+
+      test('accepts optional credentials', () {
+        final context = PipelineContext(
+          appName: 'A',
+          seedBuildNumber: 10000,
+          platforms: <AppPlatform>{},
+          pgyerApiKey: 'key',
+          feishuWebhookUrl: 'https://example.com/hook',
+        );
+        expect(context.pgyerApiKey, 'key');
+        expect(context.feishuWebhookUrl, 'https://example.com/hook');
       });
     });
 

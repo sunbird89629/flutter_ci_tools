@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/app_store_action.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -22,7 +21,8 @@ class _FakeShellRunner implements ShellRunner {
 
 void main() {
   PipelineContext ctx() => PipelineContext(
-        config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 1000),
+        appName: 'TestApp',
+        seedBuildNumber: 1000,
         platforms: {AppPlatform.ios},
       );
 
@@ -67,10 +67,15 @@ void main() {
       // The tmp JSON file path is generated at runtime under systemTemp,
       // so we match the surrounding command shape and verify the path
       // looks like a system-temp path that has since been cleaned up.
-      expect(call, startsWith('fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path '));
+      expect(
+          call,
+          startsWith(
+              'fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path '));
       expect(call, endsWith(' --skip_waiting_for_build_processing'));
       final tmpJsonPath = call
-          .replaceFirst('fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path ', '')
+          .replaceFirst(
+              'fastlane pilot upload --ipa build/ios/ipa/app.ipa --api_key_path ',
+              '')
           .replaceFirst(' --skip_waiting_for_build_processing', '');
       expect(tmpJsonPath, contains(Directory.systemTemp.path));
       expect(tmpJsonPath, endsWith('.json'));

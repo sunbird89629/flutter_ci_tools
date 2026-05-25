@@ -19,7 +19,7 @@ enum DeployTarget {
 
 /// Sends the standard "new build" message to Feishu.
 ///
-/// Reads `config.feishuWebhookUrl`, `context.buildName`, `context.buildNumber`,
+/// Reads `context.feishuWebhookUrl`, `context.buildName`, `context.buildNumber`,
 /// and `context.metadata` to format the message text. Requires
 /// `ResolveBuildVersionAction` and `CollectMetadataAction` earlier in the
 /// pipeline body.
@@ -50,7 +50,7 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     const sep = '──────────────────────────';
     final m = context.metadata;
     final lines = <String>[
-      '🚀 ${context.config.appName} 新版本 ${context.buildNumber} (${platform.label} · ${target.label})',
+      '🚀 ${context.appName} 新版本 ${context.buildNumber} (${platform.label} · ${target.label})',
       'branch: ${m.branch}  by: ${m.gitUser}',
       sep,
       'versionName: ${context.buildName}',

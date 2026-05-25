@@ -1,4 +1,3 @@
-import 'config.dart';
 import 'logger.dart';
 import 'pipeline_context.dart';
 import 'actions/pipeline_action.dart';
@@ -33,10 +32,6 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 /// provides only the execution shell ([beforeBuild] → [body] → [afterBuild])
 /// with try/finally semantics guaranteeing [afterBuild] runs even on failure.
 abstract class BuildPipeline {
-  BuildPipeline(this._config);
-
-  final CIToolsConfig _config;
-
   /// Populated by [run]; do not access before then.
   late final PipelineContext context;
 
@@ -48,6 +43,11 @@ abstract class BuildPipeline {
 
   /// Extended help text printed when the user passes `--help`.
   String get help;
+
+  /// Builds the [PipelineContext] for this run. Implementations typically
+  /// instantiate a project-specific [PipelineContext] subclass that bundles
+  /// shared configuration (app name, credentials, etc.).
+  PipelineContext createContext(Set<AppPlatform> platforms);
 
   /// Optional preparation hook. Default no-op.
   Future<void> beforeBuild() async {}
@@ -61,10 +61,10 @@ abstract class BuildPipeline {
   /// mask the original [body] failure.
   Future<void> afterBuild() async {}
 
-  /// Entry point. Constructs the [PipelineContext] with the given [platforms],
-  /// then runs `beforeBuild → body → afterBuild`.
+  /// Entry point. Builds the [PipelineContext] via [createContext], then runs
+  /// `beforeBuild → body → afterBuild`.
   Future<void> run(Set<AppPlatform> platforms) async {
-    context = PipelineContext(config: _config, platforms: platforms);
+    context = createContext(platforms);
     try {
       await beforeBuild();
       await body();

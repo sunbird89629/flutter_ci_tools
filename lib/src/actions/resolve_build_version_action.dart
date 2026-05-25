@@ -17,7 +17,7 @@ class ResolveBuildVersionAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final number = await _versionManager.computeNextBuildNumber(
-      context.config.seedBuildNumber,
+      context.seedBuildNumber,
     );
     context.buildNumber = number;
     Logger.info(

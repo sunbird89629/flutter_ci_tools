@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/google_play_action.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -22,7 +21,8 @@ class _FakeShellRunner implements ShellRunner {
 
 void main() {
   PipelineContext ctx() => PipelineContext(
-        config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 1000),
+        appName: 'TestApp',
+        seedBuildNumber: 1000,
         platforms: {AppPlatform.android},
       );
 

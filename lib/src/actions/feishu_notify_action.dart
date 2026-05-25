@@ -23,16 +23,19 @@ class FeishuNotifyAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final webhookUrl = context.config.feishuWebhookUrl!;
+    final webhookUrl = context.feishuWebhookUrl!;
     Logger.info('Sending Feishu notification...');
     final jsonMessage = jsonEncode({
       'msg_type': 'text',
       'content': {'text': message},
     });
     final result = await _shellRunner.runAndCapture('curl', [
-      '-X', 'POST',
-      '-H', 'Content-Type: application/json',
-      '-d', jsonMessage,
+      '-X',
+      'POST',
+      '-H',
+      'Content-Type: application/json',
+      '-d',
+      jsonMessage,
       webhookUrl,
     ]);
     if (result.exitCode == 0) {

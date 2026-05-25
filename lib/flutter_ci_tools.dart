@@ -17,7 +17,6 @@ export 'src/actions/swap_info_plist_action.dart';
 export 'src/build_metadata.dart';
 export 'src/builders/android_builder.dart';
 export 'src/builders/ios_builder.dart';
-export 'src/config.dart';
 export 'src/default_shell_runner.dart';
 export 'src/exceptions.dart';
 export 'src/git_manager.dart';

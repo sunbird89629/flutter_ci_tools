@@ -1,20 +1,29 @@
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart';
+import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/pipeline_registry.dart';
 import 'package:test/test.dart';
 
 class _StubPipeline extends BuildPipeline {
-  _StubPipeline(this._name, this._description, this._help, CIToolsConfig config)
-      : super(config);
+  _StubPipeline(this._name, this._description, this._help);
 
   final String _name;
   final String _description;
   final String _help;
   Set<AppPlatform>? receivedPlatforms;
 
-  @override String get name => _name;
-  @override String get description => _description;
-  @override String get help => _help;
+  @override
+  String get name => _name;
+  @override
+  String get description => _description;
+  @override
+  String get help => _help;
+
+  @override
+  PipelineContext createContext(Set<AppPlatform> platforms) => PipelineContext(
+        appName: 'TestApp',
+        seedBuildNumber: 10000,
+        platforms: platforms,
+      );
 
   @override
   Future<void> body() async {
@@ -23,21 +32,14 @@ class _StubPipeline extends BuildPipeline {
 }
 
 void main() {
-  late CIToolsConfig config;
-
   _StubPipeline createPipeline(String name,
       {String? description, String? help}) {
     return _StubPipeline(
       name,
       description ?? '$name description',
       help ?? '$name help',
-      config,
     );
   }
-
-  setUp(() {
-    config = const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 10000);
-  });
 
   group('PipelineRegistry', () {
     test('register adds a pipeline', () {
@@ -119,8 +121,8 @@ void main() {
       registry.register(createPipeline('test'));
 
       var exitCode = -1;
-      await registry.run([], readLine: () => '0',
-          onExit: (code) => exitCode = code);
+      await registry
+          .run([], readLine: () => '0', onExit: (code) => exitCode = code);
       expect(exitCode, 0);
     });
 

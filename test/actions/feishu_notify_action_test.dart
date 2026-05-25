@@ -1,5 +1,4 @@
 import 'package:flutter_ci_tools/src/actions/feishu_notify_action.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/shell_runner.dart';
@@ -25,11 +24,9 @@ void main() {
       () async {
     final shell = _FakeShellRunner();
     final context = PipelineContext(
-      config: const CIToolsConfig(
-        appName: 'TestApp',
-        seedBuildNumber: 1000,
-        feishuWebhookUrl: 'https://open.feishu.cn/hook',
-      ),
+      appName: 'TestApp',
+      seedBuildNumber: 1000,
+      feishuWebhookUrl: 'https://open.feishu.cn/hook',
       platforms: {AppPlatform.android},
     );
 

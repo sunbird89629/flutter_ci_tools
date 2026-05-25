@@ -1,5 +1,4 @@
 import 'package:flutter_ci_tools/src/actions/check_git_status_action.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/exceptions.dart';
 import 'package:flutter_ci_tools/src/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
@@ -16,14 +15,22 @@ class _FakeGitManager implements GitManager {
     if (!isClean) throw GitException('dirty', 1);
   }
 
-  @override Future<void> resetHard() async {}
-  @override Future<void> clean() async {}
-  @override Future<void> restoreWorkspace() async {}
-  @override Future<String> getShortHash() async => '';
-  @override Future<String> getRecentCommits({int count = 10}) async => '';
-  @override Future<String> getBranch() async => '';
-  @override Future<String> getCurrentUser() async => '';
-  @override Future<String> getLatestCommitBody() async => '';
+  @override
+  Future<void> resetHard() async {}
+  @override
+  Future<void> clean() async {}
+  @override
+  Future<void> restoreWorkspace() async {}
+  @override
+  Future<String> getShortHash() async => '';
+  @override
+  Future<String> getRecentCommits({int count = 10}) async => '';
+  @override
+  Future<String> getBranch() async => '';
+  @override
+  Future<String> getCurrentUser() async => '';
+  @override
+  Future<String> getLatestCommitBody() async => '';
 }
 
 void main() {
@@ -33,7 +40,8 @@ void main() {
   setUp(() {
     git = _FakeGitManager();
     context = PipelineContext(
-      config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
     );
   });

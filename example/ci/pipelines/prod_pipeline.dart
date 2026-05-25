@@ -4,7 +4,9 @@ import '../app_config.dart';
 import '../build_info_writer.dart';
 
 class ProdPipeline extends BuildPipeline {
-  ProdPipeline() : super(exampleConfig);
+  @override
+  PipelineContext createContext(Set<AppPlatform> platforms) =>
+      ExampleAppContext(platforms: platforms);
 
   @override
   String get name => 'prod';

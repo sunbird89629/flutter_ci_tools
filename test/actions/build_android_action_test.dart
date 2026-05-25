@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/build_android_action.dart';
 import 'package:flutter_ci_tools/src/builders/android_builder.dart';
-import 'package:flutter_ci_tools/src/config.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
@@ -17,7 +16,8 @@ class _FakeAndroidBuilder extends AndroidBuilder {
     required int buildNumber,
     required String envName,
   }) async {
-    calls.add('apk buildName=$buildName buildNumber=$buildNumber envName=$envName');
+    calls.add(
+        'apk buildName=$buildName buildNumber=$buildNumber envName=$envName');
     return File('build/app-release.apk');
   }
 
@@ -27,7 +27,8 @@ class _FakeAndroidBuilder extends AndroidBuilder {
     required int buildNumber,
     required String envName,
   }) async {
-    calls.add('aab buildName=$buildName buildNumber=$buildNumber envName=$envName');
+    calls.add(
+        'aab buildName=$buildName buildNumber=$buildNumber envName=$envName');
     return File('build/app-release.aab');
   }
 }
@@ -39,12 +40,14 @@ void main() {
   setUp(() {
     builder = _FakeAndroidBuilder();
     context = PipelineContext(
-      config: const CIToolsConfig(appName: 'TestApp', seedBuildNumber: 12000),
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
     )..buildNumber = 12001;
   });
 
-  test('BuildAndroidAction(apk) returns apk file and forwards build args', () async {
+  test('BuildAndroidAction(apk) returns apk file and forwards build args',
+      () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.apk,

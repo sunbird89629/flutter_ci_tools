@@ -2,16 +2,23 @@ import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../build_info_writer.dart';
 
-final buildConfig = CIToolsConfig(
-  appName: "testAppName",
-  seedBuildNumber: 10000,
-  pgyerApiKey: "1540c89d7f12ade530a14ac4adf9caa2",
-  feishuWebhookUrl:
-      "https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd",
-);
+/// Standalone context for the android_test pipeline — uses its own dev-only
+/// credentials separate from the main app config.
+class AndroidTestContext extends PipelineContext {
+  AndroidTestContext({required super.platforms})
+      : super(
+          appName: 'testAppName',
+          seedBuildNumber: 10000,
+          pgyerApiKey: '1540c89d7f12ade530a14ac4adf9caa2',
+          feishuWebhookUrl:
+              'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd',
+        );
+}
 
 class AndroidTestPipeline extends BuildPipeline {
-  AndroidTestPipeline() : super(buildConfig);
+  @override
+  PipelineContext createContext(Set<AppPlatform> platforms) =>
+      AndroidTestContext(platforms: platforms);
 
   @override
   String get name => 'android_test';
@@ -39,7 +46,7 @@ class AndroidTestPipeline extends BuildPipeline {
     ));
     final pgyerUrl = await runAction(PgyerUploadAction(
       artifact: apk,
-      apiKey: context.config.pgyerApiKey!,
+      apiKey: context.pgyerApiKey!,
     ));
     await runAction(FeishuBuildNotifyAction(
       platform: AppPlatform.android,

@@ -6,7 +6,9 @@ import '../app_config.dart';
 import '../build_info_writer.dart';
 
 class TestPipeline extends BuildPipeline {
-  TestPipeline() : super(exampleConfig);
+  @override
+  PipelineContext createContext(Set<AppPlatform> platforms) =>
+      ExampleAppContext(platforms: platforms);
 
   @override
   String get name => 'test';
@@ -60,7 +62,7 @@ Usage: dart run ci/build.dart test [android|ios]
   Future<void> _deployToPgyer(AppPlatform platform, File artifact) async {
     final pgyerUrl = await runAction(PgyerUploadAction(
       artifact: artifact,
-      apiKey: context.config.pgyerApiKey!,
+      apiKey: context.pgyerApiKey!,
       description: _pgyerDescription(),
     ));
     await runAction(FeishuBuildNotifyAction(
