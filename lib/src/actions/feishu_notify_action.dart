@@ -11,10 +11,12 @@ import 'pipeline_action.dart';
 /// For standard build notifications prefer [FeishuBuildNotifyAction].
 class FeishuNotifyAction extends PipelineAction<void> {
   FeishuNotifyAction({
+    required this.webhookUrl,
     required this.message,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
+  final String webhookUrl;
   final String message;
   final ShellRunner _shellRunner;
 
@@ -23,7 +25,6 @@ class FeishuNotifyAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final webhookUrl = context.feishuWebhookUrl!;
     Logger.info('Sending Feishu notification...');
     final jsonMessage = jsonEncode({
       'msg_type': 'text',
