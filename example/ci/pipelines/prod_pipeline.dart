@@ -47,6 +47,7 @@ Usage: dart run ci/build.dart prod [android|ios]
         jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
       ));
       await runAction(FeishuBuildNotifyAction(
+        webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
         platform: AppPlatform.android,
         target: DeployTarget.googlePlay,
       ));
@@ -64,6 +65,7 @@ Usage: dart run ci/build.dart prod [android|ios]
         apiKeyPath: ProdCredentials.appStoreApiKeyPath,
       ));
       await runAction(FeishuBuildNotifyAction(
+        webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
         platform: AppPlatform.ios,
         target: DeployTarget.appStore,
       ));

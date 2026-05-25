@@ -62,10 +62,11 @@ Usage: dart run ci/build.dart test [android|ios]
   Future<void> _deployToPgyer(AppPlatform platform, File artifact) async {
     final pgyerUrl = await runAction(PgyerUploadAction(
       artifact: artifact,
-      apiKey: context.pgyerApiKey!,
+      apiKey: (context as ExampleAppContext).pgyerApiKey,
       description: _pgyerDescription(),
     ));
     await runAction(FeishuBuildNotifyAction(
+      webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
       platform: platform,
       target: DeployTarget.pgyer,
       downloadUrl: pgyerUrl,
