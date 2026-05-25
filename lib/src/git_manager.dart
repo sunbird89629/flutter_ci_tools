@@ -95,7 +95,11 @@ class DefaultGitManager implements GitManager {
   @override
   Future<String> getRecentCommits({int count = 10}) async {
     final result = await _runGitCommand([
-      'log', '--oneline', '--no-merges', '-n', '$count',
+      'log',
+      '--oneline',
+      '--no-merges',
+      '-n',
+      '$count',
     ]);
     return result.stdout.toString().trim();
   }
@@ -109,7 +113,9 @@ class DefaultGitManager implements GitManager {
   @override
   Future<String> getCurrentUser() async {
     final userResult = await _shellRunner.runAndCapture('git', [
-      'config', '--get', 'user.name',
+      'config',
+      '--get',
+      'user.name',
     ]);
     final name = userResult.stdout.toString().trim();
     if (name.isNotEmpty) return name;

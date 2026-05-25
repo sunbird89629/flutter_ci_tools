@@ -39,7 +39,9 @@ class DefaultVersionManager implements VersionManager {
   Future<int?> fetchLatestBuildNumber() async {
     await _shellRunner.runAndCapture('git', ['fetch', '--tags', '--force']);
     final res = await _shellRunner.runAndCapture('git', [
-      'tag', '--list', '$_tagPrefix*',
+      'tag',
+      '--list',
+      '$_tagPrefix*',
     ]);
     final nums = res.stdout
         .toString()
@@ -69,7 +71,12 @@ class DefaultVersionManager implements VersionManager {
     final tag = '$_tagPrefix$buildNumber';
     Logger.info('Tagging $tag ...');
     await _shellRunner.run('git', [
-      'tag', '-a', '-f', tag, '-m', 'CI build $buildNumber',
+      'tag',
+      '-a',
+      '-f',
+      tag,
+      '-m',
+      'CI build $buildNumber',
     ]);
     await _shellRunner.run('git', ['push', '--force', 'origin', tag]);
     Logger.success('Pushed tag $tag');

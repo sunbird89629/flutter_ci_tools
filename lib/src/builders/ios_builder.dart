@@ -38,10 +38,8 @@ class IOSBuilder {
         'IPA build failed: Directory not found at ${ipaDir.path}',
       );
     }
-    final ipaList = ipaDir
-        .listSync()
-        .where((e) => e.path.endsWith('.ipa'))
-        .toList();
+    final ipaList =
+        ipaDir.listSync().where((e) => e.path.endsWith('.ipa')).toList();
     if (ipaList.isEmpty) {
       throw StateError(
         'IPA build failed: No .ipa file found in ${ipaDir.path}',

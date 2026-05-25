@@ -78,8 +78,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// response (even an error code) counts as reachable; network/timeout
   /// errors count as unreachable.
   static Future<bool> _defaultProbeDomain(String domain) async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 5);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
     try {
       final req = await client
           .getUrl(Uri.parse('https://$domain/apiv2/app/getCOSToken'))
@@ -99,10 +98,13 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     final buildType = artifact.path.split('.').last;
     final result = await _shellRunner.runAndCapture('curl', [
       '-s',
-      '--form-string', '_api_key=$apiKey',
-      '--form-string', 'buildType=$buildType',
+      '--form-string',
+      '_api_key=$apiKey',
+      '--form-string',
+      'buildType=$buildType',
       if (description != null) ...[
-        '--form-string', 'buildUpdateDescription=$description',
+        '--form-string',
+        'buildUpdateDescription=$description',
       ],
       '$apiBaseUrl/app/getCOSToken',
     ]);
@@ -146,15 +148,25 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     final size = artifact.lengthSync();
     Logger.info('Uploading $fileName ($size bytes) to COS...');
     final result = await _shellRunner.runAndCapture('curl', [
-      '-o', '/dev/null', '-w', '%{http_code}',
+      '-o',
+      '/dev/null',
+      '-w',
+      '%{http_code}',
       '-s',
-      '--connect-timeout', '30',
-      '--max-time', '1800',
-      '--form-string', 'key=${token.key}',
-      '--form-string', 'signature=${token.signature}',
-      '--form-string', 'x-cos-security-token=${token.securityToken}',
-      '--form-string', 'x-cos-meta-file-name=$fileName',
-      '-F', 'file=@${artifact.path}',
+      '--connect-timeout',
+      '30',
+      '--max-time',
+      '1800',
+      '--form-string',
+      'key=${token.key}',
+      '--form-string',
+      'signature=${token.signature}',
+      '--form-string',
+      'x-cos-security-token=${token.securityToken}',
+      '--form-string',
+      'x-cos-meta-file-name=$fileName',
+      '-F',
+      'file=@${artifact.path}',
       token.endpoint,
     ]);
     if (result.exitCode != 0) {
@@ -162,7 +174,8 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     }
     final httpCode = result.stdout.trim();
     if (httpCode != '204') {
-      throw DeployException('COS upload returned HTTP $httpCode (expected 204)');
+      throw DeployException(
+          'COS upload returned HTTP $httpCode (expected 204)');
     }
     Logger.success('Uploaded to COS.');
   }

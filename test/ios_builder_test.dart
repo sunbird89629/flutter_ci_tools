@@ -39,7 +39,8 @@ void main() {
 
       expect(
         shell.runCalls,
-        contains('fvm flutter build ipa --export-method=development --build-name=1.2.0 --build-number=12001 --dart-define=ENV=test'),
+        contains(
+            'fvm flutter build ipa --export-method=development --build-name=1.2.0 --build-number=12001 --dart-define=ENV=test'),
       );
     });
 

@@ -38,10 +38,13 @@ class PgyerUploadAction extends PipelineAction<String> {
       }
       result = await _shellRunner.runAndCapture('curl', [
         '--http1.1',
-        '-F', 'file=@$filePath',
-        '-F', '_api_key=$apiKey',
+        '-F',
+        'file=@$filePath',
+        '-F',
+        '_api_key=$apiKey',
         if (description != null) ...[
-          '-F', 'buildUpdateDescription=$description',
+          '-F',
+          'buildUpdateDescription=$description',
         ],
         'https://www.pgyer.com/apiv2/app/upload',
       ]);

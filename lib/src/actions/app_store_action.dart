@@ -49,9 +49,12 @@ class AppStoreUploadAction extends PipelineAction<void> {
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
       await _shellRunner.run('fastlane', [
-        'pilot', 'upload',
-        '--ipa', artifact.path,
-        '--api_key_path', apiKeyJsonFile.path,
+        'pilot',
+        'upload',
+        '--ipa',
+        artifact.path,
+        '--api_key_path',
+        apiKeyJsonFile.path,
         '--skip_waiting_for_build_processing',
       ]);
     } finally {

@@ -27,8 +27,7 @@ void main() {
       expect(result.stderr, isEmpty);
     });
 
-    test('runAndCapture returns non-zero exit code without throwing',
-        () async {
+    test('runAndCapture returns non-zero exit code without throwing', () async {
       final result = await shellRunner.runAndCapture('false', []);
       expect(result.exitCode, isNot(0));
     });

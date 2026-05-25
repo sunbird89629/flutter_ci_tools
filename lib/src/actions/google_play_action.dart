@@ -35,10 +35,14 @@ class GooglePlayUploadAction extends PipelineAction<void> {
     }
     await _shellRunner.run('fastlane', [
       'supply',
-      '--aab', artifact.path,
-      '--package_name', packageName,
-      '--json_key', jsonKeyPath,
-      '--track', 'internal',
+      '--aab',
+      artifact.path,
+      '--package_name',
+      packageName,
+      '--json_key',
+      jsonKeyPath,
+      '--track',
+      'internal',
       '--skip_upload_metadata',
       '--skip_upload_images',
       '--skip_upload_screenshots',
