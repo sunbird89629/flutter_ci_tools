@@ -17,11 +17,9 @@ void main() {
     });
 
     group('construction', () {
-      test('exposes flattened config fields', () {
+      test('exposes config fields', () {
         expect(ctx.appName, 'TestApp');
         expect(ctx.seedBuildNumber, 12000);
-        expect(ctx.pgyerApiKey, isNull);
-        expect(ctx.feishuWebhookUrl, isNull);
       });
 
       test('exposes platforms passed to constructor', () {
@@ -33,17 +31,6 @@ void main() {
         expect(context.platforms, {AppPlatform.android});
       });
 
-      test('accepts optional credentials', () {
-        final context = PipelineContext(
-          appName: 'A',
-          seedBuildNumber: 10000,
-          platforms: <AppPlatform>{},
-          pgyerApiKey: 'key',
-          feishuWebhookUrl: 'https://example.com/hook',
-        );
-        expect(context.pgyerApiKey, 'key');
-        expect(context.feishuWebhookUrl, 'https://example.com/hook');
-      });
     });
 
     group('buildNumber and buildName', () {
