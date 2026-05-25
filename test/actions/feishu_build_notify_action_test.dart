@@ -24,7 +24,6 @@ void main() {
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
-      feishuWebhookUrl: 'https://open.feishu.cn/hook',
       platforms: <AppPlatform>{},
     )
       ..buildNumber = 12042
@@ -37,6 +36,7 @@ void main() {
       );
 
     final action = FeishuBuildNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
       platform: AppPlatform.android,
       target: DeployTarget.pgyer,
       downloadUrl: 'https://example.com/dl',

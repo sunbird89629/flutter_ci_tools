@@ -19,18 +19,20 @@ enum DeployTarget {
 
 /// Sends the standard "new build" message to Feishu.
 ///
-/// Reads `context.feishuWebhookUrl`, `context.buildName`, `context.buildNumber`,
+/// Reads `context.buildName`, `context.buildNumber`,
 /// and `context.metadata` to format the message text. Requires
 /// `ResolveBuildVersionAction` and `CollectMetadataAction` earlier in the
 /// pipeline body.
 class FeishuBuildNotifyAction extends PipelineAction<void> {
   FeishuBuildNotifyAction({
+    required this.webhookUrl,
     required this.platform,
     required this.target,
     this.downloadUrl,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
+  final String webhookUrl;
   final AppPlatform platform;
   final DeployTarget target;
   final String? downloadUrl;
@@ -42,8 +44,11 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final message = _formatMessage(context);
-    await FeishuNotifyAction(message: message, shellRunner: _shellRunner)
-        .run(context);
+    await FeishuNotifyAction(
+      webhookUrl: webhookUrl,
+      message: message,
+      shellRunner: _shellRunner,
+    ).run(context);
   }
 
   String _formatMessage(PipelineContext context) {
