@@ -26,7 +26,7 @@ void main() {
       seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
     )
-      ..buildNumber = 12042
+      ..resolveBuildVersion(12042)
       ..metadata = BuildMetadata(
         branch: 'main',
         gitUser: 'Alice',
