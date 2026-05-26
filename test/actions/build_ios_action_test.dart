@@ -24,7 +24,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
-    )..buildNumber = 12001;
+    )..resolveBuildVersion(12001);
   });
 
   test(
