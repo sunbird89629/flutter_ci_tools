@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'build_metadata.dart';
-import 'pipeline.dart' show AppPlatform;
 
 /// State of the build version number.
 sealed class BuildVersion {}
@@ -17,7 +16,7 @@ class BuildVersionResolved extends BuildVersion {
 
 /// Shared, mutable context passed through all pipeline steps.
 ///
-/// Holds both static configuration (app identity, platforms) provided at
+/// Holds both static configuration (app identity) provided at
 /// construction time and runtime state (metadata, build number, build artifact)
 /// populated by lifecycle actions during a single pipeline run.
 ///
@@ -26,7 +25,6 @@ class PipelineContext {
   PipelineContext({
     required this.appName,
     required this.seedBuildNumber,
-    required this.platforms,
   });
 
   /// Display name of the application (used in notifications).
@@ -34,9 +32,6 @@ class PipelineContext {
 
   /// Starting build number used when no existing `builds/*` tag is found.
   final int seedBuildNumber;
-
-  /// Platforms this pipeline run targets.
-  final Set<AppPlatform> platforms;
 
   /// Git and build metadata, populated by `CollectMetadataAction`.
   late BuildMetadata metadata;
