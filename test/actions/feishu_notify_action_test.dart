@@ -1,5 +1,4 @@
 import 'package:flutter_ci_tools/src/actions/feishu_notify_action.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
@@ -26,7 +25,6 @@ void main() {
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 1000,
-      platforms: {AppPlatform.android},
     );
 
     final action = FeishuNotifyAction(

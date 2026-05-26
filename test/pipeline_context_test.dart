@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/build_metadata.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
@@ -13,7 +12,6 @@ void main() {
       ctx = PipelineContext(
         appName: 'TestApp',
         seedBuildNumber: 12000,
-        platforms: <AppPlatform>{},
       );
     });
 
@@ -21,15 +19,6 @@ void main() {
       test('exposes config fields', () {
         expect(ctx.appName, 'TestApp');
         expect(ctx.seedBuildNumber, 12000);
-      });
-
-      test('exposes platforms passed to constructor', () {
-        final context = PipelineContext(
-          appName: 'A',
-          seedBuildNumber: 10000,
-          platforms: {AppPlatform.android},
-        );
-        expect(context.platforms, {AppPlatform.android});
       });
     });
 

@@ -9,7 +9,7 @@ class _StubPipeline extends BuildPipeline {
   final String _name;
   final String _description;
   final String _help;
-  Set<AppPlatform>? receivedPlatforms;
+  bool wasRun = false;
 
   @override
   String get name => _name;
@@ -19,15 +19,14 @@ class _StubPipeline extends BuildPipeline {
   String get help => _help;
 
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) => PipelineContext(
+  PipelineContext createContext() => PipelineContext(
         appName: 'TestApp',
         seedBuildNumber: 10000,
-        platforms: platforms,
       );
 
   @override
   Future<void> body() async {
-    receivedPlatforms = context.platforms;
+    wasRun = true;
   }
 }
 
@@ -58,41 +57,13 @@ void main() {
       );
     });
 
-    test('run dispatches with all platforms when no platform arg', () async {
+    test('run dispatches to pipeline', () async {
       final registry = PipelineRegistry();
       final pipeline = createPipeline('test');
       registry.register(pipeline);
 
       await registry.run(['test']);
-      expect(pipeline.receivedPlatforms, AppPlatform.values.toSet());
-    });
-
-    test('run dispatches with android-only set for "android" arg', () async {
-      final registry = PipelineRegistry();
-      final pipeline = createPipeline('test');
-      registry.register(pipeline);
-
-      await registry.run(['test', 'android']);
-      expect(pipeline.receivedPlatforms, {AppPlatform.android});
-    });
-
-    test('run dispatches with ios-only set for "ios" arg', () async {
-      final registry = PipelineRegistry();
-      final pipeline = createPipeline('test');
-      registry.register(pipeline);
-
-      await registry.run(['test', 'ios']);
-      expect(pipeline.receivedPlatforms, {AppPlatform.ios});
-    });
-
-    test('run exits 64 and prints "Unknown platform" for invalid platform arg',
-        () async {
-      final registry = PipelineRegistry();
-      registry.register(createPipeline('test'));
-
-      var exitCode = -1;
-      await registry.run(['test', 'web'], onExit: (code) => exitCode = code);
-      expect(exitCode, 64);
+      expect(pipeline.wasRun, isTrue);
     });
 
     test('pipelines getter returns registered pipelines in order', () {
@@ -106,14 +77,13 @@ void main() {
       expect(registry.pipelines, [p1, p2]);
     });
 
-    test('run interactive selects pipeline by number with all platforms',
-        () async {
+    test('run interactive selects pipeline by number', () async {
       final registry = PipelineRegistry();
       final pipeline = createPipeline('test');
       registry.register(pipeline);
 
       await registry.run([], readLine: () => '1');
-      expect(pipeline.receivedPlatforms, AppPlatform.values.toSet());
+      expect(pipeline.wasRun, isTrue);
     });
 
     test('run interactive exits on 0', () async {
@@ -137,7 +107,7 @@ void main() {
         if (callCount == 1) return 'invalid';
         return '1';
       });
-      expect(pipeline.receivedPlatforms, isNotNull);
+      expect(pipeline.wasRun, isTrue);
       expect(callCount, 2);
     });
 
@@ -152,7 +122,7 @@ void main() {
         if (callCount == 1) return '99';
         return '1';
       });
-      expect(pipeline.receivedPlatforms, isNotNull);
+      expect(pipeline.wasRun, isTrue);
       expect(callCount, 2);
     });
   });

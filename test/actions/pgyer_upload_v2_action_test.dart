@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_v2_action.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
@@ -57,7 +56,6 @@ void main() {
   PipelineContext ctx() => PipelineContext(
         appName: 'TestApp',
         seedBuildNumber: 1000,
-        platforms: {AppPlatform.android},
       );
 
   group('PgyerUploadV2Action', () {
