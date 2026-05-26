@@ -5,11 +5,13 @@ import '../utils/default_shell_runner.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
-/// Builds an iOS IPA and returns the output file.
+/// Builds an iOS IPA and stores it in context.
 ///
 /// Reads `context.buildName` and `context.buildNumber` — requires
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
-class BuildIOSAction extends PipelineAction<File> {
+///
+/// After completion, the output file is available via `context.buildArtifact`.
+class BuildIOSAction extends PipelineAction<void> {
   BuildIOSAction({
     required this.envName,
     required this.exportMethod,
@@ -24,7 +26,7 @@ class BuildIOSAction extends PipelineAction<File> {
   String get name => 'Build iOS';
 
   @override
-  Future<File> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     await _shellRunner.run('fvm', [
       'flutter',
       'build',
@@ -34,7 +36,7 @@ class BuildIOSAction extends PipelineAction<File> {
       '--build-number=${context.buildNumber}',
       '--dart-define=ENV=$envName',
     ]);
-    return _findIpa();
+    context.setBuildArtifact(_findIpa());
   }
 
   File _findIpa() {
