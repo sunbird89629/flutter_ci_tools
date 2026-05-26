@@ -4,6 +4,13 @@ Reusable CI tooling for Flutter apps. Provides a pipeline/action architecture
 for build orchestration, git-tag-based versioning, deploy services (Pgyer,
 Feishu, Google Play, App Store), and structured terminal logging.
 
+## Design Philosophy
+
+- **Minimal concepts.** Three building blocks: Pipeline, Action, Context. Nothing else to learn.
+- **Code is the config.** No YAML, no DSL. Compose pipelines in Dart and the type checker is your linter.
+- **Batteries included.** Built-in actions cover the common path — clean, version, build, upload, notify.
+- **Zero ceiling.** Every interface is open. Subclass, replace, or write your own action without forking.
+
 ## Quick Start
 
 ### 1. Entry point — `ci/build.dart`
