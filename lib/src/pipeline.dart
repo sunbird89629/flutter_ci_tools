@@ -7,6 +7,7 @@ enum AppPlatform {
   android('Android'),
   ios('iOS');
 
+  /// Human-readable platform name (e.g. `"Android"`, `"iOS"`).
   final String label;
   const AppPlatform(this.label);
 }

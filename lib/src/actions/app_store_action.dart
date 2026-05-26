@@ -12,6 +12,12 @@ import 'pipeline_action.dart';
 ///
 /// Reads the IPA path from [PipelineContext.buildArtifact].
 class AppStoreUploadAction extends PipelineAction<void> {
+  /// Creates an App Store upload action.
+  ///
+  /// [issuerId] is the App Store Connect API issuer ID.
+  /// [apiKeyId] is the App Store Connect API key ID.
+  /// [apiKeyPath] is the filesystem path to the `.p8` private key file.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   AppStoreUploadAction({
     required this.issuerId,
     required this.apiKeyId,
@@ -19,8 +25,13 @@ class AppStoreUploadAction extends PipelineAction<void> {
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// App Store Connect API issuer ID.
   final String issuerId;
+
+  /// App Store Connect API key ID.
   final String apiKeyId;
+
+  /// Filesystem path to the `.p8` private key file.
   final String apiKeyPath;
   final ShellRunner _shellRunner;
 

@@ -11,13 +11,21 @@ import 'pipeline_action.dart';
 ///
 /// Reads the build artifact from [PipelineContext.buildArtifact].
 class GooglePlayUploadAction extends PipelineAction<void> {
+  /// Creates a Google Play upload action.
+  ///
+  /// [packageName] is the Android application ID (e.g. `"com.example.app"`).
+  /// [jsonKeyPath] is the filesystem path to the Google Play service account JSON key.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   GooglePlayUploadAction({
     required this.packageName,
     required this.jsonKeyPath,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// Android application ID (e.g. `"com.example.app"`).
   final String packageName;
+
+  /// Filesystem path to the Google Play service account JSON key file.
   final String jsonKeyPath;
   final ShellRunner _shellRunner;
 

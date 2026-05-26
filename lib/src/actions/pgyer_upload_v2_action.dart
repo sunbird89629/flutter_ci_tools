@@ -25,6 +25,13 @@ import 'pipeline_action.dart';
 ///
 /// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
 class PgyerUploadV2Action extends PipelineAction<String> {
+  /// Creates a Pgyer V2 upload action.
+  ///
+  /// [apiKey] is the Pgyer API key for authentication.
+  /// [description] is an optional build description shown on Pgyer.
+  /// [apiDomains] overrides the default list of API hosts to probe.
+  /// [probeDomain] overrides the default domain reachability check for testing.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadV2Action({
     required this.apiKey,
     this.description,
@@ -35,7 +42,10 @@ class PgyerUploadV2Action extends PipelineAction<String> {
         _probeDomain = probeDomain ?? _defaultProbeDomain,
         _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// Pgyer API key for authentication.
   final String apiKey;
+
+  /// Optional build description shown on the Pgyer download page.
   final String? description;
 
   /// Ordered list of API hosts to probe. First reachable one is used.

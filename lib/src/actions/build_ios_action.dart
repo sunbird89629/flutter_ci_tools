@@ -12,13 +12,21 @@ import 'pipeline_action.dart';
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
 class BuildIOSAction extends PipelineAction<void> {
+  /// Creates an iOS build action.
+  ///
+  /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).
+  /// [exportMethod] is the Xcode export method (e.g. `"ad-hoc"`, `"app-store"`).
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   BuildIOSAction({
     required this.envName,
     required this.exportMethod,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// The `--dart-define=ENV` value passed to the Flutter build.
   final String envName;
+
+  /// Xcode export method (e.g. `"ad-hoc"`, `"app-store"`, `"development"`).
   final String exportMethod;
   final ShellRunner _shellRunner;
 

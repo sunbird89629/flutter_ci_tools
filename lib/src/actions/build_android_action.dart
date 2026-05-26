@@ -7,7 +7,7 @@ import 'pipeline_action.dart';
 
 /// Android build output format.
 enum AndroidBuildType {
-  /// Standard APK package.
+    /// Standard APK package.
   apk,
 
   /// Android App Bundle for Play Store upload.
@@ -21,13 +21,21 @@ enum AndroidBuildType {
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
 class BuildAndroidAction extends PipelineAction<void> {
+  /// Creates an Android build action.
+  ///
+  /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).
+  /// [buildType] selects APK or AAB output.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   BuildAndroidAction({
     required this.envName,
     required this.buildType,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// The `--dart-define=ENV` value passed to the Flutter build.
   final String envName;
+
+  /// Whether to build an APK or an AAB.
   final AndroidBuildType buildType;
   final ShellRunner _shellRunner;
 
