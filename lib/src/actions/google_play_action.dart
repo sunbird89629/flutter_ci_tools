@@ -8,15 +8,15 @@ import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Uploads an AAB file to Google Play via Fastlane Supply.
+///
+/// Reads the build artifact from [PipelineContext.buildArtifact].
 class GooglePlayUploadAction extends PipelineAction<void> {
   GooglePlayUploadAction({
-    required this.artifact,
     required this.packageName,
     required this.jsonKeyPath,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
-  final File artifact;
   final String packageName;
   final String jsonKeyPath;
   final ShellRunner _shellRunner;
@@ -26,6 +26,7 @@ class GooglePlayUploadAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
+    final artifact = context.buildArtifact;
     Logger.info('AAB: ${artifact.path}');
     Logger.info('Package: $packageName');
     if (!File(jsonKeyPath).existsSync()) {
