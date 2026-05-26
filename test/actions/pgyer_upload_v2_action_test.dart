@@ -63,7 +63,6 @@ void main() {
   group('PgyerUploadV2Action', () {
     test('name is correct', () {
       final action = PgyerUploadV2Action(
-        artifact: File('test.apk'),
         apiKey: 'k',
       );
       expect(action.name, 'Upload to Pgyer (V2)');
@@ -95,13 +94,13 @@ void main() {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
+        final context = ctx()..setBuildArtifact(apk);
         final action = PgyerUploadV2Action(
-          artifact: apk,
           apiKey: 'k',
           probeDomain: (d) async => d == 'api.pgyer.com',
           shellRunner: shell,
         );
-        final url = await action.run(ctx());
+        final url = await action.run(context);
         expect(url, 'https://pgyer.com/abcd');
       } finally {
         tmp.deleteSync(recursive: true);
@@ -109,13 +108,13 @@ void main() {
     });
 
     test('throws when all probe domains fail', () async {
+      final context = ctx()..setBuildArtifact(File('test.apk'));
       final action = PgyerUploadV2Action(
-        artifact: File('test.apk'),
         apiKey: 'k',
         probeDomain: (_) async => false,
         shellRunner: _ScriptedShellRunner(),
       );
-      await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
+      await expectLater(action.run(context), throwsA(isA<DeployException>()));
     });
 
     test('throws when getCOSToken returns non-zero code', () async {
@@ -128,13 +127,13 @@ void main() {
                   stderr: '',
                 ));
 
+      final context = ctx()..setBuildArtifact(File('test.apk'));
       final action = PgyerUploadV2Action(
-        artifact: File('test.apk'),
         apiKey: 'k',
         probeDomain: (_) async => true,
         shellRunner: shell,
       );
-      await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
+      await expectLater(action.run(context), throwsA(isA<DeployException>()));
     });
 
     test('throws when COS upload returns non-204', () async {
@@ -154,13 +153,13 @@ void main() {
           ..on('bucket.cos.x.com',
               () => ShellResult(exitCode: 0, stdout: '500', stderr: ''));
 
+        final context = ctx()..setBuildArtifact(apk);
         final action = PgyerUploadV2Action(
-          artifact: apk,
           apiKey: 'k',
           probeDomain: (_) async => true,
           shellRunner: shell,
         );
-        await expectLater(action.run(ctx()), throwsA(isA<DeployException>()));
+        await expectLater(action.run(context), throwsA(isA<DeployException>()));
       } finally {
         tmp.deleteSync(recursive: true);
       }
@@ -191,13 +190,13 @@ void main() {
                     stderr: '',
                   ));
 
+        final context = ctx()..setBuildArtifact(apk);
         final action = PgyerUploadV2Action(
-          artifact: apk,
           apiKey: 'k',
           probeDomain: stub.probe,
           shellRunner: shell,
         );
-        final url = await action.run(ctx());
+        final url = await action.run(context);
         expect(url, 'https://xcxwo.com/x');
         // First domain probed and rejected, second probed and accepted.
         expect(stub.probed, ['api.pgyer.com', 'api.xcxwo.com']);

@@ -20,10 +20,12 @@ import 'pipeline_action.dart';
 /// 4. Polls `buildInfo` until processing completes and returns the build's
 ///    public download URL.
 ///
+/// The artifact file is read from [PipelineContext.buildArtifact], which
+/// must be set by a preceding build action (e.g. [BuildAndroidAction]).
+///
 /// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
 class PgyerUploadV2Action extends PipelineAction<String> {
   PgyerUploadV2Action({
-    required this.artifact,
     required this.apiKey,
     this.description,
     List<String>? apiDomains,
@@ -33,7 +35,6 @@ class PgyerUploadV2Action extends PipelineAction<String> {
         _probeDomain = probeDomain ?? _defaultProbeDomain,
         _shellRunner = shellRunner ?? DefaultShellRunner();
 
-  final File artifact;
   final String apiKey;
   final String? description;
 
@@ -48,12 +49,13 @@ class PgyerUploadV2Action extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
+    final artifact = context.buildArtifact;
     final domain = await _selectReachableDomain();
     final apiBaseUrl = 'http://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
 
-    final token = await _getCOSToken(apiBaseUrl);
-    await _uploadToCOS(token);
+    final token = await _getCOSToken(apiBaseUrl, artifact);
+    await _uploadToCOS(token, artifact);
     final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key);
     final downloadUrl = 'https://$webDomain/$shortcutUrl';
     Logger.success('Pgyer build ready: $downloadUrl');
@@ -93,7 +95,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     }
   }
 
-  Future<_CosToken> _getCOSToken(String apiBaseUrl) async {
+  Future<_CosToken> _getCOSToken(String apiBaseUrl, File artifact) async {
     Logger.info('Requesting COS upload token...');
     final buildType = artifact.path.split('.').last;
     final result = await _shellRunner.runAndCapture('curl', [
@@ -143,7 +145,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     );
   }
 
-  Future<void> _uploadToCOS(_CosToken token) async {
+  Future<void> _uploadToCOS(_CosToken token, File artifact) async {
     final fileName = artifact.path.split('/').last;
     final size = artifact.lengthSync();
     Logger.info('Uploading $fileName ($size bytes) to COS...');
