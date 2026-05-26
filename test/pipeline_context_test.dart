@@ -1,4 +1,5 @@
-// test/pipeline_context_test.dart
+import 'dart:io';
+
 import 'package:flutter_ci_tools/src/build_metadata.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -30,23 +31,53 @@ void main() {
         );
         expect(context.platforms, {AppPlatform.android});
       });
-
     });
 
-    group('buildNumber and buildName', () {
+    group('buildNumber (sealed)', () {
+      test('throws StateError when accessed before resolution', () {
+        expect(
+          () => ctx.buildNumber,
+          throwsA(isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('buildNumber'),
+          )),
+        );
+      });
+
+      test('returns value after resolveBuildVersion', () {
+        ctx.resolveBuildVersion(12001);
+        expect(ctx.buildNumber, 12001);
+      });
+
       test('buildName formats buildNumber correctly', () {
-        ctx.buildNumber = 12001;
+        ctx.resolveBuildVersion(12001);
         expect(ctx.buildName, '1.2.0');
       });
 
       test('buildName handles zeros', () {
-        ctx.buildNumber = 10000;
+        ctx.resolveBuildVersion(10000);
         expect(ctx.buildName, '1.0.0');
       });
 
       test('buildName handles triple digits', () {
-        ctx.buildNumber = 12345;
+        ctx.resolveBuildVersion(12345);
         expect(ctx.buildName, '1.2.3');
+      });
+    });
+
+    group('buildArtifact', () {
+      test('throws StateError when accessed before being set', () {
+        expect(
+          () => ctx.buildArtifact,
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('returns file after setBuildArtifact', () {
+        final file = File('test.apk');
+        ctx.setBuildArtifact(file);
+        expect(ctx.buildArtifact, file);
       });
     });
 
