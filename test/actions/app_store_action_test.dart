@@ -20,15 +20,18 @@ class _FakeShellRunner implements ShellRunner {
 }
 
 void main() {
-  PipelineContext ctx() => PipelineContext(
-        appName: 'TestApp',
-        seedBuildNumber: 1000,
-        platforms: {AppPlatform.ios},
-      );
+  PipelineContext ctx() {
+    final c = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 1000,
+      platforms: {AppPlatform.ios},
+    );
+    c.setBuildArtifact(File('build/ios/ipa/app.ipa'));
+    return c;
+  }
 
   test('name is correct', () {
     final action = AppStoreUploadAction(
-      artifact: File('build/ios/ipa/app.ipa'),
       issuerId: 'issuer',
       apiKeyId: 'key-id',
       apiKeyPath: '/some/AuthKey.p8',
@@ -38,7 +41,6 @@ void main() {
 
   test('throws when api key file does not exist', () async {
     final action = AppStoreUploadAction(
-      artifact: File('build/ios/ipa/app.ipa'),
       issuerId: 'issuer',
       apiKeyId: 'key-id',
       apiKeyPath: '/nonexistent/path/AuthKey.p8',
@@ -55,7 +57,6 @@ void main() {
 
     final shell = _FakeShellRunner();
     final action = AppStoreUploadAction(
-      artifact: File('build/ios/ipa/app.ipa'),
       issuerId: 'iss',
       apiKeyId: 'kid',
       apiKeyPath: p8.path,
