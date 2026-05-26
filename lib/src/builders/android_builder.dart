@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/default_shell_runner.dart';
 
-import '../shell_runner.dart';
+import '../utils/shell_runner.dart';
 
 /// Builds Android APK or App Bundle artifacts using `fvm flutter build`.
 class AndroidBuilder {

@@ -1,4 +1,4 @@
-import 'package:flutter_ci_tools/src/default_shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/default_shell_runner.dart';
 import 'package:test/test.dart';
 
 void main() {

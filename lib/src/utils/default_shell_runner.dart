@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:flutter_ci_tools/src/logger.dart';
-import 'package:flutter_ci_tools/src/shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
+import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 
 /// Default [ShellRunner] that executes real processes via [Process.start] / [Process.run].
 ///

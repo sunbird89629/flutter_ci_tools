@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import '../default_shell_runner.dart';
-import '../logger.dart';
+import '../utils/default_shell_runner.dart';
+import '../utils/logger.dart';
 import '../pipeline_context.dart';
-import '../shell_runner.dart';
+import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Sends an arbitrary text message to a Feishu (Lark) webhook.

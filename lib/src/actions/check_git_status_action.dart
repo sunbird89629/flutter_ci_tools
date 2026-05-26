@@ -1,4 +1,4 @@
-import '../git_manager.dart';
+import '../utils/git_manager.dart';
 import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter_ci_tools/src/actions/push_build_tag_action.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
-import 'package:flutter_ci_tools/src/version_manager.dart';
+import 'package:flutter_ci_tools/src/utils/version_manager.dart';
 import 'package:test/test.dart';
 
 class _FakeVersionManager implements VersionManager {

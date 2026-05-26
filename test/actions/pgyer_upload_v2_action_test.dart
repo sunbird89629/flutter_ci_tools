@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_v2_action.dart';
-import 'package:flutter_ci_tools/src/exceptions.dart';
+import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
-import 'package:flutter_ci_tools/src/shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 /// Fake that lets each test register handlers keyed by a substring match

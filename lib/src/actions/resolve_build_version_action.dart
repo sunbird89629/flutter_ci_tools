@@ -1,6 +1,6 @@
-import '../logger.dart';
+import '../utils/logger.dart';
 import '../pipeline_context.dart';
-import '../version_manager.dart';
+import '../utils/version_manager.dart';
 import 'pipeline_action.dart';
 
 /// Computes the next build number via [VersionManager] and writes it to
