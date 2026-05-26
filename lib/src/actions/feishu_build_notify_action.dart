@@ -1,5 +1,4 @@
 import '../utils/shell_runner_impl.dart';
-import '../pipeline.dart' show AppPlatform;
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'feishu_notify_action.dart';
@@ -33,13 +32,11 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Creates a Feishu build notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.
-  /// [platform] is the target platform (Android/iOS).
   /// [target] is the deploy destination (Pgyer, Google Play, etc.).
   /// [downloadUrl] is an optional direct download link included in the message.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuBuildNotifyAction({
     required this.webhookUrl,
-    required this.platform,
     required this.target,
     this.downloadUrl,
     ShellRunner? shellRunner,
@@ -47,9 +44,6 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
 
   /// Feishu bot webhook URL.
   final String webhookUrl;
-
-  /// Target platform (Android or iOS).
-  final AppPlatform platform;
 
   /// Deploy destination label (Pgyer, Google Play, or App Store).
   final DeployTarget target;
@@ -75,7 +69,7 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     const sep = '──────────────────────────';
     final m = context.metadata;
     final lines = <String>[
-      '🚀 ${context.appName} 新版本 ${context.buildNumber} (${platform.label} · ${target.label})',
+      '🚀 ${context.appName} 新版本 ${context.buildNumber} (${target.label})',
       'branch: ${m.branch}  by: ${m.gitUser}',
       sep,
       'versionName: ${context.buildName}',

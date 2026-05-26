@@ -52,7 +52,6 @@ class AndroidTestPipeline extends BuildPipeline {
     ));
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: ctx.feishuWebhookUrl,
-      platform: AppPlatform.android,
       target: DeployTarget.pgyer,
       downloadUrl: pgyerUrl,
     ));
