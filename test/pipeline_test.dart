@@ -33,10 +33,9 @@ class _TestPipeline extends BuildPipeline {
   String get help => 'help';
 
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) => PipelineContext(
+  PipelineContext createContext() => PipelineContext(
         appName: 'A',
         seedBuildNumber: 10000,
-        platforms: platforms,
       );
 
   @override
@@ -60,9 +59,8 @@ void main() {
     test('runs beforeBuild → body → afterBuild in order', () async {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log);
-      await pipeline.run({AppPlatform.android});
+      await pipeline.run();
       expect(log, ['before', 'body-start', 'action-a', 'after']);
-      expect(pipeline.context.platforms, {AppPlatform.android});
     });
 
     test('runs afterBuild even when body throws, and rethrows the body error',
@@ -70,7 +68,7 @@ void main() {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log, bodyThrows: true);
       await expectLater(
-        pipeline.run({AppPlatform.android, AppPlatform.ios}),
+        pipeline.run(),
         throwsA(isA<StateError>()),
       );
       expect(log, ['before', 'body-start', 'after']);
@@ -81,7 +79,7 @@ void main() {
         () async {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log, afterThrows: true);
-      await pipeline.run({AppPlatform.android}); // should NOT throw
+      await pipeline.run(); // should NOT throw
       expect(log, containsAll(['before', 'body-start', 'action-a', 'after']));
     });
   });

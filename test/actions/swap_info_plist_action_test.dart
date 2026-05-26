@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/swap_info_plist_action.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
@@ -26,7 +25,6 @@ void main() {
       await action.run(PipelineContext(
         appName: 'TestApp',
         seedBuildNumber: 12000,
-        platforms: <AppPlatform>{},
       ));
 
       expect(action.name, 'Swap Info.plist for Product Variant');
