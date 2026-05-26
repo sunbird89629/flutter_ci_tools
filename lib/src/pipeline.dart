@@ -1,4 +1,4 @@
-import 'logger.dart';
+import 'utils/logger.dart';
 import 'pipeline_context.dart';
 import 'actions/pipeline_action.dart';
 

@@ -1,5 +1,5 @@
 import '../pipeline_context.dart';
-import '../version_manager.dart';
+import '../utils/version_manager.dart';
 import 'pipeline_action.dart';
 
 /// Creates and force-pushes a `builds/<buildNumber>` tag for this build.

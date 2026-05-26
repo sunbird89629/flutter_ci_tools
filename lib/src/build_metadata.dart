@@ -1,4 +1,4 @@
-import 'git_manager.dart';
+import 'utils/git_manager.dart';
 
 /// Snapshot of Git and build context collected at the start of a pipeline run.
 class BuildMetadata {

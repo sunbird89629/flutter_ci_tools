@@ -1,6 +1,6 @@
-import '../default_shell_runner.dart';
+import '../utils/default_shell_runner.dart';
 import '../pipeline_context.dart';
-import '../shell_runner.dart';
+import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Runs `fvm flutter clean` followed by `fvm flutter pub get`.

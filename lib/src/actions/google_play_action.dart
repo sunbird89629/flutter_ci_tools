@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import '../default_shell_runner.dart';
-import '../exceptions.dart';
-import '../logger.dart';
+import '../utils/default_shell_runner.dart';
+import '../utils/exceptions.dart';
+import '../utils/logger.dart';
 import '../pipeline_context.dart';
-import '../shell_runner.dart';
+import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Uploads an AAB file to Google Play via Fastlane Supply.
