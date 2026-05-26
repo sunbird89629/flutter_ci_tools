@@ -9,16 +9,16 @@ import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Uploads an IPA file to App Store Connect via Fastlane Pilot.
+///
+/// Reads the IPA path from [PipelineContext.buildArtifact].
 class AppStoreUploadAction extends PipelineAction<void> {
   AppStoreUploadAction({
-    required this.artifact,
     required this.issuerId,
     required this.apiKeyId,
     required this.apiKeyPath,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
-  final File artifact;
   final String issuerId;
   final String apiKeyId;
   final String apiKeyPath;
@@ -29,6 +29,7 @@ class AppStoreUploadAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
+    final artifact = context.buildArtifact;
     Logger.info('IPA: ${artifact.path}');
     Logger.info('API Key: $apiKeyId');
     if (!File(apiKeyPath).existsSync()) {

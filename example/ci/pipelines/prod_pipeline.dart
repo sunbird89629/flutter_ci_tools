@@ -53,12 +53,11 @@ Usage: dart run ci/build.dart prod [android|ios]
     }
 
     if (context.platforms.contains(AppPlatform.ios)) {
-      final ipa = await runAction(BuildIOSAction(
+      await runAction(BuildIOSAction(
         envName: 'prod',
         exportMethod: 'app-store',
       ));
       await runAction(AppStoreUploadAction(
-        artifact: ipa,
         issuerId: ProdCredentials.appStoreIssuerId,
         apiKeyId: ProdCredentials.appStoreApiKeyId,
         apiKeyPath: ProdCredentials.appStoreApiKeyPath,
