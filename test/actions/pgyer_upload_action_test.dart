@@ -32,11 +32,15 @@ class _FakeShellRunner implements ShellRunner {
 }
 
 void main() {
-  PipelineContext ctx() => PipelineContext(
-        appName: 'TestApp',
-        seedBuildNumber: 1000,
-        platforms: {AppPlatform.android},
-      );
+  PipelineContext ctx() {
+    final c = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 1000,
+      platforms: {AppPlatform.android},
+    );
+    c.setBuildArtifact(File('test.apk'));
+    return c;
+  }
 
   test('returns download URL on success', () async {
     final shell = _FakeShellRunner()
@@ -46,7 +50,6 @@ void main() {
         stderr: '',
       ));
     final action = PgyerUploadAction(
-      artifact: File('test.apk'),
       apiKey: 'test_api_key',
       shellRunner: shell,
     );
@@ -76,7 +79,6 @@ void main() {
         ),
       );
     final action = PgyerUploadAction(
-      artifact: File('test.apk'),
       apiKey: 'k',
       description: 'notes',
       shellRunner: shell,
@@ -93,7 +95,6 @@ void main() {
         stderr: '',
       ));
     final action = PgyerUploadAction(
-      artifact: File('test.apk'),
       apiKey: 'k',
       shellRunner: shell,
     );
@@ -108,7 +109,6 @@ void main() {
         stderr: '',
       ));
     final action = PgyerUploadAction(
-      artifact: File('test.apk'),
       apiKey: 'k',
       shellRunner: shell,
     );
@@ -117,7 +117,6 @@ void main() {
 
   test('name is correct', () {
     final action = PgyerUploadAction(
-      artifact: File('test.apk'),
       apiKey: 'k',
     );
     expect(action.name, 'Upload to Pgyer');

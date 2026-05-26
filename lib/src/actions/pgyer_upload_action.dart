@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import '../utils/default_shell_runner.dart';
 import '../utils/exceptions.dart';
@@ -8,16 +7,15 @@ import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
-/// Uploads a build artifact to Pgyer and returns the download URL.
+/// Uploads the build artifact from [PipelineContext.buildArtifact] to Pgyer
+/// and returns the download URL.
 class PgyerUploadAction extends PipelineAction<String> {
   PgyerUploadAction({
-    required this.artifact,
     required this.apiKey,
     this.description,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
-  final File artifact;
   final String apiKey;
   final String? description;
   final ShellRunner _shellRunner;
@@ -27,7 +25,7 @@ class PgyerUploadAction extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
-    final filePath = artifact.path;
+    final filePath = context.buildArtifact.path;
     Logger.info('Uploading $filePath ...');
     const maxAttempts = 3;
     ShellResult? result;
