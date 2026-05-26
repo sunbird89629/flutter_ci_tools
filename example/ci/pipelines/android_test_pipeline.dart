@@ -43,12 +43,11 @@ class AndroidTestPipeline extends BuildPipeline {
       metadata: context.metadata,
     );
 
-    final apk = await runAction(BuildAndroidAction(
+    await runAction(BuildAndroidAction(
       envName: 'test',
       buildType: AndroidBuildType.apk,
     ));
     final pgyerUrl = await runAction(PgyerUploadAction(
-      artifact: apk,
       apiKey: ctx.pgyerApiKey,
     ));
     await runAction(FeishuBuildNotifyAction(
