@@ -10,13 +10,21 @@ import 'pipeline_action.dart';
 /// Uploads the build artifact from [PipelineContext.buildArtifact] to Pgyer
 /// and returns the download URL.
 class PgyerUploadAction extends PipelineAction<String> {
+  /// Creates a Pgyer upload action.
+  ///
+  /// [apiKey] is the Pgyer API key for authentication.
+  /// [description] is an optional build description shown on Pgyer.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadAction({
     required this.apiKey,
     this.description,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// Pgyer API key for authentication.
   final String apiKey;
+
+  /// Optional build description shown on the Pgyer download page.
   final String? description;
   final ShellRunner _shellRunner;
 

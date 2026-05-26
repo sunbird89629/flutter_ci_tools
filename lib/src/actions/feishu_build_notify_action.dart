@@ -9,10 +9,16 @@ import 'pipeline_action.dart';
 ///
 /// Used to label the standard Feishu build-notification message.
 enum DeployTarget {
+  /// Pgyer beta distribution platform.
   pgyer('Pgyer'),
+
+  /// Google Play Store.
   googlePlay('Google Play'),
+
+  /// Apple App Store.
   appStore('App Store');
 
+  /// Human-readable deploy target name.
   final String label;
   const DeployTarget(this.label);
 }
@@ -24,6 +30,13 @@ enum DeployTarget {
 /// `ResolveBuildVersionAction` and `CollectMetadataAction` earlier in the
 /// pipeline body.
 class FeishuBuildNotifyAction extends PipelineAction<void> {
+  /// Creates a Feishu build notification action.
+  ///
+  /// [webhookUrl] is the Feishu bot webhook URL.
+  /// [platform] is the target platform (Android/iOS).
+  /// [target] is the deploy destination (Pgyer, Google Play, etc.).
+  /// [downloadUrl] is an optional direct download link included in the message.
+  /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuBuildNotifyAction({
     required this.webhookUrl,
     required this.platform,
@@ -32,9 +45,16 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
+  /// Feishu bot webhook URL.
   final String webhookUrl;
+
+  /// Target platform (Android or iOS).
   final AppPlatform platform;
+
+  /// Deploy destination label (Pgyer, Google Play, or App Store).
   final DeployTarget target;
+
+  /// Optional direct download link included in the notification message.
   final String? downloadUrl;
   final ShellRunner _shellRunner;
 
