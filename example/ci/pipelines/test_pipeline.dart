@@ -40,7 +40,7 @@ Usage: dart run ci/build.dart test [android|ios]
         envName: 'test',
         buildType: AndroidBuildType.apk,
       ));
-      await _deployToPgyer(AppPlatform.android);
+      await _deployToPgyer();
     }
 
     if (context.platforms.contains(AppPlatform.ios)) {
@@ -48,7 +48,7 @@ Usage: dart run ci/build.dart test [android|ios]
         envName: 'test',
         exportMethod: 'development',
       ));
-      await _deployToPgyer(AppPlatform.ios);
+      await _deployToPgyer();
     }
 
     await runAction(PushBuildTagAction());
@@ -57,14 +57,13 @@ Usage: dart run ci/build.dart test [android|ios]
   @override
   Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 
-  Future<void> _deployToPgyer(AppPlatform platform) async {
+  Future<void> _deployToPgyer() async {
     final pgyerUrl = await runAction(PgyerUploadAction(
       apiKey: (context as ExampleAppContext).pgyerApiKey,
       description: _pgyerDescription(),
     ));
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
-      platform: platform,
       target: DeployTarget.pgyer,
       downloadUrl: pgyerUrl,
     ));

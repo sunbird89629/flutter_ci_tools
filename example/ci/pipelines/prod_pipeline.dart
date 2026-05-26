@@ -47,7 +47,6 @@ Usage: dart run ci/build.dart prod [android|ios]
       ));
       await runAction(FeishuBuildNotifyAction(
         webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
-        platform: AppPlatform.android,
         target: DeployTarget.googlePlay,
       ));
     }
@@ -64,7 +63,6 @@ Usage: dart run ci/build.dart prod [android|ios]
       ));
       await runAction(FeishuBuildNotifyAction(
         webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
-        platform: AppPlatform.ios,
         target: DeployTarget.appStore,
       ));
     }

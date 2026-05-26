@@ -1,6 +1,5 @@
 import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart';
 import 'package:flutter_ci_tools/src/build_metadata.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
@@ -24,7 +23,6 @@ void main() {
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
-      platforms: <AppPlatform>{},
     )
       ..resolveBuildVersion(12042)
       ..metadata = BuildMetadata(
@@ -37,7 +35,6 @@ void main() {
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
-      platform: AppPlatform.android,
       target: DeployTarget.pgyer,
       downloadUrl: 'https://example.com/dl',
       shellRunner: shell,
@@ -47,7 +44,6 @@ void main() {
     expect(action.name, 'Send Feishu Build Notification');
     expect(shell.lastJson, contains('TestApp'));
     expect(shell.lastJson, contains('12042'));
-    expect(shell.lastJson, contains('Android'));
     expect(shell.lastJson, contains('Pgyer'));
     expect(shell.lastJson, contains('https://example.com/dl'));
     expect(shell.lastJson, contains('release notes'));
