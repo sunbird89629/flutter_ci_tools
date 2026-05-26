@@ -1,11 +1,9 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
-import '../build_info_writer.dart';
-
 /// Standalone context for the android_test pipeline — uses its own dev-only
 /// credentials separate from the main app config.
 class AndroidTestContext extends PipelineContext {
-  AndroidTestContext({required super.platforms})
+  AndroidTestContext()
       : super(
           appName: 'testAppName',
           seedBuildNumber: 10000,
@@ -18,8 +16,7 @@ class AndroidTestContext extends PipelineContext {
 
 class AndroidTestPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) =>
-      AndroidTestContext(platforms: platforms);
+  PipelineContext createContext() => AndroidTestContext();
 
   @override
   String get name => 'android_test';
@@ -36,12 +33,6 @@ class AndroidTestPipeline extends BuildPipeline {
     await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(CleanProjectAction());
-    await writeBuildInfo(
-      env: 'test',
-      buildName: context.buildName,
-      buildNumber: context.buildNumber,
-      metadata: context.metadata,
-    );
 
     await runAction(BuildAndroidAction(
       envName: 'test',

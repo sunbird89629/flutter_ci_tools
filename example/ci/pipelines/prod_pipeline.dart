@@ -1,12 +1,10 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
-import '../build_info_writer.dart';
 
 class ProdPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) =>
-      ExampleAppContext(platforms: platforms);
+  PipelineContext createContext() => ExampleAppContext();
 
   @override
   String get name => 'prod';
@@ -17,10 +15,8 @@ class ProdPipeline extends BuildPipeline {
 Prod Pipeline
 构建生产版本并上传到 Google Play 和 App Store。
 
-Usage: dart run ci/build.dart prod [android|ios]
-  android    仅构建 Android
-  ios        仅构建 iOS
-不指定平台时同时构建两个平台。''';
+Usage: dart run ci/build.dart prod
+同时构建 Android 和 iOS 两个平台。''';
 
   @override
   Future<void> body() async {
@@ -29,43 +25,35 @@ Usage: dart run ci/build.dart prod [android|ios]
     await runAction(CheckGitStatusAction());
     await runAction(SwapInfoPlistAction());
     await runAction(CleanProjectAction());
-    await writeBuildInfo(
-      env: 'prod',
-      buildName: context.buildName,
-      buildNumber: context.buildNumber,
-      metadata: context.metadata,
-    );
 
-    if (context.platforms.contains(AppPlatform.android)) {
-      await runAction(BuildAndroidAction(
-        envName: 'prod',
-        buildType: AndroidBuildType.appbundle,
-      ));
-      await runAction(GooglePlayUploadAction(
-        packageName: ProdCredentials.googlePlayPackageName,
-        jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
-      ));
-      await runAction(FeishuBuildNotifyAction(
-        webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
-        target: DeployTarget.googlePlay,
-      ));
-    }
+    // Android
+    await runAction(BuildAndroidAction(
+      envName: 'prod',
+      buildType: AndroidBuildType.appbundle,
+    ));
+    await runAction(GooglePlayUploadAction(
+      packageName: ProdCredentials.googlePlayPackageName,
+      jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
+    ));
+    await runAction(FeishuBuildNotifyAction(
+      webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
+      target: DeployTarget.googlePlay,
+    ));
 
-    if (context.platforms.contains(AppPlatform.ios)) {
-      await runAction(BuildIOSAction(
-        envName: 'prod',
-        exportMethod: 'app-store',
-      ));
-      await runAction(AppStoreUploadAction(
-        issuerId: ProdCredentials.appStoreIssuerId,
-        apiKeyId: ProdCredentials.appStoreApiKeyId,
-        apiKeyPath: ProdCredentials.appStoreApiKeyPath,
-      ));
-      await runAction(FeishuBuildNotifyAction(
-        webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
-        target: DeployTarget.appStore,
-      ));
-    }
+    // iOS
+    await runAction(BuildIOSAction(
+      envName: 'prod',
+      exportMethod: 'app-store',
+    ));
+    await runAction(AppStoreUploadAction(
+      issuerId: ProdCredentials.appStoreIssuerId,
+      apiKeyId: ProdCredentials.appStoreApiKeyId,
+      apiKeyPath: ProdCredentials.appStoreApiKeyPath,
+    ));
+    await runAction(FeishuBuildNotifyAction(
+      webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
+      target: DeployTarget.appStore,
+    ));
 
     await runAction(PushBuildTagAction());
   }
