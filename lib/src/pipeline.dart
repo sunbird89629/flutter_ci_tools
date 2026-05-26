@@ -2,16 +2,6 @@ import 'utils/logger.dart';
 import 'pipeline_context.dart';
 import 'actions/pipeline_action.dart';
 
-/// Target platform for a build run.
-enum AppPlatform {
-  android('Android'),
-  ios('iOS');
-
-  /// Human-readable platform name (e.g. `"Android"`, `"iOS"`).
-  final String label;
-  const AppPlatform(this.label);
-}
-
 /// Executes [action] with standardized section logging and error handling.
 Future<T> runStep<T>(String name, Future<T> Function() action) async {
   final startTime = DateTime.now();
@@ -48,7 +38,7 @@ abstract class BuildPipeline {
   /// Builds the [PipelineContext] for this run. Implementations typically
   /// instantiate a project-specific [PipelineContext] subclass that bundles
   /// shared configuration (app name, credentials, etc.).
-  PipelineContext createContext(Set<AppPlatform> platforms);
+  PipelineContext createContext();
 
   /// Optional preparation hook. Default no-op.
   Future<void> beforeBuild() async {}
@@ -64,8 +54,8 @@ abstract class BuildPipeline {
 
   /// Entry point. Builds the [PipelineContext] via [createContext], then runs
   /// `beforeBuild → body → afterBuild`.
-  Future<void> run(Set<AppPlatform> platforms) async {
-    context = createContext(platforms);
+  Future<void> run() async {
+    context = createContext();
     try {
       await beforeBuild();
       await body();
