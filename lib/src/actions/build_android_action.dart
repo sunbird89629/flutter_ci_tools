@@ -14,11 +14,13 @@ enum AndroidBuildType {
   appbundle,
 }
 
-/// Builds an Android artifact (APK or AAB) and returns the output file.
+/// Builds an Android artifact (APK or AAB) and stores it in context.
 ///
 /// Reads `context.buildName` and `context.buildNumber` — requires
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
-class BuildAndroidAction extends PipelineAction<File> {
+///
+/// After completion, the output file is available via `context.buildArtifact`.
+class BuildAndroidAction extends PipelineAction<void> {
   BuildAndroidAction({
     required this.envName,
     required this.buildType,
@@ -33,7 +35,7 @@ class BuildAndroidAction extends PipelineAction<File> {
   String get name => 'Build Android';
 
   @override
-  Future<File> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     final (subcommand, outputPath) = switch (buildType) {
       AndroidBuildType.apk => (
           'apk',
@@ -52,6 +54,6 @@ class BuildAndroidAction extends PipelineAction<File> {
       '--build-number=${context.buildNumber}',
       '--dart-define=ENV=$envName',
     ]);
-    return File(outputPath);
+    context.setBuildArtifact(File(outputPath));
   }
 }

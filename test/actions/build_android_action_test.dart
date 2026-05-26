@@ -24,21 +24,21 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
-    )..buildNumber = 12001;
+    )..resolveBuildVersion(12001);
   });
 
-  test('BuildAndroidAction(apk) runs flutter build apk and returns apk file',
-      () async {
+  test('BuildAndroidAction(apk) stores apk in context', () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.apk,
       shellRunner: shell,
     );
 
-    final file = await action.run(context);
+    await action.run(context);
 
     expect(action.name, 'Build Android');
-    expect(file.path, 'build/app/outputs/flutter-apk/app-release.apk');
+    expect(
+        context.buildArtifact.path, 'build/app/outputs/flutter-apk/app-release.apk');
     expect(
       shell.runCalls,
       contains(
@@ -47,18 +47,17 @@ void main() {
     );
   });
 
-  test(
-      'BuildAndroidAction(appbundle) runs flutter build appbundle and returns aab file',
-      () async {
+  test('BuildAndroidAction(appbundle) stores aab in context', () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.appbundle,
       shellRunner: shell,
     );
 
-    final file = await action.run(context);
+    await action.run(context);
 
-    expect(file.path, 'build/app/outputs/bundle/release/app-release.aab');
+    expect(context.buildArtifact.path,
+        'build/app/outputs/bundle/release/app-release.aab');
     expect(
       shell.runCalls,
       contains(
