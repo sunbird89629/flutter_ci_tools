@@ -20,15 +20,18 @@ class _FakeShellRunner implements ShellRunner {
 }
 
 void main() {
-  PipelineContext ctx() => PipelineContext(
-        appName: 'TestApp',
-        seedBuildNumber: 1000,
-        platforms: {AppPlatform.android},
-      );
+  PipelineContext ctx() {
+    final c = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 1000,
+      platforms: {AppPlatform.android},
+    );
+    c.setBuildArtifact(File('build/app-release.aab'));
+    return c;
+  }
 
   test('name is correct', () {
     final action = GooglePlayUploadAction(
-      artifact: File('build/app-release.aab'),
       packageName: 'com.example.app',
       jsonKeyPath: '/some/key.json',
     );
@@ -37,7 +40,6 @@ void main() {
 
   test('throws when json key file does not exist', () async {
     final action = GooglePlayUploadAction(
-      artifact: File('build/app-release.aab'),
       packageName: 'com.example.app',
       jsonKeyPath: '/nonexistent/path/key.json',
       shellRunner: _FakeShellRunner(),
@@ -51,7 +53,6 @@ void main() {
     tmpKey.writeAsStringSync('{}');
     final shell = _FakeShellRunner();
     final action = GooglePlayUploadAction(
-      artifact: File('build/app-release.aab'),
       packageName: 'com.example.app',
       jsonKeyPath: tmpKey.path,
       shellRunner: shell,

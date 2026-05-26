@@ -37,12 +37,11 @@ Usage: dart run ci/build.dart prod [android|ios]
     );
 
     if (context.platforms.contains(AppPlatform.android)) {
-      final aab = await runAction(BuildAndroidAction(
+      await runAction(BuildAndroidAction(
         envName: 'prod',
         buildType: AndroidBuildType.appbundle,
       ));
       await runAction(GooglePlayUploadAction(
-        artifact: aab,
         packageName: ProdCredentials.googlePlayPackageName,
         jsonKeyPath: ProdCredentials.googlePlayJsonKeyPath,
       ));
