@@ -1,44 +1,25 @@
-import 'dart:io';
-
-import 'package:flutter_ci_tools/src/actions/build_android_action.dart';
-import 'package:flutter_ci_tools/src/builders/android_builder.dart';
-import 'package:flutter_ci_tools/src/pipeline.dart' show AppPlatform;
-import 'package:flutter_ci_tools/src/pipeline_context.dart';
+import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 import 'package:test/test.dart';
 
-class _FakeAndroidBuilder extends AndroidBuilder {
-  _FakeAndroidBuilder() : super();
-  final List<String> calls = [];
+class _FakeShellRunner implements ShellRunner {
+  final List<String> runCalls = [];
 
   @override
-  Future<File> buildApk({
-    required String buildName,
-    required int buildNumber,
-    required String envName,
-  }) async {
-    calls.add(
-        'apk buildName=$buildName buildNumber=$buildNumber envName=$envName');
-    return File('build/app-release.apk');
+  Future<void> run(String exe, List<String> args) async {
+    runCalls.add('$exe ${args.join(' ')}');
   }
 
   @override
-  Future<File> buildAppBundle({
-    required String buildName,
-    required int buildNumber,
-    required String envName,
-  }) async {
-    calls.add(
-        'aab buildName=$buildName buildNumber=$buildNumber envName=$envName');
-    return File('build/app-release.aab');
-  }
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async =>
+      ShellResult(exitCode: 0, stdout: '', stderr: '');
 }
 
 void main() {
+  late _FakeShellRunner shell;
   late PipelineContext context;
-  late _FakeAndroidBuilder builder;
 
   setUp(() {
-    builder = _FakeAndroidBuilder();
+    shell = _FakeShellRunner();
     context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
@@ -46,35 +27,51 @@ void main() {
     )..buildNumber = 12001;
   });
 
-  test('BuildAndroidAction(apk) returns apk file and forwards build args',
+  test('BuildAndroidAction(apk) runs flutter build apk and returns apk file',
       () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.apk,
-      androidBuilder: builder,
+      shellRunner: shell,
     );
 
     final file = await action.run(context);
 
     expect(action.name, 'Build Android');
-    expect(file.path, endsWith('.apk'));
-    expect(builder.calls, [
-      'apk buildName=1.2.0 buildNumber=12001 envName=prod',
-    ]);
+    expect(file.path, 'build/app/outputs/flutter-apk/app-release.apk');
+    expect(
+      shell.runCalls,
+      contains(
+        'fvm flutter build apk --build-name=1.2.0 --build-number=12001 --dart-define=ENV=prod',
+      ),
+    );
   });
 
-  test('BuildAndroidAction(appbundle) returns aab file', () async {
+  test(
+      'BuildAndroidAction(appbundle) runs flutter build appbundle and returns aab file',
+      () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.appbundle,
-      androidBuilder: builder,
+      shellRunner: shell,
     );
 
     final file = await action.run(context);
 
-    expect(file.path, endsWith('.aab'));
-    expect(builder.calls, [
-      'aab buildName=1.2.0 buildNumber=12001 envName=prod',
-    ]);
+    expect(file.path, 'build/app/outputs/bundle/release/app-release.aab');
+    expect(
+      shell.runCalls,
+      contains(
+        'fvm flutter build appbundle --build-name=1.2.0 --build-number=12001 --dart-define=ENV=prod',
+      ),
+    );
+  });
+
+  test('BuildAndroidAction default constructor does not throw', () {
+    final action = BuildAndroidAction(
+      envName: 'prod',
+      buildType: AndroidBuildType.apk,
+    );
+    expect(action, isA<BuildAndroidAction>());
   });
 }
