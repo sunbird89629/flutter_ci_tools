@@ -31,7 +31,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       platforms: <AppPlatform>{},
-    )..buildNumber = 12042;
+    )..resolveBuildVersion(12042);
 
     final action = PushBuildTagAction(versionManager: version);
     await action.run(context);
