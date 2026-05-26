@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import '../builders/android_builder.dart';
 import '../pipeline_context.dart';
+import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Android build output format.
@@ -21,31 +22,36 @@ class BuildAndroidAction extends PipelineAction<File> {
   BuildAndroidAction({
     required this.envName,
     required this.buildType,
-    AndroidBuilder? androidBuilder,
-  }) : _androidBuilder = androidBuilder ?? AndroidBuilder();
+    ShellRunner? shellRunner,
+  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
 
   final String envName;
   final AndroidBuildType buildType;
-  final AndroidBuilder _androidBuilder;
+  final ShellRunner _shellRunner;
 
   @override
   String get name => 'Build Android';
 
   @override
   Future<File> run(PipelineContext context) async {
-    switch (buildType) {
-      case AndroidBuildType.apk:
-        return _androidBuilder.buildApk(
-          buildName: context.buildName,
-          buildNumber: context.buildNumber,
-          envName: envName,
-        );
-      case AndroidBuildType.appbundle:
-        return _androidBuilder.buildAppBundle(
-          buildName: context.buildName,
-          buildNumber: context.buildNumber,
-          envName: envName,
-        );
-    }
+    final (subcommand, outputPath) = switch (buildType) {
+      AndroidBuildType.apk => (
+          'apk',
+          'build/app/outputs/flutter-apk/app-release.apk',
+        ),
+      AndroidBuildType.appbundle => (
+          'appbundle',
+          'build/app/outputs/bundle/release/app-release.aab',
+        ),
+    };
+    await _shellRunner.run('fvm', [
+      'flutter',
+      'build',
+      subcommand,
+      '--build-name=${context.buildName}',
+      '--build-number=${context.buildNumber}',
+      '--dart-define=ENV=$envName',
+    ]);
+    return File(outputPath);
   }
 }
