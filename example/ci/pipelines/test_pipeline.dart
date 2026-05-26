@@ -1,12 +1,10 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
-import '../build_info_writer.dart';
 
 class TestPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) =>
-      ExampleAppContext(platforms: platforms);
+  PipelineContext createContext() => ExampleAppContext();
 
   @override
   String get name => 'test';
@@ -17,10 +15,8 @@ class TestPipeline extends BuildPipeline {
 Test Pipeline
 构建测试版本并上传到蒲公英。
 
-Usage: dart run ci/build.dart test [android|ios]
-  android    仅构建 Android
-  ios        仅构建 iOS
-不指定平台时同时构建两个平台。''';
+Usage: dart run ci/build.dart test
+同时构建 Android 和 iOS 两个平台。''';
 
   @override
   Future<void> body() async {
@@ -28,28 +24,18 @@ Usage: dart run ci/build.dart test [android|ios]
     await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(CleanProjectAction());
-    await writeBuildInfo(
-      env: 'test',
-      buildName: context.buildName,
-      buildNumber: context.buildNumber,
-      metadata: context.metadata,
-    );
 
-    if (context.platforms.contains(AppPlatform.android)) {
-      await runAction(BuildAndroidAction(
-        envName: 'test',
-        buildType: AndroidBuildType.apk,
-      ));
-      await _deployToPgyer();
-    }
+    await runAction(BuildAndroidAction(
+      envName: 'test',
+      buildType: AndroidBuildType.apk,
+    ));
+    await _deployToPgyer();
 
-    if (context.platforms.contains(AppPlatform.ios)) {
-      await runAction(BuildIOSAction(
-        envName: 'test',
-        exportMethod: 'development',
-      ));
-      await _deployToPgyer();
-    }
+    await runAction(BuildIOSAction(
+      envName: 'test',
+      exportMethod: 'development',
+    ));
+    await _deployToPgyer();
 
     await runAction(PushBuildTagAction());
   }
