@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
@@ -38,19 +36,19 @@ Usage: dart run ci/build.dart test [android|ios]
     );
 
     if (context.platforms.contains(AppPlatform.android)) {
-      final apk = await runAction(BuildAndroidAction(
+      await runAction(BuildAndroidAction(
         envName: 'test',
         buildType: AndroidBuildType.apk,
       ));
-      await _deployToPgyer(AppPlatform.android, apk);
+      await _deployToPgyer(AppPlatform.android);
     }
 
     if (context.platforms.contains(AppPlatform.ios)) {
-      final ipa = await runAction(BuildIOSAction(
+      await runAction(BuildIOSAction(
         envName: 'test',
         exportMethod: 'development',
       ));
-      await _deployToPgyer(AppPlatform.ios, ipa);
+      await _deployToPgyer(AppPlatform.ios);
     }
 
     await runAction(PushBuildTagAction());
@@ -59,9 +57,8 @@ Usage: dart run ci/build.dart test [android|ios]
   @override
   Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 
-  Future<void> _deployToPgyer(AppPlatform platform, File artifact) async {
+  Future<void> _deployToPgyer(AppPlatform platform) async {
     final pgyerUrl = await runAction(PgyerUploadAction(
-      artifact: artifact,
       apiKey: (context as ExampleAppContext).pgyerApiKey,
       description: _pgyerDescription(),
     ));
