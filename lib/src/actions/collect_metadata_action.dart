@@ -1,5 +1,6 @@
 import '../build_metadata.dart';
 import '../utils/git_manager.dart';
+import '../utils/git_manager_impl.dart';
 import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 
@@ -7,7 +8,7 @@ import 'pipeline_action.dart';
 /// [PipelineContext.metadata].
 class CollectMetadataAction extends PipelineAction<void> {
   CollectMetadataAction({GitManager? gitManager})
-      : _gitManager = gitManager ?? DefaultGitManager();
+      : _gitManager = gitManager ?? GitManagerImpl();
 
   final GitManager _gitManager;
 

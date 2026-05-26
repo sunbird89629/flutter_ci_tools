@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../utils/logger.dart';
 import '../pipeline_context.dart';
@@ -15,7 +15,7 @@ class GooglePlayUploadAction extends PipelineAction<void> {
     required this.packageName,
     required this.jsonKeyPath,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String packageName;
   final String jsonKeyPath;

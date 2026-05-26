@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../pipeline_context.dart';
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
@@ -25,7 +25,7 @@ class BuildAndroidAction extends PipelineAction<void> {
     required this.envName,
     required this.buildType,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String envName;
   final AndroidBuildType buildType;

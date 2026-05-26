@@ -1,12 +1,12 @@
-import 'package:flutter_ci_tools/src/utils/default_shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/shell_runner_impl.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DefaultShellRunner', () {
-    late DefaultShellRunner shellRunner;
+  group('ShellRunnerImpl', () {
+    late ShellRunnerImpl shellRunner;
 
     setUp(() {
-      shellRunner = DefaultShellRunner();
+      shellRunner = ShellRunnerImpl();
     });
 
     test('run completes successfully for a valid command', () async {

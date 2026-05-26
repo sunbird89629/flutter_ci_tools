@@ -32,11 +32,11 @@ class _FakeShellRunner implements ShellRunner {
 
 void main() {
   late _FakeShellRunner shell;
-  late DefaultVersionManager version;
+  late VersionManagerImpl version;
 
   setUp(() {
     shell = _FakeShellRunner();
-    version = DefaultVersionManager(shellRunner: shell);
+    version = VersionManagerImpl(shellRunner: shell);
   });
 
   group('VersionManager', () {

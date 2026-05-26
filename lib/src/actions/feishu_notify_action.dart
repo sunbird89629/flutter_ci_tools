@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
@@ -14,7 +14,7 @@ class FeishuNotifyAction extends PipelineAction<void> {
     required this.webhookUrl,
     required this.message,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String webhookUrl;
   final String message;
