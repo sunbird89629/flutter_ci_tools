@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 
-/// Default [ShellRunner] that executes real processes via [Process.start] / [Process.run].
+/// Production [ShellRunner] implementation that executes real processes
+/// via [Process.start] / [Process.run].
 ///
 /// Automatically augments `PATH` with `~/.pub-cache/bin` and `/opt/homebrew/bin` (macOS).
-class DefaultShellRunner implements ShellRunner {
+class ShellRunnerImpl implements ShellRunner {
   /// Environment variables with augmented PATH for finding Flutter, Dart, and Homebrew tools.
   static late final Map<String, String> environment = () {
     final home = Platform.environment['HOME'] ?? '';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../utils/logger.dart';
 import '../pipeline_context.dart';
@@ -14,7 +14,7 @@ class PgyerUploadAction extends PipelineAction<String> {
     required this.apiKey,
     this.description,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String apiKey;
   final String? description;

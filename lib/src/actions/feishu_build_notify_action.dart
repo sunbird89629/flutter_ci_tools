@@ -1,4 +1,4 @@
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../pipeline.dart' show AppPlatform;
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
@@ -30,7 +30,7 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     required this.target,
     this.downloadUrl,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String webhookUrl;
   final AppPlatform platform;

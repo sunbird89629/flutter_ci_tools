@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import '../pipeline_context.dart';
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
@@ -16,7 +16,7 @@ class BuildIOSAction extends PipelineAction<void> {
     required this.envName,
     required this.exportMethod,
     ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? DefaultShellRunner();
+  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String envName;
   final String exportMethod;

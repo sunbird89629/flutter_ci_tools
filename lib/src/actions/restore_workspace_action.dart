@@ -1,4 +1,5 @@
 import '../utils/git_manager.dart';
+import '../utils/git_manager_impl.dart';
 import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 
@@ -8,7 +9,7 @@ import 'pipeline_action.dart';
 /// of whether the main body succeeded.
 class RestoreWorkspaceAction extends PipelineAction<void> {
   RestoreWorkspaceAction({GitManager? gitManager})
-      : _gitManager = gitManager ?? DefaultGitManager();
+      : _gitManager = gitManager ?? GitManagerImpl();
 
   final GitManager _gitManager;
 

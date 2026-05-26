@@ -27,11 +27,11 @@ class _FakeShellRunner implements ShellRunner {
 
 void main() {
   late _FakeShellRunner shell;
-  late DefaultGitManager git;
+  late GitManagerImpl git;
 
   setUp(() {
     shell = _FakeShellRunner();
-    git = DefaultGitManager(shellRunner: shell);
+    git = GitManagerImpl(shellRunner: shell);
   });
 
   group('GitManager', () {

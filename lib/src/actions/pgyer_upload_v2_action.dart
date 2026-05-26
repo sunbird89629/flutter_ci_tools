@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../utils/default_shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../utils/logger.dart';
 import '../pipeline_context.dart';
@@ -33,7 +33,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     ShellRunner? shellRunner,
   })  : apiDomains = apiDomains ?? _defaultApiDomains,
         _probeDomain = probeDomain ?? _defaultProbeDomain,
-        _shellRunner = shellRunner ?? DefaultShellRunner();
+        _shellRunner = shellRunner ?? ShellRunnerImpl();
 
   final String apiKey;
   final String? description;

@@ -1,13 +1,14 @@
 import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/version_manager.dart';
+import '../utils/version_manager_impl.dart';
 import 'pipeline_action.dart';
 
 /// Computes the next build number via [VersionManager] and stores it in
 /// [PipelineContext] via [PipelineContext.resolveBuildVersion].
 class ResolveBuildVersionAction extends PipelineAction<void> {
   ResolveBuildVersionAction({VersionManager? versionManager})
-      : _versionManager = versionManager ?? DefaultVersionManager();
+      : _versionManager = versionManager ?? VersionManagerImpl();
 
   final VersionManager _versionManager;
 
