@@ -1,3 +1,4 @@
+export 'src/action_status.dart';
 export 'src/actions/app_store_action.dart';
 export 'src/actions/build_android_action.dart';
 export 'src/actions/build_ios_action.dart';
