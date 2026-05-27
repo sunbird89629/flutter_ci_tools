@@ -8,12 +8,14 @@ void main() {
     });
 
     test('contains success, failed, skipped, interrupted', () {
-      expect(ActionStatus.values, containsAll([
-        ActionStatus.success,
-        ActionStatus.failed,
-        ActionStatus.skipped,
-        ActionStatus.interrupted,
-      ]));
+      expect(
+          ActionStatus.values,
+          containsAll([
+            ActionStatus.success,
+            ActionStatus.failed,
+            ActionStatus.skipped,
+            ActionStatus.interrupted,
+          ]));
     });
   });
 }

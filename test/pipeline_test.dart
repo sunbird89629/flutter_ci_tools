@@ -142,8 +142,8 @@ void main() {
     test('records success status and duration on action', () async {
       final pipeline = _TestPipeline(log: []);
       await pipeline.run([]);
-      final actionA = pipeline.executedActions
-          .firstWhere((a) => a.name == 'action-a');
+      final actionA =
+          pipeline.executedActions.firstWhere((a) => a.name == 'action-a');
       expect(actionA.status, ActionStatus.success);
       expect(actionA.duration, isNotNull);
       expect(actionA.duration!.inMilliseconds, greaterThanOrEqualTo(0));
@@ -168,8 +168,8 @@ void main() {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log);
       await pipeline.run([]);
-      expect(pipeline.executedActions.map((a) => a.name),
-          ['action-a', 'after']);
+      expect(
+          pipeline.executedActions.map((a) => a.name), ['action-a', 'after']);
     });
 
     test('allSucceeded returns true when all actions succeed', () async {
