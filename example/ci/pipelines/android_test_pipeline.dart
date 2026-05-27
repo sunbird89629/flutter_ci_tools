@@ -3,10 +3,11 @@ import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 /// Standalone context for the android_test pipeline — uses its own dev-only
 /// credentials separate from the main app config.
 class AndroidTestContext extends PipelineContext {
-  AndroidTestContext()
+  AndroidTestContext({List<String> args = const []})
       : super(
           appName: 'testAppName',
           seedBuildNumber: 10000,
+          rawArgs: args,
         );
 
   final String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
@@ -16,7 +17,7 @@ class AndroidTestContext extends PipelineContext {
 
 class AndroidTestPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext() => AndroidTestContext();
+  PipelineContext createContext(List<String> args) => AndroidTestContext(args: args);
 
   @override
   String get name => 'android_test';

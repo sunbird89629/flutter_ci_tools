@@ -16,6 +16,7 @@ export 'src/actions/resolve_build_version_action.dart';
 export 'src/actions/restore_workspace_action.dart';
 export 'src/actions/swap_info_plist_action.dart';
 export 'src/build_metadata.dart';
+export 'src/utils/args_parser.dart';
 export 'src/utils/shell_runner_impl.dart';
 export 'src/utils/exceptions.dart';
 export 'src/utils/git_manager.dart';

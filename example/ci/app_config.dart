@@ -9,10 +9,11 @@ String _env(String key) => Platform.environment[key] ?? _placeholder;
 /// Project-wide [PipelineContext] subclass: bundles the configuration shared
 /// by every pipeline in this example app (name, seed build number, API keys).
 class ExampleAppContext extends PipelineContext {
-  ExampleAppContext()
+  ExampleAppContext({List<String> args = const []})
       : super(
           appName: 'FlutterCIToolsExample',
           seedBuildNumber: 10000,
+          rawArgs: args,
         );
 
   String get pgyerApiKey => _env('PGYER_API_KEY');

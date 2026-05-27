@@ -34,9 +34,10 @@ class _TestPipeline extends BuildPipeline {
   String get help => 'help';
 
   @override
-  PipelineContext createContext() => PipelineContext(
+  PipelineContext createContext(List<String> args) => PipelineContext(
         appName: 'A',
         seedBuildNumber: 10000,
+        rawArgs: args,
       );
 
   @override
@@ -78,7 +79,7 @@ class _ValuePipeline extends BuildPipeline {
   @override
   String get help => 'help';
   @override
-  PipelineContext createContext() => PipelineContext(
+  PipelineContext createContext(List<String> args) => PipelineContext(
         appName: 'A',
         seedBuildNumber: 10000,
       );
@@ -96,7 +97,7 @@ class _FailActionPipeline extends BuildPipeline {
   @override
   String get help => 'help';
   @override
-  PipelineContext createContext() => PipelineContext(
+  PipelineContext createContext(List<String> args) => PipelineContext(
         appName: 'A',
         seedBuildNumber: 10000,
       );
@@ -112,7 +113,7 @@ void main() {
     test('runs beforeBuild → body → afterBuild in order', () async {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log);
-      await pipeline.run();
+      await pipeline.run([]);
       expect(log, ['before', 'body-start', 'action-a', 'after']);
     });
 
@@ -121,7 +122,7 @@ void main() {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log, bodyThrows: true);
       await expectLater(
-        pipeline.run(),
+        pipeline.run([]),
         throwsA(isA<StateError>()),
       );
       expect(log, ['before', 'body-start', 'after']);
@@ -132,7 +133,7 @@ void main() {
         () async {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log, afterThrows: true);
-      await pipeline.run(); // should NOT throw
+      await pipeline.run([]); // should NOT throw
       expect(log, containsAll(['before', 'body-start', 'action-a', 'after']));
     });
   });
@@ -140,7 +141,7 @@ void main() {
   group('action status tracking', () {
     test('records success status and duration on action', () async {
       final pipeline = _TestPipeline(log: []);
-      await pipeline.run();
+      await pipeline.run([]);
       final actionA = pipeline.executedActions
           .firstWhere((a) => a.name == 'action-a');
       expect(actionA.status, ActionStatus.success);
@@ -153,7 +154,7 @@ void main() {
     test('records failed status with error on action', () async {
       final pipeline = _FailActionPipeline();
       await expectLater(
-        pipeline.run(),
+        pipeline.run([]),
         throwsA(isA<StateError>()),
       );
       expect(pipeline.executedActions.first.name, 'ok-action');
@@ -166,14 +167,14 @@ void main() {
     test('executedActions preserves execution order', () async {
       final log = <String>[];
       final pipeline = _TestPipeline(log: log);
-      await pipeline.run();
+      await pipeline.run([]);
       expect(pipeline.executedActions.map((a) => a.name),
           ['action-a', 'after']);
     });
 
     test('allSucceeded returns true when all actions succeed', () async {
       final pipeline = _TestPipeline(log: []);
-      await pipeline.run();
+      await pipeline.run([]);
       expect(pipeline.allSucceeded, isTrue);
       expect(pipeline.lastFailure, isNull);
     });
@@ -182,7 +183,7 @@ void main() {
         () async {
       final pipeline = _FailActionPipeline();
       await expectLater(
-        pipeline.run(),
+        pipeline.run([]),
         throwsA(isA<StateError>()),
       );
       expect(pipeline.allSucceeded, isFalse);
@@ -195,7 +196,7 @@ void main() {
 
     test('runAction returns the action result', () async {
       final pipeline = _ValuePipeline();
-      await pipeline.run();
+      await pipeline.run([]);
       expect(pipeline.returnValue, 'hello');
       expect(pipeline.executedActions.first.status, ActionStatus.success);
     });

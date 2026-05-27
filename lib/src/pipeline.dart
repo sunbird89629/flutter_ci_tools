@@ -51,10 +51,12 @@ abstract class BuildPipeline {
   /// Extended help text printed when the user passes `--help`.
   String get help;
 
-  /// Builds the [PipelineContext] for this run. Implementations typically
-  /// instantiate a project-specific [PipelineContext] subclass that bundles
-  /// shared configuration (app name, credentials, etc.).
-  PipelineContext createContext();
+  /// Builds the [PipelineContext] for this run, receiving the raw CLI args.
+  ///
+  /// Implementations typically instantiate a project-specific
+  /// [PipelineContext] subclass that bundles shared configuration
+  /// (app name, credentials, etc.).
+  PipelineContext createContext(List<String> args);
 
   /// Optional preparation hook. Default no-op.
   Future<void> beforeBuild() async {}
@@ -70,8 +72,8 @@ abstract class BuildPipeline {
 
   /// Entry point. Builds the [PipelineContext] via [createContext], then runs
   /// `beforeBuild → body → afterBuild`.
-  Future<void> run() async {
-    context = createContext();
+  Future<void> run(List<String> args) async {
+    context = createContext(args);
     try {
       await beforeBuild();
       await body();
