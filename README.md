@@ -33,12 +33,12 @@ Future<void> main(List<String> args) async {
 ```dart
 class TestPipeline extends BuildPipeline {
   @override String get name => 'test';
-  @override String get description => 'Build & deploy to Pgyer';
+  @override String get description => 'Build Android APK & deploy to Pgyer';
   @override String get help => '...';
 
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) =>
-      MyAppContext(platforms: platforms);
+  PipelineContext createContext(List<String> args) =>
+      MyAppContext(rawArgs: args);
 
   @override
   Future<void> body() async {
@@ -46,14 +46,14 @@ class TestPipeline extends BuildPipeline {
     await runAction(CollectMetadataAction());
     await runAction(CleanProjectAction());
 
-    if (context.platforms.contains(AppPlatform.android)) {
-      final apk = await runAction(BuildAndroidAction(
-        envName: 'test', buildType: AndroidBuildType.apk,
-      ));
-      await runAction(PgyerUploadAction(
-        artifact: apk, apiKey: (context as MyAppContext).pgyerApiKey, description: '...',
-      ));
-    }
+    // Build artifact is stored on context.buildArtifact.
+    await runAction(BuildAndroidAction(
+      envName: 'test', buildType: AndroidBuildType.apk,
+    ));
+    await runAction(PgyerUploadAction(
+      apiKey: (context as MyAppContext).pgyerApiKey,
+      description: 'test build',
+    ));
 
     await runAction(PushBuildTagAction());
   }
@@ -62,6 +62,11 @@ class TestPipeline extends BuildPipeline {
   Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 }
 ```
+
+A pipeline decides internally what to build — there's no platform enum.
+For an app that ships both Android and iOS, write two pipelines (e.g.
+`android-test` and `ios-test`) or use a single pipeline that runs both
+builds back-to-back.
 
 ## Usage
 
@@ -72,13 +77,16 @@ credentials, etc.) across all pipelines:
 
 ```dart
 class MyAppContext extends PipelineContext {
-  MyAppContext({required super.platforms})
+  MyAppContext({super.rawArgs})
       : super(appName: 'MyApp', seedBuildNumber: 10000);
 
   String get pgyerApiKey => Platform.environment['PGYER_API_KEY'] ?? '';
   String get feishuWebhookUrl => Platform.environment['FEISHU_WEBHOOK_URL'] ?? '';
 }
 ```
+
+`rawArgs` carries the CLI args passed after the pipeline name through to
+the context — see [CLI Arguments](#cli-arguments) below.
 
 ### 2. Create a BuildPipeline
 
@@ -92,8 +100,8 @@ class MyPipeline extends BuildPipeline {
   @override String get help => '...';
 
   @override
-  PipelineContext createContext(Set<AppPlatform> platforms) =>
-      MyAppContext(platforms: platforms);
+  PipelineContext createContext(List<String> args) =>
+      MyAppContext(rawArgs: args);
 
   @override
   Future<void> body() async {
@@ -116,19 +124,73 @@ Future<void> main(List<String> args) async {
 Run from the command line:
 
 ```bash
-dart run ci/build.dart test           # both platforms
-dart run ci/build.dart test android   # Android only
-dart run ci/build.dart                # interactive selector
+dart run ci/build.dart test                 # run the 'test' pipeline
+dart run ci/build.dart test --flavor=prod   # extra args pass through to the pipeline
+dart run ci/build.dart                      # interactive selector
+dart run ci/build.dart test --help          # pipeline-specific help
 ```
+
+## CLI Arguments
+
+Everything after the pipeline name is forwarded to the pipeline via
+`createContext(args)`. Store it on the context as `rawArgs` (the
+`PipelineContext` base supports this directly) and read it through the
+built-in `ArgsParser`:
+
+```dart
+@override
+Future<void> body() async {
+  final flavor = context.args.getOption('flavor') ?? 'dev';
+  final dryRun = context.args.has('--dry-run');
+
+  await runAction(BuildAndroidAction(
+    envName: flavor,
+    buildType: AndroidBuildType.apk,
+  ));
+  if (!dryRun) await runAction(PushBuildTagAction());
+}
+```
+
+`ArgsParser` handles three common patterns: `has('--flag')`,
+`getOption('key')` for `--key=value`, and `positional` for the first
+non-flag argument. Pipelines are free to interpret args however they
+like — no full arg-parsing framework imposed.
+
+## Execution Summary
+
+Every `runAction()` call records the action's `status`
+(`success` / `failed` / `skipped` / `interrupted`), `duration`, and any
+`error` / `stackTrace`. When the pipeline finishes (success or failure),
+a summary is printed automatically:
+
+```
+────────────────────────────────────
+执行摘要
+────────────────────────────────────
+✅ ResolveBuildVersionAction (12ms)
+✅ CollectMetadataAction (240ms)
+✅ CleanProjectAction (3.1s)
+✅ BuildAndroidAction (47.2s)
+❌ PgyerUploadAction (1.8s)
+────────────────────────────────────
+```
+
+The same information is available programmatically via
+`pipeline.executedActions`, `pipeline.allSucceeded`, and
+`pipeline.lastFailure` — useful for custom post-build hooks (e.g. a
+Feishu notification that reports which step failed).
 
 ## API
 
 | Symbol | Description |
 |--------|-------------|
-| `PipelineContext` | Shared config + runtime state passed through all actions |
-| `BuildPipeline` | Abstract base: `beforeBuild → body → afterBuild` lifecycle |
-| `PipelineAction<R>` | Abstract action unit; receives context, returns typed result |
+| `PipelineContext` | Shared config + runtime state (`appName`, `seedBuildNumber`, `rawArgs`, `args`, `metadata`, `buildNumber`, `buildArtifact`) |
+| `BuildPipeline` | Abstract base: `beforeBuild → body → afterBuild` lifecycle, plus action tracking (`executedActions`, `allSucceeded`, `lastFailure`) |
+| `PipelineAction<R>` | Abstract action unit; receives context, returns typed result; carries `status` / `duration` / `error` after running |
+| `ActionStatus` | Enum: `success`, `failed`, `skipped`, `interrupted` |
+| `BuildVersion` | Sealed type — `BuildVersionUnresolved` / `BuildVersionResolved` — guarding `context.buildNumber` |
 | `PipelineRegistry` | Registers pipelines; handles CLI routing and interactive selection |
+| `ArgsParser` | Minimal CLI parser: `has`, `getOption('key')` for `--key=value`, `positional` |
 | `runStep` | Logs + times a pipeline step, rethrows on failure |
 | `Logger` | Coloured stdout/stderr output |
 | `ShellRunner` | Process runner with live streaming and capture |
