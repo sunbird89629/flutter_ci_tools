@@ -52,8 +52,7 @@ void main() {
     );
   });
 
-  test('BuildIOSAction throws StateError if IPA directory not found',
-      () async {
+  test('BuildIOSAction throws StateError if IPA directory not found', () async {
     final action = BuildIOSAction(
       envName: 'test',
       exportMethod: 'ad-hoc',

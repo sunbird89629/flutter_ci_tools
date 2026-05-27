@@ -36,8 +36,8 @@ void main() {
     await action.run(context);
 
     expect(action.name, 'Build Android');
-    expect(
-        context.buildArtifact.path, 'build/app/outputs/flutter-apk/app-release.apk');
+    expect(context.buildArtifact.path,
+        'build/app/outputs/flutter-apk/app-release.apk');
     expect(
       shell.runCalls,
       contains(

@@ -7,7 +7,7 @@ import 'pipeline_action.dart';
 
 /// Android build output format.
 enum AndroidBuildType {
-    /// Standard APK package.
+  /// Standard APK package.
   apk,
 
   /// Android App Bundle for Play Store upload.
