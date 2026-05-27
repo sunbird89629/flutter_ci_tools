@@ -1,15 +1,14 @@
+import 'action_status.dart';
 import 'utils/logger.dart';
 import 'pipeline_context.dart';
 import 'actions/pipeline_action.dart';
 
 /// Executes [action] with standardized section logging and error handling.
 Future<T> runStep<T>(String name, Future<T> Function() action) async {
-  final startTime = DateTime.now();
   Logger.section(name);
   try {
     final result = await action();
-    final duration = DateTime.now().difference(startTime);
-    Logger.success('Finished: $name (${duration.inSeconds}s)');
+    Logger.success('Finished: $name');
     return result;
   } catch (e) {
     Logger.error('Failed: $name', e);
@@ -25,6 +24,23 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 abstract class BuildPipeline {
   /// Populated by [run]; do not access before then.
   late final PipelineContext context;
+
+  /// Actions executed during this run, in execution order.
+  final List<PipelineAction> executedActions = [];
+
+  /// Whether all executed actions succeeded.
+  bool get allSucceeded =>
+      executedActions.every((a) => a.status == ActionStatus.success);
+
+  /// The last failed action, or null if none failed.
+  PipelineAction? get lastFailure {
+    for (var i = executedActions.length - 1; i >= 0; i--) {
+      if (executedActions[i].status == ActionStatus.failed) {
+        return executedActions[i];
+      }
+    }
+    return null;
+  }
 
   /// Unique identifier (e.g. `"prod"`).
   String get name;
@@ -65,11 +81,57 @@ abstract class BuildPipeline {
       } catch (e) {
         Logger.error('afterBuild failed', e);
       }
+      _printSummary();
     }
   }
 
-  /// Runs [action] wrapped in [runStep] using [PipelineAction.name] as the
-  /// log section header. Returns the action's typed result.
-  Future<R> runAction<R>(PipelineAction<R> action) =>
-      runStep(action.name, () => action.run(context));
+  /// Runs [action] wrapped in [runStep], records status and timing.
+  /// Returns the action's typed result.
+  Future<R> runAction<R>(PipelineAction<R> action) async {
+    executedActions.add(action);
+    final stopwatch = Stopwatch()..start();
+    try {
+      final result = await runStep(action.name, () => action.run(context));
+      stopwatch.stop();
+      action
+        ..status = ActionStatus.success
+        ..duration = stopwatch.elapsed;
+      return result;
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      action
+        ..status = ActionStatus.failed
+        ..duration = stopwatch.elapsed
+        ..error = e
+        ..stackTrace = stackTrace;
+      rethrow;
+    }
+  }
+
+  void _printSummary() {
+    if (executedActions.isEmpty) return;
+    const sep = '────────────────────────────────────';
+    Logger.info(sep);
+    Logger.info('执行摘要');
+    Logger.info(sep);
+    for (final action in executedActions) {
+      final status = action.status;
+      final duration = action.duration;
+      if (status == null || duration == null) continue;
+      final icon = switch (status) {
+        ActionStatus.success => '✅',
+        ActionStatus.failed => '❌',
+        ActionStatus.skipped => '⏭️',
+        ActionStatus.interrupted => '🛑',
+      };
+      final ms = duration.inMilliseconds;
+      final time = ms >= 1000 ? '${(ms / 1000).toStringAsFixed(1)}s' : '${ms}ms';
+      Logger.info('$icon ${action.name} ($time)');
+    }
+    Logger.info(sep);
+    final failure = lastFailure;
+    if (failure != null) {
+      Logger.error('失败: ${failure.name}', failure.error);
+    }
+  }
 }
