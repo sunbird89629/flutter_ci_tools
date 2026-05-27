@@ -20,6 +20,33 @@ void main() {
         expect(ctx.appName, 'TestApp');
         expect(ctx.seedBuildNumber, 12000);
       });
+
+      test('exposes rawArgs', () {
+        final ctx = PipelineContext(
+          appName: 'TestApp',
+          seedBuildNumber: 10000,
+          rawArgs: ['android', '--debug'],
+        );
+        expect(ctx.rawArgs, ['android', '--debug']);
+      });
+
+      test('args getter returns ArgsParser wrapping rawArgs', () {
+        final ctx = PipelineContext(
+          appName: 'TestApp',
+          seedBuildNumber: 10000,
+          rawArgs: ['android', '--env=test'],
+        );
+        expect(ctx.args.has('android'), isTrue);
+        expect(ctx.args.getOption('env'), 'test');
+      });
+
+      test('rawArgs defaults to empty list', () {
+        final ctx = PipelineContext(
+          appName: 'TestApp',
+          seedBuildNumber: 10000,
+        );
+        expect(ctx.rawArgs, isEmpty);
+      });
     });
 
     group('buildNumber (sealed)', () {

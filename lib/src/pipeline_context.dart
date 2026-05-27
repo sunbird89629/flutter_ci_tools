@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'build_metadata.dart';
+import 'utils/args_parser.dart';
 
 /// State of the build version number.
 sealed class BuildVersion {}
@@ -25,6 +26,7 @@ class PipelineContext {
   PipelineContext({
     required this.appName,
     required this.seedBuildNumber,
+    this.rawArgs = const [],
   });
 
   /// Display name of the application (used in notifications).
@@ -32,6 +34,12 @@ class PipelineContext {
 
   /// Starting build number used when no existing `builds/*` tag is found.
   final int seedBuildNumber;
+
+  /// Raw CLI arguments passed through from the registry.
+  final List<String> rawArgs;
+
+  /// Convenience argument parser built from [rawArgs].
+  late final ArgsParser args = ArgsParser(rawArgs);
 
   /// Git and build metadata, populated by `CollectMetadataAction`.
   late BuildMetadata metadata;

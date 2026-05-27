@@ -18,11 +18,17 @@ class _StubPipeline extends BuildPipeline {
   @override
   String get help => _help;
 
+  List<String>? receivedArgs;
+
   @override
-  PipelineContext createContext() => PipelineContext(
-        appName: 'TestApp',
-        seedBuildNumber: 10000,
-      );
+  PipelineContext createContext(List<String> args) {
+    receivedArgs = args;
+    return PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 10000,
+      rawArgs: args,
+    );
+  }
 
   @override
   Future<void> body() async {

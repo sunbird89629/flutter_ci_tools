@@ -57,7 +57,7 @@ class PipelineRegistry {
       return;
     }
 
-    await pipeline.run();
+    await pipeline.run(args.sublist(1));
   }
 
   Future<void> _interactiveSelect(
@@ -89,7 +89,7 @@ class PipelineRegistry {
         return;
       }
       if (choice != null && choice >= 1 && choice <= list.length) {
-        await list[choice - 1].run();
+        await list[choice - 1].run([]);
         return;
       }
 

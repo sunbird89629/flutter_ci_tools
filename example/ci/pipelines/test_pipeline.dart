@@ -4,7 +4,7 @@ import '../app_config.dart';
 
 class TestPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext() => ExampleAppContext();
+  PipelineContext createContext(List<String> args) => ExampleAppContext(args: args);
 
   @override
   String get name => 'test';
