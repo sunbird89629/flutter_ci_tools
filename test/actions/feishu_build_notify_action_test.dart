@@ -63,5 +63,7 @@ void main() {
     expect(shell.lastJson, contains('release notes'));
     expect(shell.lastJson, contains('main'));
     expect(shell.lastJson, contains('abc1234'));
+    expect(shell.lastJson, contains('Alice'));
+    expect(shell.lastJson, contains('commit1'));
   });
 }
