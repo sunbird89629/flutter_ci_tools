@@ -33,7 +33,6 @@ class AndroidTestPipeline extends BuildPipeline {
     final ctx = context as AndroidTestContext;
 
     await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(CleanProjectAction());
 

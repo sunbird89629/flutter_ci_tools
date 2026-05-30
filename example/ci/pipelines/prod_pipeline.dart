@@ -21,7 +21,6 @@ Usage: dart run ci/build.dart prod
   @override
   Future<void> body() async {
     await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(SwapInfoPlistAction());
     await runAction(CleanProjectAction());
