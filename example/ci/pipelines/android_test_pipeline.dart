@@ -11,13 +11,15 @@ class AndroidTestContext extends PipelineContext {
         );
 
   final String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
+  // MessageBus Bot Webhook
   final String feishuWebhookUrl =
       'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd';
 }
 
 class AndroidTestPipeline extends BuildPipeline {
   @override
-  PipelineContext createContext(List<String> args) => AndroidTestContext(args: args);
+  PipelineContext createContext(List<String> args) =>
+      AndroidTestContext(args: args);
 
   @override
   String get name => 'android_test';
