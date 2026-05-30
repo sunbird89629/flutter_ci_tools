@@ -23,6 +23,38 @@
 
 只解决 (1) 能恢复正确性（仍串行）；要恢复并行需同时解决 (2)。
 
+## 设计准则：传参通道（广播 vs 点对点）
+
+action 之间传参有两条通道，**不应统一成一条**，而是按数据特征分流：
+
+| 数据特征 | 通道 | 例子 |
+|---|---|---|
+| **广播型**：本次 run 的共享事实，多个下游都读 | `PipelineContext` | `metadata`、`buildNumber`、`args` |
+| **点对点**：A 产出、B 消费的一次性管线值 | 显式返回值 / 构造参数 | `pgyerUrl → notify`、`artifact → upload` |
+
+准则一句话：**「多人读的共享配置」进 context；「一对一接力的管线值」走显式传。**
+
+### 为什么不把所有传参都塞进 context
+
+曾考虑让所有 action 一律走 context 以求「单一心智模型」，否决，代价有四：
+
+1. **丢编译期保证** — 返回值接力是类型安全的（漏接上一步则编译报错）；全走 context
+   会把所有传参降级成运行时 `late` / `StateError`，即把 `buildArtifact` / `buildNumber`
+   现有的「忘了前置 action 就运行时炸」模式蔓延到全局。
+2. **单槽冲突 / context 膨胀** — 即本文档要解决的根因；点对点值塞进 context 单槽会互相
+   覆盖，具名多槽又让 context 沦为「什么都装的大袋子」，并行更无从表达。
+3. **隐藏依赖** — 输入写在构造函数里一眼可见；藏进 `run()` 读 context 则违背
+   constructor injection / 显式接口约定。
+4. **并行 + 可测试性变差** — 共享可变 context + 并行写 = 竞态；显式传值天然适合并行，
+   单测也无需预先 setup 一大袋 context 状态。
+
+### 对本设计的指导
+
+`buildArtifact` 本质是**点对点**（build 产出 → 特定 upload 消费），却被放进 context 单槽，
+于是撞上「多 artifact / 并行」的墙。因此正确方向不是往 context 里塞更多东西，而是把
+`buildArtifact` 抽出来走**显式传值**——即下文「变更 1（upload 显式 File）」与「待决问题
+第 1 条（build action 返回 `File`）」。context 单槽语义保留，仅不再是唯一来源。
+
 ## Design
 
 ### 变更 1：upload action 支持显式 File（向后兼容）
@@ -133,5 +165,22 @@ await runParallel([
 - [ ] `_printSummary` 的执行顺序展示——并行 action 在 `executedActions` 里按
       注册顺序排列，但实际完成顺序不同；摘要是否需要标注「并行组」？
 - [ ] 是否值得为「多 artifact」在 `PipelineContext` 里提供具名多槽
-      （如 `Map<String, File>`），还是显式传 File 已足够、不必动 context？
-      倾向后者——保持 context 简单，并行性交给 pipeline 编排层。
+      （如 `Map<String, File>` 或 `androidArtifact` / `iosArtifact` 字段），
+      还是显式传 File 已足够、不必动 context？**倾向显式传 File。**
+
+      两种方案能力等价：具名多槽 + `runParallel` 也能跑通并行（不同 key 不再共享
+      单槽，消除并行写竞态），这正是 Fastlane 的模型（`lane_context` 里
+      `SharedValues::IPA_OUTPUT_PATH` 之类具名 key）。
+
+      **分水岭 = 这个 artifact 有几个下游消费它：**
+
+      | 下游数量 | 选型 | 理由 |
+      |---|---|---|
+      | 恰好 1 个（点对点） | 显式传 `File`（变更 1） | 类型安全、依赖写在构造函数上、天然 scale |
+      | 多个都要读同一 artifact | 才考虑具名多槽 | 广播省去把 `File` 穿过多个构造函数 |
+
+      当前 artifact 是**点对点**（`BuildAndroid` 产出 → 某个特定 upload 消费，读它的
+      只有一个下游），按本文「广播 vs 点对点」准则应走显式传。具名多槽的额外代价：
+      build 写 / upload 读靠**字符串 key 约定对齐**（编译器不保证、拼错即运行时炸）、
+      依赖藏进 key 名、硬编码字段不 scale（多 flavor / 多商店目标要不断加字段）。
+      故除非将来出现「同一 artifact 多下游消费」，否则不引入具名多槽。
