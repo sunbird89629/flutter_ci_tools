@@ -1,5 +1,5 @@
 import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart';
-import 'package:flutter_ci_tools/src/build_metadata.dart';
+import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
@@ -16,6 +16,27 @@ class _FakeShellRunner implements ShellRunner {
   }
 }
 
+class _FakeGitManager implements GitManager {
+  @override
+  Future<void> checkClean() async {}
+  @override
+  Future<void> resetHard() async {}
+  @override
+  Future<void> clean() async {}
+  @override
+  Future<void> restoreWorkspace() async {}
+  @override
+  Future<String> getShortHash() async => 'abc1234';
+  @override
+  Future<String> getRecentCommits({int count = 10}) async => 'commit1\ncommit2';
+  @override
+  Future<String> getBranch() async => 'main';
+  @override
+  Future<String> getCurrentUser() async => 'Alice';
+  @override
+  Future<String> getLatestCommitBody() async => 'release notes';
+}
+
 void main() {
   test('FeishuBuildNotifyAction sends formatted build message via webhook',
       () async {
@@ -23,15 +44,8 @@ void main() {
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
-    )
-      ..resolveBuildVersion(12042)
-      ..metadata = BuildMetadata(
-        branch: 'main',
-        gitUser: 'Alice',
-        gitHash: 'abc1234',
-        recentCommits: 'commit1\ncommit2',
-        commitBody: 'release notes',
-      );
+      git: _FakeGitManager(),
+    )..resolveBuildVersion(12042);
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
@@ -47,5 +61,7 @@ void main() {
     expect(shell.lastJson, contains('Pgyer'));
     expect(shell.lastJson, contains('https://example.com/dl'));
     expect(shell.lastJson, contains('release notes'));
+    expect(shell.lastJson, contains('main'));
+    expect(shell.lastJson, contains('abc1234'));
   });
 }
