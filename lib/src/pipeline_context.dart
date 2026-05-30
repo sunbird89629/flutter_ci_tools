@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'build_metadata.dart';
 import 'utils/args_parser.dart';
+import 'utils/git_manager.dart';
 
 /// State of the build version number.
 sealed class BuildVersion {}
@@ -27,7 +28,11 @@ class PipelineContext {
     required this.appName,
     required this.seedBuildNumber,
     this.rawArgs = const [],
-  });
+    GitManager? git,
+  }) : git = git ?? GitManager.instance;
+
+  /// Git accessor shared across all pipeline actions.
+  final GitManager git;
 
   /// Display name of the application (used in notifications).
   final String appName;
