@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter_ci_tools/src/build_metadata.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:test/test.dart';
@@ -116,21 +115,6 @@ void main() {
         final file = File('test.apk');
         ctx.setBuildArtifact(file);
         expect(ctx.buildArtifact, file);
-      });
-    });
-
-    group('metadata', () {
-      test('metadata can be set and read', () {
-        final meta = BuildMetadata(
-          branch: 'main',
-          gitUser: 'Alice',
-          gitHash: 'abc1234',
-          recentCommits: 'commits',
-          commitBody: 'body',
-        );
-        ctx.metadata = meta;
-        expect(ctx.metadata.branch, 'main');
-        expect(ctx.metadata.gitHash, 'abc1234');
       });
     });
 

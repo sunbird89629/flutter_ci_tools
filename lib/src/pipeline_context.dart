@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'build_metadata.dart';
 import 'utils/args_parser.dart';
 import 'utils/git_manager.dart';
 
@@ -19,7 +18,7 @@ class BuildVersionResolved extends BuildVersion {
 /// Shared, mutable context passed through all pipeline steps.
 ///
 /// Holds both static configuration (app identity) provided at
-/// construction time and runtime state (metadata, build number, build artifact)
+/// construction time and runtime state (build number, build artifact)
 /// populated by lifecycle actions during a single pipeline run.
 ///
 /// Subclass this to bundle reusable configuration across multiple pipelines.
@@ -45,9 +44,6 @@ class PipelineContext {
 
   /// Convenience argument parser built from [rawArgs].
   late final ArgsParser args = ArgsParser(rawArgs);
-
-  /// Git and build metadata, populated by `CollectMetadataAction`.
-  late BuildMetadata metadata;
 
   BuildVersion _buildVersion = BuildVersionUnresolved();
 
