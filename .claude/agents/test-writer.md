@@ -68,21 +68,37 @@ PipelineContext ctx() {
 }
 ```
 
-If the action needs `metadata`, set it in the helper:
+If the action reads git data, inject a fake `GitManager` via the `git`
+parameter (the action reads it through `context.git`):
 
 ```dart
+class _FakeGitManager implements GitManager {
+  @override
+  Future<void> checkClean() async {}
+  @override
+  Future<void> resetHard() async {}
+  @override
+  Future<void> clean() async {}
+  @override
+  Future<void> restoreWorkspace() async {}
+  @override
+  Future<String> getShortHash() async => 'abc1234';
+  @override
+  Future<String> getRecentCommits({int count = 10}) async => 'commit1\ncommit2';
+  @override
+  Future<String> getBranch() async => 'main';
+  @override
+  Future<String> getCurrentUser() async => 'Alice';
+  @override
+  Future<String> getLatestCommitBody() async => 'body';
+}
+
 PipelineContext ctx() {
-  final c = PipelineContext(
+  return PipelineContext(
     appName: 'TestApp',
     seedBuildNumber: 1000,
-  )..metadata = BuildMetadata(
-      branch: 'main',
-      gitUser: 'Alice',
-      gitHash: 'abc1234',
-      recentCommits: 'commit1\ncommit2',
-      commitBody: 'body',
-    );
-  return c;
+    git: _FakeGitManager(),
+  );
 }
 ```
 

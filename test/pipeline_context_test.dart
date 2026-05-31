@@ -1,8 +1,29 @@
 import 'dart:io';
 
-import 'package:flutter_ci_tools/src/build_metadata.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
+import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:test/test.dart';
+
+class _FakeGitManager implements GitManager {
+  @override
+  Future<void> checkClean() async {}
+  @override
+  Future<void> resetHard() async {}
+  @override
+  Future<void> clean() async {}
+  @override
+  Future<void> restoreWorkspace() async {}
+  @override
+  Future<String> getShortHash() async => 'abc1234';
+  @override
+  Future<String> getRecentCommits({int count = 10}) async => 'log';
+  @override
+  Future<String> getBranch() async => 'main';
+  @override
+  Future<String> getCurrentUser() async => 'Alice';
+  @override
+  Future<String> getLatestCommitBody() async => 'body';
+}
 
 void main() {
   group('PipelineContext', () {
@@ -97,18 +118,16 @@ void main() {
       });
     });
 
-    group('metadata', () {
-      test('metadata can be set and read', () {
-        final meta = BuildMetadata(
-          branch: 'main',
-          gitUser: 'Alice',
-          gitHash: 'abc1234',
-          recentCommits: 'commits',
-          commitBody: 'body',
+    group('git', () {
+      test('exposes the injected GitManager', () async {
+        final git = _FakeGitManager();
+        final c = PipelineContext(
+          appName: 'TestApp',
+          seedBuildNumber: 12000,
+          git: git,
         );
-        ctx.metadata = meta;
-        expect(ctx.metadata.branch, 'main');
-        expect(ctx.metadata.gitHash, 'abc1234');
+        expect(identical(c.git, git), isTrue);
+        expect(await c.git.getBranch(), 'main');
       });
     });
   });

@@ -24,10 +24,9 @@ enum DeployTarget {
 
 /// Sends the standard "new build" message to Feishu.
 ///
-/// Reads `context.buildName`, `context.buildNumber`,
-/// and `context.metadata` to format the message text. Requires
-/// `ResolveBuildVersionAction` and `CollectMetadataAction` earlier in the
-/// pipeline body.
+/// Reads `context.buildName`, `context.buildNumber`, and `context.git` to
+/// format the message text. Requires `ResolveBuildVersionAction` earlier in
+/// the pipeline body.
 class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Creates a Feishu build notification action.
   ///
@@ -57,7 +56,7 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final message = _formatMessage(context);
+    final message = await _formatMessage(context);
     await FeishuNotifyAction(
       webhookUrl: webhookUrl,
       message: message,
@@ -65,16 +64,21 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     ).run(context);
   }
 
-  String _formatMessage(PipelineContext context) {
+  Future<String> _formatMessage(PipelineContext context) async {
     const sep = '──────────────────────────';
-    final m = context.metadata;
+    final git = context.git;
+    final branch = await git.getBranch();
+    final gitUser = await git.getCurrentUser();
+    final gitHash = await git.getShortHash();
+    final recentCommits = await git.getRecentCommits(count: 15);
+    final commitBody = await git.getLatestCommitBody();
     final lines = <String>[
       '🚀 ${context.appName} 新版本 ${context.buildNumber} (${target.label})',
-      'branch: ${m.branch}  by: ${m.gitUser}',
+      'branch: $branch  by: $gitUser',
       sep,
       'versionName: ${context.buildName}',
       'versionCode: ${context.buildNumber}',
-      'git_hash:    ${m.gitHash}',
+      'git_hash:    $gitHash',
     ];
     if (downloadUrl != null) {
       lines
@@ -84,12 +88,12 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     lines
       ..add(sep)
       ..add('最近提交:')
-      ..add(m.recentCommits);
-    if (m.commitBody.isNotEmpty) {
+      ..add(recentCommits);
+    if (commitBody.isNotEmpty) {
       lines
         ..add(sep)
         ..add('版本说明:')
-        ..add(m.commitBody);
+        ..add(commitBody);
     }
     return lines.join('\n');
   }

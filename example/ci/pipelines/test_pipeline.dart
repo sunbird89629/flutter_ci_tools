@@ -21,7 +21,6 @@ Usage: dart run ci/build.dart test
   @override
   Future<void> body() async {
     await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
     await runAction(CheckGitStatusAction());
     await runAction(CleanProjectAction());
 
@@ -46,7 +45,7 @@ Usage: dart run ci/build.dart test
   Future<void> _deployToPgyer() async {
     final pgyerUrl = await runAction(PgyerUploadAction(
       apiKey: (context as ExampleAppContext).pgyerApiKey,
-      description: _pgyerDescription(),
+      description: await _pgyerDescription(),
     ));
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: (context as ExampleAppContext).feishuWebhookUrl,
@@ -55,16 +54,18 @@ Usage: dart run ci/build.dart test
     ));
   }
 
-  String _pgyerDescription() {
-    final m = context.metadata;
+  Future<String> _pgyerDescription() async {
+    final git = context.git;
+    final gitHash = await git.getShortHash();
+    final recentCommits = await git.getRecentCommits(count: 15);
     return [
       'versionName: ${context.buildName}',
       'versionCode: ${context.buildNumber}',
       'env:         test',
-      'git_hash:    ${m.gitHash}',
+      'git_hash:    $gitHash',
       '',
       'recent commits:',
-      m.recentCommits,
+      recentCommits,
     ].join('\n');
   }
 }

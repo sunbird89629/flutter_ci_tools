@@ -43,7 +43,6 @@ class TestPipeline extends BuildPipeline {
   @override
   Future<void> body() async {
     await runAction(ResolveBuildVersionAction());
-    await runAction(CollectMetadataAction());
     await runAction(CleanProjectAction());
 
     // Build artifact is stored on context.buildArtifact.
@@ -168,7 +167,6 @@ a summary is printed automatically:
 执行摘要
 ────────────────────────────────────
 ✅ ResolveBuildVersionAction (12ms)
-✅ CollectMetadataAction (240ms)
 ✅ CleanProjectAction (3.1s)
 ✅ BuildAndroidAction (47.2s)
 ❌ PgyerUploadAction (1.8s)
@@ -184,7 +182,7 @@ Feishu notification that reports which step failed).
 
 | Symbol | Description |
 |--------|-------------|
-| `PipelineContext` | Shared config + runtime state (`appName`, `seedBuildNumber`, `rawArgs`, `args`, `metadata`, `buildNumber`, `buildArtifact`) |
+| `PipelineContext` | Shared config + runtime state (`appName`, `seedBuildNumber`, `rawArgs`, `args`, `git`, `buildNumber`, `buildArtifact`) |
 | `BuildPipeline` | Abstract base: `beforeBuild → body → afterBuild` lifecycle, plus action tracking (`executedActions`, `allSucceeded`, `lastFailure`) |
 | `PipelineAction<R>` | Abstract action unit; receives context, returns typed result; carries `status` / `duration` / `error` after running |
 | `ActionStatus` | Enum: `success`, `failed`, `skipped`, `interrupted` |
@@ -196,9 +194,8 @@ Feishu notification that reports which step failed).
 | `ShellRunner` | Process runner with live streaming and capture |
 | `GitManager` | Git status, branch, hash, commit history |
 | `VersionManager` | `builds/*` git-tag-based build numbering |
-| `BuildMetadata` | Collects branch/user/hash/commits at build time |
 
-Built-in actions include `ResolveBuildVersionAction`, `CollectMetadataAction`,
+Built-in actions include `ResolveBuildVersionAction`,
 `CheckGitStatusAction`, `CleanProjectAction`, `BuildAndroidAction`,
 `BuildIOSAction`, `PgyerUploadAction`, `PgyerUploadV2Action`,
 `GooglePlayUploadAction`, `AppStoreUploadAction`, `FeishuBuildNotifyAction`,

@@ -6,7 +6,7 @@ Dart package for reusable Flutter CI tooling — build orchestration, git versio
 
 - **Pipeline** — orchestrates a sequence of Actions (`beforeBuild` → `body` → `afterBuild`)
 - **PipelineAction** — single-responsibility step (build, upload, notify, etc.)
-- **PipelineContext** — shared mutable state passed through all actions (buildNumber, metadata, buildArtifact)
+- **PipelineContext** — shared mutable state passed through all actions (buildNumber, buildArtifact); also carries the injected `git` accessor (`GitManager`)
 - **PipelineRegistry** — CLI router, dispatches to named pipelines
 
 Each pipeline is a user-authored `BuildPipeline` subclass. Pipelines decide internally what to build — no platform enum.
