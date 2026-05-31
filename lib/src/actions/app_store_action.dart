@@ -42,7 +42,10 @@ class AppStoreUploadAction extends PipelineAction<void> {
   Future<void> run(PipelineContext context) async {
     final artifact = context.buildArtifact;
     Logger.info('IPA: ${artifact.path}');
-    Logger.info('API Key: $apiKeyId');
+    final maskedKeyId = apiKeyId.length > 6
+        ? '${apiKeyId.substring(0, 4)}***${apiKeyId.substring(apiKeyId.length - 2)}'
+        : '***';
+    Logger.info('API Key: $maskedKeyId');
     if (!File(apiKeyPath).existsSync()) {
       throw DeployException(
         'App Store API Key (.p8) not found at $apiKeyPath',
@@ -55,9 +58,8 @@ class AppStoreUploadAction extends PipelineAction<void> {
       'key': p8Content,
       'in_house': false,
     });
-    final apiKeyJsonFile = File(
-      '${Directory.systemTemp.path}/flutter_ci_api_key_${DateTime.now().microsecondsSinceEpoch}.json',
-    );
+    final apiKeyJsonFile =
+        File('${Directory.systemTemp.createTempSync('flutter_ci_').path}/api_key.json');
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
       await _shellRunner.run('fastlane', [
@@ -70,7 +72,8 @@ class AppStoreUploadAction extends PipelineAction<void> {
         '--skip_waiting_for_build_processing',
       ]);
     } finally {
-      if (apiKeyJsonFile.existsSync()) apiKeyJsonFile.deleteSync();
+      final tempDir = apiKeyJsonFile.parent;
+      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
     }
     Logger.success('App Store upload successful!');
   }

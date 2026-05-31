@@ -69,7 +69,7 @@ void main() {
     test('happy path: probe → token → upload → poll → return URL', () async {
       final shell = _ScriptedShellRunner()
         ..on(
-            '--form-string _api_key=k',
+            'getCOSToken',
             () => ShellResult(
                   exitCode: 0,
                   stdout: '{"code":0,"data":{'
@@ -82,7 +82,7 @@ void main() {
         ..on('bucket.cos.region.myqcloud.com',
             () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
         ..on(
-            'app/buildInfo?_api_key=k&buildKey=BUILD_KEY',
+            'app/buildInfo',
             () => ShellResult(
                   exitCode: 0,
                   stdout: '{"code":0,"data":{"buildShortcutUrl":"abcd"}}',
@@ -118,7 +118,7 @@ void main() {
     test('throws when getCOSToken returns non-zero code', () async {
       final shell = _ScriptedShellRunner()
         ..on(
-            '--form-string _api_key=k',
+            'getCOSToken',
             () => ShellResult(
                   exitCode: 0,
                   stdout: '{"code":1,"message":"bad key"}',
@@ -140,7 +140,7 @@ void main() {
       try {
         final shell = _ScriptedShellRunner()
           ..on(
-              '--form-string _api_key=k',
+              'getCOSToken',
               () => ShellResult(
                     exitCode: 0,
                     stdout: '{"code":0,"data":{'
@@ -170,7 +170,7 @@ void main() {
         final stub = probeStub((d) => d == 'api.xcxwo.com');
         final shell = _ScriptedShellRunner()
           ..on(
-              '--form-string _api_key=k',
+              'getCOSToken',
               () => ShellResult(
                     exitCode: 0,
                     stdout: '{"code":0,"data":{'
@@ -181,7 +181,7 @@ void main() {
           ..on('bucket.cos.x.com',
               () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
           ..on(
-              'buildInfo?_api_key=k&buildKey=BK',
+              'app/buildInfo',
               () => ShellResult(
                     exitCode: 0,
                     stdout: '{"code":0,"data":{"buildShortcutUrl":"x"}}',
