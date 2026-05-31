@@ -90,4 +90,55 @@ class PipelineContext {
 
   /// Sets the build artifact file. Called by build actions.
   void setBuildArtifact(File file) => _buildArtifact = file;
+
+  /// Flutter 项目根目录。
+  ///
+  /// 从 [Directory.current] 起逐级向上查找含 `pubspec.yaml` 的目录。
+  /// 到文件系统根仍未找到则抛 [StateError]。
+  late final Directory projectRoot = _findProjectRoot();
+
+  /// `pubspec.yaml` 的 `name` 字段。
+  late final String pubspecName = _readPubspecField('name');
+
+  /// `pubspec.yaml` 的 `version` 字段（原始字符串，如 `"0.1.0"`）。
+  late final String pubspecVersion = _readPubspecField('version');
+
+  late final String _pubspecContent =
+      File('${projectRoot.path}/pubspec.yaml').readAsStringSync();
+
+  String _readPubspecField(String key) {
+    final match = RegExp('^$key:\\s*(.+)\$', multiLine: true)
+        .firstMatch(_pubspecContent);
+    if (match == null) {
+      throw StateError('pubspec.yaml 中未找到字段：$key。');
+    }
+    var value = match.group(1)!;
+    // 去掉行尾注释
+    final hash = value.indexOf('#');
+    if (hash != -1) value = value.substring(0, hash);
+    value = value.trim();
+    // 去掉首尾引号
+    if (value.length >= 2 &&
+        (value.startsWith('"') && value.endsWith('"') ||
+            value.startsWith("'") && value.endsWith("'"))) {
+      value = value.substring(1, value.length - 1);
+    }
+    return value;
+  }
+
+  Directory _findProjectRoot() {
+    var dir = Directory.current.absolute;
+    while (true) {
+      if (File('${dir.path}/pubspec.yaml').existsSync()) {
+        return dir;
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) {
+        throw StateError(
+          '未找到 pubspec.yaml：从 ${Directory.current.path} 向上查找至文件系统根均无结果。',
+        );
+      }
+      dir = parent;
+    }
+  }
 }
