@@ -61,7 +61,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   Future<String> run(PipelineContext context) async {
     final artifact = context.buildArtifact;
     final domain = await _selectReachableDomain();
-    final apiBaseUrl = 'http://$domain/apiv2';
+    final apiBaseUrl = 'https://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
 
     final token = await _getCOSToken(apiBaseUrl, artifact);
@@ -198,7 +198,13 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       final result = await _shellRunner.runAndCapture('curl', [
         '-s',
-        '$apiBaseUrl/app/buildInfo?_api_key=$apiKey&buildKey=$key',
+        '-X',
+        'POST',
+        '--form-string',
+        '_api_key=$apiKey',
+        '--form-string',
+        'buildKey=$key',
+        '$apiBaseUrl/app/buildInfo',
       ]);
       if (result.exitCode == 0) {
         try {

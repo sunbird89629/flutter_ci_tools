@@ -20,14 +20,23 @@ class ShellRunnerImpl implements ShellRunner {
     };
   }();
 
+  static final _sensitiveArgPattern =
+      RegExp(r'(_api_key|password|secret|token)=\S+', caseSensitive: false);
+
+  static String _redactArgs(List<String> args) {
+    return args
+        .map((a) => a.replaceAll(_sensitiveArgPattern, r'$1=***'))
+        .join(' ');
+  }
+
   @override
   Future<void> run(String executable, List<String> args) async {
-    Logger.command('$executable ${args.join(' ')}');
+    Logger.command('$executable ${_redactArgs(args)}');
     final process = await Process.start(
       executable,
       args,
       environment: environment,
-      runInShell: true,
+      runInShell: false,
     );
 
     final stdoutDone = process.stdout.forEach((data) => stdout.add(data));

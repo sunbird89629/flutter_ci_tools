@@ -374,9 +374,9 @@ class AndroidTestContext extends PipelineContext {
           seedBuildNumber: 10000,
         );
 
-  final String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
-  final String feishuWebhookUrl =
-      'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd';
+  String get pgyerApiKey => Platform.environment['PGYER_API_KEY'] ?? '';
+  String get feishuWebhookUrl =>
+      Platform.environment['FEISHU_WEBHOOK_URL'] ?? '';
 }
 ```
 
