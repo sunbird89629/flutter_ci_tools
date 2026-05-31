@@ -58,8 +58,8 @@ class AppStoreUploadAction extends PipelineAction<void> {
       'key': p8Content,
       'in_house': false,
     });
-    final apiKeyJsonFile =
-        File('${Directory.systemTemp.createTempSync('flutter_ci_').path}/api_key.json');
+    final apiKeyJsonFile = File(
+        '${Directory.systemTemp.createTempSync('flutter_ci_').path}/api_key.json');
     apiKeyJsonFile.writeAsStringSync(apiKeyJson);
     try {
       await _shellRunner.run('fastlane', [
