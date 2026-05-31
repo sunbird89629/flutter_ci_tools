@@ -51,7 +51,6 @@ class AndroidTestPipeline extends BuildPipeline {
 
     await runAction(PushBuildTagAction());
   }
-
-  @override
-  Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
+  // @override
+  // Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 }
