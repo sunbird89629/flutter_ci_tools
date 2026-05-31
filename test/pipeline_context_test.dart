@@ -135,6 +135,28 @@ void main() {
     });
   });
 
+  group('pubspec 字段', () {
+    test('读取本包 name 与 version', () {
+      final ctx = _ctx();
+      expect(ctx.pubspecName, equals('flutter_ci_tools'));
+      expect(ctx.pubspecVersion, equals('0.1.0'));
+    });
+
+    test('字段缺失时抛 StateError', () {
+      final original = Directory.current;
+      final tmp = Directory.systemTemp.createTempSync('pctx_noname_');
+      try {
+        // 只写 version，不写 name
+        File('${tmp.path}/pubspec.yaml').writeAsStringSync('version: 9.9.9\n');
+        Directory.current = tmp;
+        expect(() => _ctx().pubspecName, throwsStateError);
+      } finally {
+        Directory.current = original;
+        tmp.deleteSync(recursive: true);
+      }
+    });
+  });
+
   group('projectRoot', () {
     test('定位到含 pubspec.yaml 的包根目录', () {
       final root = _ctx().projectRoot;
