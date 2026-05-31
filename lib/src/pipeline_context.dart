@@ -90,4 +90,26 @@ class PipelineContext {
 
   /// Sets the build artifact file. Called by build actions.
   void setBuildArtifact(File file) => _buildArtifact = file;
+
+  /// Flutter 项目根目录。
+  ///
+  /// 从 [Directory.current] 起逐级向上查找含 `pubspec.yaml` 的目录。
+  /// 到文件系统根仍未找到则抛 [StateError]。
+  late final Directory projectRoot = _findProjectRoot();
+
+  Directory _findProjectRoot() {
+    var dir = Directory.current.absolute;
+    while (true) {
+      if (File('${dir.path}/pubspec.yaml').existsSync()) {
+        return dir;
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) {
+        throw StateError(
+          '未找到 pubspec.yaml：从 ${Directory.current.path} 向上查找至文件系统根均无结果。',
+        );
+      }
+      dir = parent;
+    }
+  }
 }

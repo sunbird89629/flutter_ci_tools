@@ -4,6 +4,9 @@ import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:test/test.dart';
 
+PipelineContext _ctx() =>
+    PipelineContext(appName: 'demo', seedBuildNumber: 100000);
+
 class _FakeGitManager implements GitManager {
   @override
   Future<void> checkClean() async {}
@@ -129,6 +132,44 @@ void main() {
         expect(identical(c.git, git), isTrue);
         expect(await c.git.getBranch(), 'main');
       });
+    });
+  });
+
+  group('projectRoot', () {
+    test('定位到含 pubspec.yaml 的包根目录', () {
+      final root = _ctx().projectRoot;
+      expect(File('${root.path}/pubspec.yaml').existsSync(), isTrue);
+    });
+
+    test('从嵌套子目录向上查找', () {
+      final original = Directory.current;
+      final tmp = Directory.systemTemp.createTempSync('pctx_');
+      try {
+        File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: tmp_pkg\n');
+        final nested = Directory('${tmp.path}/a/b/c')
+          ..createSync(recursive: true);
+        Directory.current = nested;
+        // canonicalize 消除 macOS /private/var 与 /var 符号链接差异
+        expect(
+          _ctx().projectRoot.resolveSymbolicLinksSync(),
+          equals(tmp.resolveSymbolicLinksSync()),
+        );
+      } finally {
+        Directory.current = original;
+        tmp.deleteSync(recursive: true);
+      }
+    });
+
+    test('找不到 pubspec.yaml 时抛 StateError', () {
+      final original = Directory.current;
+      final tmp = Directory.systemTemp.createTempSync('pctx_empty_');
+      try {
+        Directory.current = tmp;
+        expect(() => _ctx().projectRoot, throwsStateError);
+      } finally {
+        Directory.current = original;
+        tmp.deleteSync(recursive: true);
+      }
     });
   });
 }
