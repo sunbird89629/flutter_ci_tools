@@ -142,10 +142,17 @@ class PgyerUploadV2Action extends PipelineAction<String> {
       );
     }
     final data = response['data'] as Map<String, dynamic>?;
+    // Pgyer API 响应结构可能有两种形式：
+    // 1. 直接在 data 下（旧格式）
+    // 2. signature/securityToken 嵌套在 data.params 下（新格式）
+    final params = data?['params'] as Map<String, dynamic>?;
     final endpoint = data?['endpoint'] as String?;
     final key = data?['key'] as String?;
-    final signature = data?['signature'] as String?;
-    final securityToken = data?['x-cos-security-token'] as String?;
+    final signature =
+        (params?['signature'] ?? data?['signature']) as String?;
+    final securityToken =
+        (params?['x-cos-security-token'] ?? data?['x-cos-security-token'])
+            as String?;
     if (endpoint == null ||
         key == null ||
         signature == null ||

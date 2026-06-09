@@ -247,6 +247,46 @@ void main() {
       }
     });
 
+    test('handles nested params in getCOSToken response (new API format)', () async {
+      final tmp = Directory.systemTemp.createTempSync();
+      final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
+      try {
+        final shell = _ScriptedShellRunner()
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{'
+                        '"endpoint":"https://bucket.cos.region.myqcloud.com",'
+                        '"key":"BUILD_KEY",'
+                        '"params":{'
+                        '"signature":"SIG_NESTED",'
+                        '"x-cos-security-token":"TOK_NESTED"}}}',
+                    stderr: '',
+                  ))
+          ..on('bucket.cos.region.myqcloud.com',
+              () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
+          ..on(
+              'app/buildInfo?_api_key=k&buildKey=BUILD_KEY',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{"buildShortcutUrl":"nested"}}',
+                    stderr: '',
+                  ));
+
+        final context = ctx()..setBuildArtifact(apk);
+        final action = PgyerUploadV2Action(
+          apiKey: 'k',
+          probeDomain: (d) async => d == 'api.pgyer.com',
+          shellRunner: shell,
+        );
+        final url = await action.run(context);
+        expect(url, 'https://pgyer.com/nested');
+      } finally {
+        tmp.deleteSync(recursive: true);
+      }
+    });
+
     test('falls back to context.buildArtifact when artifact is null', () async {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/fallback.apk')..writeAsStringSync('fake');
