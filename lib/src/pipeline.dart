@@ -21,7 +21,7 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 /// Subclasses implement [body] to compose [PipelineAction]s; the base class
 /// provides only the execution shell ([beforeBuild] → [body] → [afterBuild])
 /// with try/finally semantics guaranteeing [afterBuild] runs even on failure.
-abstract class BuildPipeline {
+abstract class Pipeline {
   /// Converts the pipeline class name to a snake_case identifier.
   ///
   /// For example:
