@@ -11,7 +11,7 @@ import 'pipeline_action.dart';
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
-class BuildIOSAction extends PipelineAction<void> {
+class BuildIOSAction extends PipelineAction<File> {
   /// Creates an iOS build action.
   ///
   /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).
@@ -34,7 +34,7 @@ class BuildIOSAction extends PipelineAction<void> {
   String get name => 'Build iOS';
 
   @override
-  Future<void> run(PipelineContext context) async {
+  Future<File> run(PipelineContext context) async {
     await _shellRunner.run('fvm', [
       'flutter',
       'build',
@@ -44,7 +44,9 @@ class BuildIOSAction extends PipelineAction<void> {
       '--build-number=${context.buildNumber}',
       '--dart-define=ENV=$envName',
     ]);
-    context.setBuildArtifact(_findIpa());
+    final file = _findIpa();
+    context.setBuildArtifact(file);
+    return file;
   }
 
   File _findIpa() {
