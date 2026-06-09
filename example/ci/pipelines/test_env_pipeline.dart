@@ -2,9 +2,9 @@ import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
 
-final String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
+const String pgyerApiKey = '1540c89d7f12ade530a14ac4adf9caa2';
 // MessageBus Bot Webhook
-final String feishuWebhookUrl =
+const String feishuWebhookUrl =
     'https://open.feishu.cn/open-apis/bot/v2/hook/82ab0b57-f8c9-493f-a69d-575271f12bfd';
 
 class TestEnvPipeline extends Pipeline {
@@ -53,7 +53,4 @@ Usage: dart run ci/build.dart test
 
     await runAction(PushBuildTagAction());
   }
-
-  @override
-  Future<void> afterBuild() => runAction(RestoreWorkspaceAction());
 }
