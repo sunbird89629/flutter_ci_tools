@@ -2,13 +2,11 @@ import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
 
-class TestPipeline extends Pipeline {
+class TestEnvPipeline extends Pipeline {
   @override
   PipelineContext createContext(List<String> args) =>
       ExampleAppContext(args: args);
 
-  @override
-  String get name => 'test';
   @override
   String get description => '构建并部署到测试环境 (Pgyer)';
   @override
