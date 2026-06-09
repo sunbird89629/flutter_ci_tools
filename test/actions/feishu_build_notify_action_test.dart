@@ -66,4 +66,70 @@ void main() {
     expect(shell.lastJson, contains('Alice'));
     expect(shell.lastJson, contains('commit1'));
   });
+
+  test('formats message with multiple downloadUrls', () async {
+    final shell = _FakeShellRunner();
+    final context = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
+      git: _FakeGitManager(),
+    )..resolveBuildVersion(12042);
+
+    final action = FeishuBuildNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
+      target: DeployTarget.pgyer,
+      downloadUrls: [
+        'https://www.pgyer.com/android123',
+        'https://www.pgyer.com/ios456',
+      ],
+      shellRunner: shell,
+    );
+    await action.run(context);
+
+    expect(shell.lastJson, contains('🔗 下载链接:'));
+    expect(shell.lastJson, contains('  1. https://www.pgyer.com/android123'));
+    expect(shell.lastJson, contains('  2. https://www.pgyer.com/ios456'));
+  });
+
+  test('formats message with single downloadUrl in downloadUrls', () async {
+    final shell = _FakeShellRunner();
+    final context = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
+      git: _FakeGitManager(),
+    )..resolveBuildVersion(12042);
+
+    final action = FeishuBuildNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
+      target: DeployTarget.pgyer,
+      downloadUrls: ['https://www.pgyer.com/only_one'],
+      shellRunner: shell,
+    );
+    await action.run(context);
+
+    expect(shell.lastJson, contains('🔗 下载: https://www.pgyer.com/only_one'));
+    expect(shell.lastJson, isNot(contains('下载链接')));
+  });
+
+  test('downloadUrls overrides downloadUrl when both provided', () async {
+    final shell = _FakeShellRunner();
+    final context = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
+      git: _FakeGitManager(),
+    )..resolveBuildVersion(12042);
+
+    final action = FeishuBuildNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
+      target: DeployTarget.pgyer,
+      downloadUrl: 'https://old.example.com',
+      downloadUrls: ['https://new.example.com/1', 'https://new.example.com/2'],
+      shellRunner: shell,
+    );
+    await action.run(context);
+
+    expect(shell.lastJson, isNot(contains('old.example.com')));
+    expect(shell.lastJson, contains('1. https://new.example.com/1'));
+    expect(shell.lastJson, contains('2. https://new.example.com/2'));
+  });
 }

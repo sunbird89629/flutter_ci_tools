@@ -32,12 +32,15 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.
   /// [target] is the deploy destination (Pgyer, Google Play, etc.).
-  /// [downloadUrl] is an optional direct download link included in the message.
+  /// [downloadUrl] is an optional single download link included in the message.
+  /// [downloadUrls] is an optional list of download links; when provided,
+  /// overrides [downloadUrl].
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuBuildNotifyAction({
     required this.webhookUrl,
     required this.target,
     this.downloadUrl,
+    this.downloadUrls,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -47,8 +50,11 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Deploy destination label (Pgyer, Google Play, or App Store).
   final DeployTarget target;
 
-  /// Optional direct download link included in the notification message.
+  /// Optional single download link included in the notification message.
   final String? downloadUrl;
+
+  /// Optional list of download links; when provided, overrides [downloadUrl].
+  final List<String>? downloadUrls;
   final ShellRunner _shellRunner;
 
   @override
@@ -80,10 +86,17 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
       'versionCode: ${context.buildNumber}',
       'git_hash:    $gitHash',
     ];
-    if (downloadUrl != null) {
-      lines
-        ..add(sep)
-        ..add('🔗 下载: $downloadUrl');
+    final urls = downloadUrls ?? (downloadUrl != null ? [downloadUrl!] : null);
+    if (urls != null && urls.isNotEmpty) {
+      lines.add(sep);
+      if (urls.length == 1) {
+        lines.add('🔗 下载: ${urls.single}');
+      } else {
+        lines.add('🔗 下载链接:');
+        for (var i = 0; i < urls.length; i++) {
+          lines.add('  ${i + 1}. ${urls[i]}');
+        }
+      }
     }
     lines
       ..add(sep)
