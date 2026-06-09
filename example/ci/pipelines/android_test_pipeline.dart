@@ -22,9 +22,8 @@ class AndroidTestPipeline extends BuildPipeline {
       AndroidTestContext(args: args);
 
   @override
-  String get name => 'android_test';
-  @override
   String get description => 'android 测试环境版本构建，用于开发期间调试脚本的功能';
+
   @override
   String get help => 'android-only test pipeline';
 

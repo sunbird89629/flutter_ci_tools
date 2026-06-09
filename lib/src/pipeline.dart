@@ -1,7 +1,7 @@
 import 'action_status.dart';
-import 'utils/logger.dart';
-import 'pipeline_context.dart';
 import 'actions/pipeline_action.dart';
+import 'pipeline_context.dart';
+import 'utils/logger.dart';
 
 /// Executes [action] with standardized section logging and error handling.
 Future<T> runStep<T>(String name, Future<T> Function() action) async {
@@ -22,6 +22,40 @@ Future<T> runStep<T>(String name, Future<T> Function() action) async {
 /// provides only the execution shell ([beforeBuild] → [body] → [afterBuild])
 /// with try/finally semantics guaranteeing [afterBuild] runs even on failure.
 abstract class BuildPipeline {
+  /// Converts the pipeline class name to a snake_case identifier.
+  ///
+  /// For example:
+  /// - `AndroidTestPipeline` → `android_test`
+  /// - `ProdPipeline` → `prod`
+  /// - `PublishIOSAction` → `publish_i_o_s_action`
+  ///
+  /// The logic:
+  /// 1. Removes the `Pipeline` suffix (case-insensitive)
+  /// 2. Converts CamelCase to snake_case
+  String get name {
+    final className = this.runtimeType.toString();
+
+    // Remove Pipeline suffix
+    String withoutSuffix = className;
+    if (className.toLowerCase().endsWith('pipeline')) {
+      withoutSuffix = className.substring(
+        0,
+        className.length - 'pipeline'.length,
+      );
+    }
+
+    // Convert CamelCase to snake_case
+    final snakeCase = withoutSuffix
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => '_${match.group(1)}')
+        .toLowerCase()
+        .replaceFirst('_', ''); // Remove leading underscore
+
+    return snakeCase;
+  }
+
+  /// Short description shown in the interactive selector.
+  String get description => '当前 pipeline 的说明，应包含关键信息';
+
   /// Populated by [run]; do not access before then.
   late final PipelineContext context;
 
@@ -41,12 +75,6 @@ abstract class BuildPipeline {
     }
     return null;
   }
-
-  /// Unique identifier (e.g. `"prod"`).
-  String get name;
-
-  /// Short description shown in the interactive selector.
-  String get description;
 
   /// Extended help text printed when the user passes `--help`.
   String get help;
@@ -127,8 +155,9 @@ abstract class BuildPipeline {
         ActionStatus.interrupted => '🛑',
       };
       final ms = duration.inMilliseconds;
-      final time =
-          ms >= 1000 ? '${(ms / 1000).toStringAsFixed(1)}s' : '${ms}ms';
+      final time = ms >= 1000
+          ? '${(ms / 1000).toStringAsFixed(1)}s'
+          : '${ms}ms';
       Logger.info('$icon ${action.name} ($time)');
     }
     Logger.info(sep);

@@ -7,7 +7,7 @@ import '../pipeline_context.dart';
 /// Use [R] = `void` when the action has no return value.
 abstract class PipelineAction<R> {
   /// Human-readable name; used as the log section header by `BuildPipeline.runAction`.
-  String get name;
+  String get name => this.runtimeType.toString();
 
   /// The execution status of this action, or `null` before it has run.
   ActionStatus? status;
