@@ -202,5 +202,90 @@ void main() {
         tmp.deleteSync(recursive: true);
       }
     });
+
+    test('uses explicit artifact when provided', () async {
+      final tmp = Directory.systemTemp.createTempSync();
+      final explicitFile = File('${tmp.path}/explicit.aab')
+        ..writeAsStringSync('explicit');
+      try {
+        final shell = _ScriptedShellRunner()
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{'
+                        '"endpoint":"https://bucket.cos.x.com",'
+                        '"key":"EXPLICIT","signature":"S","x-cos-security-token":"T"}}',
+                    stderr: '',
+                  ))
+          ..on('bucket.cos.x.com',
+              () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
+          ..on(
+              'buildInfo?_api_key=k&buildKey=EXPLICIT',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{"buildShortcutUrl":"explicit"}}',
+                    stderr: '',
+                  ));
+
+        // Don't set context.buildArtifact — explicit should be used
+        final context = ctx();
+        final action = PgyerUploadV2Action(
+          apiKey: 'k',
+          artifact: explicitFile,
+          probeDomain: (_) async => true,
+          shellRunner: shell,
+        );
+        final url = await action.run(context);
+        expect(url, 'https://pgyer.com/explicit');
+        expect(
+          shell.calls.any((c) => c.contains('file=@${explicitFile.path}')),
+          isTrue,
+        );
+      } finally {
+        tmp.deleteSync(recursive: true);
+      }
+    });
+
+    test('falls back to context.buildArtifact when artifact is null', () async {
+      final tmp = Directory.systemTemp.createTempSync();
+      final apk = File('${tmp.path}/fallback.apk')..writeAsStringSync('fake');
+      try {
+        final shell = _ScriptedShellRunner()
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{'
+                        '"endpoint":"https://bucket.cos.x.com",'
+                        '"key":"FALLBACK","signature":"S","x-cos-security-token":"T"}}',
+                    stderr: '',
+                  ))
+          ..on('bucket.cos.x.com',
+              () => ShellResult(exitCode: 0, stdout: '204', stderr: ''))
+          ..on(
+              'buildInfo?_api_key=k&buildKey=FALLBACK',
+              () => ShellResult(
+                    exitCode: 0,
+                    stdout: '{"code":0,"data":{"buildShortcutUrl":"fb"}}',
+                    stderr: '',
+                  ));
+
+        final context = ctx()..setBuildArtifact(apk);
+        final action = PgyerUploadV2Action(
+          apiKey: 'k',
+          probeDomain: (_) async => true,
+          shellRunner: shell,
+        );
+        final url = await action.run(context);
+        expect(url, 'https://pgyer.com/fb');
+        expect(
+          shell.calls.any((c) => c.contains('file=@${apk.path}')),
+          isTrue,
+        );
+      } finally {
+        tmp.deleteSync(recursive: true);
+      }
+    });
   });
 }

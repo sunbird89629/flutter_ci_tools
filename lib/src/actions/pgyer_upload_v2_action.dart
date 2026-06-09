@@ -20,8 +20,8 @@ import 'pipeline_action.dart';
 /// 4. Polls `buildInfo` until processing completes and returns the build's
 ///    public download URL.
 ///
-/// The artifact file is read from [PipelineContext.buildArtifact], which
-/// must be set by a preceding build action (e.g. [BuildAndroidAction]).
+/// The artifact file is read from the explicit [artifact] parameter if
+/// provided, otherwise from [PipelineContext.buildArtifact].
 ///
 /// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
 class PgyerUploadV2Action extends PipelineAction<String> {
@@ -29,12 +29,15 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [description] is an optional build description shown on Pgyer.
+  /// [artifact] optionally specifies the file to upload; if null, uses
+  /// [PipelineContext.buildArtifact].
   /// [apiDomains] overrides the default list of API hosts to probe.
   /// [probeDomain] overrides the default domain reachability check for testing.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadV2Action({
     required this.apiKey,
     this.description,
+    this.artifact,
     List<String>? apiDomains,
     Future<bool> Function(String domain)? probeDomain,
     ShellRunner? shellRunner,
@@ -48,6 +51,10 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// Optional build description shown on the Pgyer download page.
   final String? description;
 
+  /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
+  /// when `null`.
+  final File? artifact;
+
   /// Ordered list of API hosts to probe. First reachable one is used.
   final List<String> apiDomains;
 
@@ -59,13 +66,13 @@ class PgyerUploadV2Action extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
-    final artifact = context.buildArtifact;
+    final file = artifact ?? context.buildArtifact;
     final domain = await _selectReachableDomain();
     final apiBaseUrl = 'http://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
 
-    final token = await _getCOSToken(apiBaseUrl, artifact);
-    await _uploadToCOS(token, artifact);
+    final token = await _getCOSToken(apiBaseUrl, file);
+    await _uploadToCOS(token, file);
     final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key);
     final downloadUrl = 'https://$webDomain/$shortcutUrl';
     Logger.success('Pgyer build ready: $downloadUrl');
