@@ -8,13 +8,13 @@ import 'pipeline.dart';
 /// - `dart run ci/build.dart <name>` — run a specific pipeline
 /// - `dart run ci/build.dart` — interactive selection menu
 class PipelineRegistry {
-  final Map<String, BasePipeline> _pipelines = {};
+  final Map<String, Pipeline> _pipelines = {};
 
   /// All registered pipelines in registration order.
-  List<BasePipeline> get pipelines => _pipelines.values.toList();
+  List<Pipeline> get pipelines => _pipelines.values.toList();
 
   /// Registers a [pipeline]. Throws [ArgumentError] if a pipeline with the same name exists.
-  void register(BasePipeline pipeline) {
+  void register(Pipeline pipeline) {
     if (_pipelines.containsKey(pipeline.name)) {
       throw ArgumentError('Pipeline "${pipeline.name}" is already registered');
     }

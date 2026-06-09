@@ -18,7 +18,7 @@ class _RecordingAction extends PipelineAction<void> {
   }
 }
 
-class _TestPipeline extends BuildPipeline {
+class _TestPipeline extends Pipeline {
   _TestPipeline(
       {required this.log, this.bodyThrows = false, this.afterThrows = false});
 
@@ -70,7 +70,7 @@ class _SimpleAction extends PipelineAction<String> {
   }
 }
 
-class _ValuePipeline extends BuildPipeline {
+class _ValuePipeline extends Pipeline {
   String? returnValue;
   @override
   String get name => 'value-test';
@@ -89,7 +89,7 @@ class _ValuePipeline extends BuildPipeline {
   }
 }
 
-class _FailActionPipeline extends BuildPipeline {
+class _FailActionPipeline extends Pipeline {
   @override
   String get name => 'fail-test';
   @override

@@ -2,9 +2,10 @@ import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
 
-class TestPipeline extends BuildPipeline {
+class TestPipeline extends Pipeline {
   @override
-  PipelineContext createContext(List<String> args) => ExampleAppContext(args: args);
+  PipelineContext createContext(List<String> args) =>
+      ExampleAppContext(args: args);
 
   @override
   String get name => 'test';

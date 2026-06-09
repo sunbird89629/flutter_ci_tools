@@ -3,7 +3,7 @@ import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/pipeline_registry.dart';
 import 'package:test/test.dart';
 
-class _StubPipeline extends BuildPipeline {
+class _StubPipeline extends Pipeline {
   _StubPipeline(this._name, this._description, this._help);
 
   final String _name;
