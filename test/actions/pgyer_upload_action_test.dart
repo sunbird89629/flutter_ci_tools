@@ -119,4 +119,47 @@ void main() {
     );
     expect(action.name, 'Upload to Pgyer');
   });
+
+  test('uses explicit artifact when provided', () async {
+    final shell = _FakeShellRunner()
+      ..stubAny(ShellResult(
+        exitCode: 0,
+        stdout: '{"code":0,"data":{"buildKey":"explicit123"}}',
+        stderr: '',
+      ));
+    final explicitFile = File('explicit_artifact.apk');
+    final action = PgyerUploadAction(
+      apiKey: 'k',
+      artifact: explicitFile,
+      shellRunner: shell,
+    );
+
+    // Don't set context.buildArtifact — explicit should be used
+    final context = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 1000,
+    );
+
+    final url = await action.run(context);
+    expect(url, 'https://www.pgyer.com/explicit123');
+    expect(shell.runCalls.first, contains('file=@explicit_artifact.apk'));
+  });
+
+  test('falls back to context.buildArtifact when artifact is null', () async {
+    final shell = _FakeShellRunner()
+      ..stubAny(ShellResult(
+        exitCode: 0,
+        stdout: '{"code":0,"data":{"buildKey":"fallback456"}}',
+        stderr: '',
+      ));
+    final action = PgyerUploadAction(
+      apiKey: 'k',
+      shellRunner: shell,
+    );
+
+    final context = ctx(); // sets buildArtifact to test.apk
+    final url = await action.run(context);
+    expect(url, 'https://www.pgyer.com/fallback456');
+    expect(shell.runCalls.first, contains('file=@test.apk'));
+  });
 }

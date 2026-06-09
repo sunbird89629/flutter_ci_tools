@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
@@ -7,17 +8,19 @@ import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
-/// Uploads the build artifact from [PipelineContext.buildArtifact] to Pgyer
-/// and returns the download URL.
+/// Uploads the build artifact to Pgyer and returns the download URL.
 class PgyerUploadAction extends PipelineAction<String> {
   /// Creates a Pgyer upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [description] is an optional build description shown on Pgyer.
+  /// [artifact] optionally specifies the file to upload; if null, uses
+  /// [PipelineContext.buildArtifact].
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadAction({
     required this.apiKey,
     this.description,
+    this.artifact,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -26,6 +29,10 @@ class PgyerUploadAction extends PipelineAction<String> {
 
   /// Optional build description shown on the Pgyer download page.
   final String? description;
+
+  /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
+  /// when `null`.
+  final File? artifact;
   final ShellRunner _shellRunner;
 
   @override
@@ -33,7 +40,8 @@ class PgyerUploadAction extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
-    final filePath = context.buildArtifact.path;
+    final file = artifact ?? context.buildArtifact;
+    final filePath = file.path;
     Logger.info('Uploading $filePath ...');
     const maxAttempts = 3;
     ShellResult? result;
