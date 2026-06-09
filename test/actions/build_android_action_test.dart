@@ -26,18 +26,20 @@ void main() {
     )..resolveBuildVersion(12001);
   });
 
-  test('BuildAndroidAction(apk) stores apk in context', () async {
+  test('BuildAndroidAction(apk) returns file and stores in context', () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.apk,
       shellRunner: shell,
     );
 
-    await action.run(context);
+    final result = await action.run(context);
 
     expect(action.name, 'Build Android');
+    expect(result.path, 'build/app/outputs/flutter-apk/app-release.apk');
     expect(context.buildArtifact.path,
         'build/app/outputs/flutter-apk/app-release.apk');
+    expect(result.path, context.buildArtifact.path);
     expect(
       shell.runCalls,
       contains(

@@ -20,7 +20,7 @@ enum AndroidBuildType {
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
-class BuildAndroidAction extends PipelineAction<void> {
+class BuildAndroidAction extends PipelineAction<File> {
   /// Creates an Android build action.
   ///
   /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).
@@ -43,7 +43,7 @@ class BuildAndroidAction extends PipelineAction<void> {
   String get name => 'Build Android';
 
   @override
-  Future<void> run(PipelineContext context) async {
+  Future<File> run(PipelineContext context) async {
     final (subcommand, outputPath) = switch (buildType) {
       AndroidBuildType.apk => (
           'apk',
@@ -62,6 +62,8 @@ class BuildAndroidAction extends PipelineAction<void> {
       '--build-number=${context.buildNumber}',
       '--dart-define=ENV=$envName',
     ]);
-    context.setBuildArtifact(File(outputPath));
+    final file = File(outputPath);
+    context.setBuildArtifact(file);
+    return file;
   }
 }
