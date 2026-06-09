@@ -119,6 +119,17 @@ abstract class Pipeline {
   /// Returns the action's typed result.
   Future<R> runAction<R>(PipelineAction<R> action) async {
     executedActions.add(action);
+    return _runTracked(action);
+  }
+
+  /// Parallel executes multiple actions, returning their results in order.
+  Future<List<R>> runParallel<R>(List<PipelineAction<R>> actions) async {
+    executedActions.addAll(actions);
+    return Future.wait(actions.map(_runTracked));
+  }
+
+  /// Extracted tracking logic for individual action execution.
+  Future<R> _runTracked<R>(PipelineAction<R> action) async {
     final stopwatch = Stopwatch()..start();
     try {
       final result = await runStep(action.name, () => action.run(context));
