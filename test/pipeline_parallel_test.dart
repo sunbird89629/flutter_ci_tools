@@ -38,7 +38,8 @@ class _TestPipeline extends Pipeline {
 
 void main() {
   group('Pipeline runParallel', () {
-    test('runs multiple actions in parallel and returns results in order', () async {
+    test('runs multiple actions in parallel and returns results in order',
+        () async {
       final pipeline = _TestPipeline();
       await pipeline.run([]);
 

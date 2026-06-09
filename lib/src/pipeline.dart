@@ -166,9 +166,8 @@ abstract class Pipeline {
         ActionStatus.interrupted => '🛑',
       };
       final ms = duration.inMilliseconds;
-      final time = ms >= 1000
-          ? '${(ms / 1000).toStringAsFixed(1)}s'
-          : '${ms}ms';
+      final time =
+          ms >= 1000 ? '${(ms / 1000).toStringAsFixed(1)}s' : '${ms}ms';
       Logger.info('$icon ${action.name} ($time)');
     }
     Logger.info(sep);

@@ -107,8 +107,8 @@ class PipelineContext {
       File('${projectRoot.path}/pubspec.yaml').readAsStringSync();
 
   String _readPubspecField(String key) {
-    final match = RegExp('^$key:\\s*(.+)\$', multiLine: true)
-        .firstMatch(_pubspecContent);
+    final match =
+        RegExp('^$key:\\s*(.+)\$', multiLine: true).firstMatch(_pubspecContent);
     if (match == null) {
       throw StateError('pubspec.yaml 中未找到字段：$key。');
     }
