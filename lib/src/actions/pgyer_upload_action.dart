@@ -13,13 +13,13 @@ class PgyerUploadAction extends PipelineAction<String> {
   /// Creates a Pgyer upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.
-  /// [description] is an optional build description shown on Pgyer.
+  /// [buildUpdateDescription] is an optional build description shown on Pgyer.
   /// [artifact] optionally specifies the file to upload; if null, uses
   /// [PipelineContext.buildArtifact].
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadAction({
     required this.apiKey,
-    this.description,
+    this.buildUpdateDescription,
     this.artifact,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
@@ -27,8 +27,8 @@ class PgyerUploadAction extends PipelineAction<String> {
   /// Pgyer API key for authentication.
   final String apiKey;
 
-  /// Optional build description shown on the Pgyer download page.
-  final String? description;
+  /// Optional build update description shown on the Pgyer download page.
+  final String? buildUpdateDescription;
 
   /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
   /// when `null`.
@@ -56,9 +56,9 @@ class PgyerUploadAction extends PipelineAction<String> {
         'file=@$filePath',
         '-F',
         '_api_key=$apiKey',
-        if (description != null) ...[
+        if (buildUpdateDescription != null) ...[
           '-F',
-          'buildUpdateDescription=$description',
+          'buildUpdateDescription=$buildUpdateDescription',
         ],
         'https://api.xcxwo.com/apiv2/app/upload',
       ]);

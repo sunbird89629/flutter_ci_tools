@@ -78,7 +78,7 @@ void main() {
       );
     final action = PgyerUploadAction(
       apiKey: 'k',
-      description: 'notes',
+      buildUpdateDescription: 'notes',
       shellRunner: shell,
     );
     final url = await action.run(ctx());

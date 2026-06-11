@@ -28,7 +28,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// Creates a Pgyer V2 upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.
-  /// [description] is an optional build description shown on Pgyer.
+  /// [buildUpdateDescription] is an optional build description shown on Pgyer.
   /// [artifact] optionally specifies the file to upload; if null, uses
   /// [PipelineContext.buildArtifact].
   /// [apiDomains] overrides the default list of API hosts to probe.
@@ -36,7 +36,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadV2Action({
     required this.apiKey,
-    this.description,
+    this.buildUpdateDescription,
     this.artifact,
     List<String>? apiDomains,
     Future<bool> Function(String domain)? probeDomain,
@@ -48,8 +48,8 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// Pgyer API key for authentication.
   final String apiKey;
 
-  /// Optional build description shown on the Pgyer download page.
-  final String? description;
+  /// Optional build update description shown on the Pgyer download page.
+  final String? buildUpdateDescription;
 
   /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
   /// when `null`.
@@ -121,9 +121,9 @@ class PgyerUploadV2Action extends PipelineAction<String> {
       '_api_key=$apiKey',
       '--form-string',
       'buildType=$buildType',
-      if (description != null) ...[
+      if (buildUpdateDescription != null) ...[
         '--form-string',
-        'buildUpdateDescription=$description',
+        'buildUpdateDescription=$buildUpdateDescription',
       ],
       '$apiBaseUrl/app/getCOSToken',
     ]);
