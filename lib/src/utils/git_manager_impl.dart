@@ -9,31 +9,33 @@ import 'shell_runner.dart';
 
 /// Production [GitManager] implementation using [ShellRunner] to execute Git commands.
 class GitManagerImpl implements GitManager {
-  /// Creates a [GitManagerImpl] with an optional [shellRunner].
-  GitManagerImpl({ShellRunner? shellRunner})
-      : _shellRunner = shellRunner ?? ShellRunnerImpl();
+  /// Creates a [GitManagerImpl] with an optional [shellRunner] and [logger].
+  GitManagerImpl({ShellRunner? shellRunner, Logger? logger})
+      : _shellRunner = shellRunner ?? ShellRunnerImpl(),
+        _logger = logger ?? Logger.silent();
 
   final ShellRunner _shellRunner;
+  final Logger _logger;
 
   @override
   Future<void> checkClean() async {
     if (Platform.environment['CIRCLECI'] == 'true') {
-      Logger.info('Skipping git check in CI environment.');
+      _logger.info('Skipping git check in CI environment.');
       return;
     }
-    Logger.info('Checking for uncommitted changes...');
+    _logger.info('Checking for uncommitted changes...');
     final result = await _runGitCommand(['status', '--porcelain']);
     if (result.stdout.toString().trim().isNotEmpty) {
-      Logger.error(
+      _logger.error(
         'Uncommitted changes detected. Please commit or stash them before running this script.',
       );
-      Logger.info('Changes:\n${result.stdout}');
+      _logger.info('Changes:\n${result.stdout}');
       throw GitException(
         'Uncommitted changes detected',
         result.exitCode,
       );
     }
-    Logger.success('Git status is clean.');
+    _logger.success('Git status is clean.');
   }
 
   @override
@@ -97,8 +99,8 @@ class GitManagerImpl implements GitManager {
   Future<ShellResult> _runGitCommand(List<String> args) async {
     final result = await _shellRunner.runAndCapture('git', args);
     if (result.exitCode != 0) {
-      Logger.error('Git command failed: git ${args.join(' ')}');
-      Logger.error('Error: ${result.stderr}');
+      _logger.error('Git command failed: git ${args.join(' ')}');
+      _logger.error('Error: ${result.stderr}');
       throw GitException(
         'git ${args.join(' ')} failed',
         result.exitCode,

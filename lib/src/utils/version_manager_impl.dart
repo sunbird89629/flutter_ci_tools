@@ -8,11 +8,13 @@ import 'version_manager.dart';
 
 /// Production [VersionManager] implementation using git tags for build numbering.
 class VersionManagerImpl implements VersionManager {
-  /// Creates a [VersionManagerImpl] with an optional [shellRunner].
-  VersionManagerImpl({ShellRunner? shellRunner})
-      : _shellRunner = shellRunner ?? ShellRunnerImpl();
+  /// Creates a [VersionManagerImpl] with an optional [shellRunner] and [logger].
+  VersionManagerImpl({ShellRunner? shellRunner, Logger? logger})
+      : _shellRunner = shellRunner ?? ShellRunnerImpl(),
+        _logger = logger ?? Logger.silent();
 
   final ShellRunner _shellRunner;
+  final Logger _logger;
   static const _tagPrefix = 'builds/';
   static const _bumpGranularity = 100;
 
@@ -39,7 +41,7 @@ class VersionManagerImpl implements VersionManager {
   Future<int> computeNextBuildNumber(int seedBuildNumber) async {
     final latest = await fetchLatestBuildNumber();
     if (latest == null) {
-      Logger.warning(
+      _logger.warning(
         'No "$_tagPrefix*" tag found. Seeding from $seedBuildNumber.',
       );
       return seedBuildNumber;
@@ -50,7 +52,7 @@ class VersionManagerImpl implements VersionManager {
   @override
   Future<void> pushNewBuildTag(int buildNumber) async {
     final tag = '$_tagPrefix$buildNumber';
-    Logger.info('Tagging $tag ...');
+    _logger.info('Tagging $tag ...');
     await _shellRunner.run('git', [
       'tag',
       '-a',
@@ -60,7 +62,7 @@ class VersionManagerImpl implements VersionManager {
       'CI build $buildNumber',
     ]);
     await _shellRunner.run('git', ['push', '--force', 'origin', tag]);
-    Logger.success('Pushed tag $tag');
+    _logger.success('Pushed tag $tag');
   }
 
   @override
@@ -69,14 +71,14 @@ class VersionManagerImpl implements VersionManager {
     final floor = latest ?? (seedBuildNumber - 1);
     final base = latest ?? seedBuildNumber;
     final suggested = (base ~/ _bumpGranularity + 1) * _bumpGranularity;
-    Logger.info('Current latest builds tag: ${latest ?? '(none)'}');
+    _logger.info('Current latest builds tag: ${latest ?? '(none)'}');
 
     while (true) {
       stdout.write('Enter new base buildNumber (default $suggested): ');
       final input = stdin.readLineSync()?.trim() ?? '';
       final next = input.isEmpty ? suggested : int.tryParse(input);
       if (next == null || next <= floor) {
-        Logger.error('Invalid buildNumber (must be > $floor): $input');
+        _logger.error('Invalid buildNumber (must be > $floor): $input');
         continue;
       }
       stdout.write('Push $_tagPrefix$next ? (y/N): ');
