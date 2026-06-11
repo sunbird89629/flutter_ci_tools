@@ -1,4 +1,4 @@
-## 0.0.3
+## 0.0.3 (`5537664`)
 
 ### Bug Fixes
 
@@ -11,7 +11,7 @@
   - Disable `runInShell` to prevent shell metacharacter injection
   - Use `Directory.systemTemp.createTempSync()` for secure temp file creation
 
-## 0.0.2
+## 0.0.2 (`48c8bde`)
 
 ### Breaking Changes
 
@@ -28,6 +28,6 @@
 - `BuildVersion` sealed type for type-safe build number state tracking.
 - Dartdoc comments on all public API surfaces.
 
-## 0.0.1
+## 0.0.1 (`edecffb`)
 
 - Initial release: Logger, ShellRunner, GitManager, VersionManager, BuildMetadata, DeployService, EnvBuilder (abstract), CIToolsConfig.
