@@ -6,8 +6,21 @@ import '../pipeline_context.dart';
 /// Actions receive a [PipelineContext] and produce a typed [R] result.
 /// Use [R] = `void` when the action has no return value.
 abstract class PipelineAction<R> {
-  /// Human-readable name; used as the log section header by `BuildPipeline.runAction`.
+  /// Human-readable name; used as the log section header by `Pipeline.runAction`.
   String get name => this.runtimeType.toString();
+
+  /// Optional description shown alongside [name] in pipeline summaries.
+  ///
+  /// Defaults to the class name converted from CamelCase to a space-separated
+  /// sentence (e.g. `BuildAndroidAction` → `"build android action"`).
+  /// Override to provide a more human-friendly description.
+  String get description {
+    final className = runtimeType.toString();
+    return className
+        .replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(1)}')
+        .toLowerCase()
+        .trim();
+  }
 
   /// The execution status of this action, or `null` before it has run.
   ActionStatus? status;
