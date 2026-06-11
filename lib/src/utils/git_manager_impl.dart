@@ -12,30 +12,30 @@ class GitManagerImpl implements GitManager {
   /// Creates a [GitManagerImpl] with an optional [shellRunner] and [logger].
   GitManagerImpl({ShellRunner? shellRunner, Logger? logger})
       : _shellRunner = shellRunner ?? ShellRunnerImpl(),
-        _logger = logger ?? Logger.silent();
+        logger = logger ?? Logger.silent();
 
   final ShellRunner _shellRunner;
-  final Logger _logger;
+  Logger logger;
 
   @override
   Future<void> checkClean() async {
     if (Platform.environment['CIRCLECI'] == 'true') {
-      _logger.info('Skipping git check in CI environment.');
+      logger.info('Skipping git check in CI environment.');
       return;
     }
-    _logger.info('Checking for uncommitted changes...');
+    logger.info('Checking for uncommitted changes...');
     final result = await _runGitCommand(['status', '--porcelain']);
     if (result.stdout.toString().trim().isNotEmpty) {
-      _logger.error(
+      logger.error(
         'Uncommitted changes detected. Please commit or stash them before running this script.',
       );
-      _logger.info('Changes:\n${result.stdout}');
+      logger.info('Changes:\n${result.stdout}');
       throw GitException(
         'Uncommitted changes detected',
         result.exitCode,
       );
     }
-    _logger.success('Git status is clean.');
+    logger.success('Git status is clean.');
   }
 
   @override
@@ -99,8 +99,8 @@ class GitManagerImpl implements GitManager {
   Future<ShellResult> _runGitCommand(List<String> args) async {
     final result = await _shellRunner.runAndCapture('git', args);
     if (result.exitCode != 0) {
-      _logger.error('Git command failed: git ${args.join(' ')}');
-      _logger.error('Error: ${result.stderr}');
+      logger.error('Git command failed: git ${args.join(' ')}');
+      logger.error('Error: ${result.stderr}');
       throw GitException(
         'git ${args.join(' ')} failed',
         result.exitCode,

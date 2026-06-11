@@ -139,7 +139,7 @@ void main() {
     test('读取本包 name 与 version', () {
       final ctx = _ctx();
       expect(ctx.pubspecName, equals('flutter_ci_tools'));
-      expect(ctx.pubspecVersion, equals('0.1.0'));
+      expect(ctx.pubspecVersion, equals('0.0.4'));
     });
 
     test('字段缺失时抛 StateError', () {

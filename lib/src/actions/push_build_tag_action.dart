@@ -9,14 +9,16 @@ import 'pipeline_action.dart';
 /// earlier in the pipeline body.
 class PushBuildTagAction extends PipelineAction<void> {
   PushBuildTagAction({VersionManager? versionManager})
-      : _versionManager = versionManager ?? VersionManagerImpl();
+      : _versionManager = versionManager;
 
-  final VersionManager _versionManager;
+  final VersionManager? _versionManager;
 
   @override
   String get name => 'Push Build Tag';
 
   @override
-  Future<void> run(PipelineContext context) =>
-      _versionManager.pushNewBuildTag(context.buildNumber);
+  Future<void> run(PipelineContext context) {
+    final vm = _versionManager ?? VersionManagerImpl(logger: context.logger);
+    return vm.pushNewBuildTag(context.buildNumber);
+  }
 }

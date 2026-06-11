@@ -7,16 +7,17 @@ import 'pipeline_action.dart';
 /// [PipelineContext] via [PipelineContext.resolveBuildVersion].
 class ResolveBuildVersionAction extends PipelineAction<void> {
   ResolveBuildVersionAction({VersionManager? versionManager})
-      : _versionManager = versionManager ?? VersionManagerImpl();
+      : _versionManager = versionManager;
 
-  final VersionManager _versionManager;
+  final VersionManager? _versionManager;
 
   @override
   String get name => 'Resolve Build Version';
 
   @override
   Future<void> run(PipelineContext context) async {
-    final number = await _versionManager.computeNextBuildNumber(
+    final vm = _versionManager ?? VersionManagerImpl(logger: context.logger);
+    final number = await vm.computeNextBuildNumber(
       context.seedBuildNumber,
     );
     context.resolveBuildVersion(number);

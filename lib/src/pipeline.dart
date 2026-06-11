@@ -1,6 +1,7 @@
 import 'action_status.dart';
 import 'actions/pipeline_action.dart';
 import 'pipeline_context.dart';
+import 'utils/logger.dart';
 
 /// Base class for CI build pipelines.
 ///
@@ -88,6 +89,12 @@ abstract class Pipeline {
   /// `beforeBuild → body → afterBuild`.
   Future<void> run(List<String> args) async {
     context = createContext(args);
+    // Apply CLI flags — create terminal logger with requested settings.
+    final logger = Logger.terminal(
+      noColor: context.args.has('--no-color'),
+      isVerbose: context.args.has('--verbose'),
+    );
+    context.logger = logger;
     try {
       await beforeBuild();
       await body();
