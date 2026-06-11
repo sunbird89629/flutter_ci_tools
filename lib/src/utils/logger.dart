@@ -1,10 +1,16 @@
 import 'dart:io';
 
-/// Colored terminal logger with emoji indicators and timestamps.
+/// Colored terminal logger with emoji indicators, timestamps, and indentation.
 ///
-/// All methods write directly to stdout/stderr. Used throughout the library
-/// for consistent build output formatting.
+/// Use [Logger.terminal] for real CLI output (writes to stdout/stderr).
+/// Use [Logger.silent] for tests (discards all output).
 class Logger {
+  final bool noColor;
+  final bool isVerbose;
+  int _indentLevel = 0;
+  final void Function(String) _write;
+  final void Function(String) _writeErr;
+
   static const _reset = '\x1B[0m';
   static const _bold = '\x1B[1m';
   static const _red = '\x1B[31m';
@@ -14,42 +20,86 @@ class Logger {
   static const _cyan = '\x1B[36m';
   static const _gray = '\x1B[90m';
 
-  /// Prints an informational message in blue.
-  static void info(String msg) => stdout.writeln('$_blueℹ️  $msg$_reset');
+  /// Real terminal logger writing to [stdout] and [stderr].
+  Logger.terminal({
+    this.noColor = false,
+    this.isVerbose = false,
+  })  : _write = ((String s) => stdout.writeln(s)),
+        _writeErr = ((String s) => stderr.writeln(s));
 
-  /// Prints a success message in green.
-  static void success(String msg) => stdout.writeln('$_green✅ $msg$_reset');
+  /// Silent logger that discards all output (for tests and fallback defaults).
+  Logger.silent()
+      : noColor = true,
+        isVerbose = false,
+        _write = _noop,
+        _writeErr = _noop;
 
-  /// Prints a warning message in yellow.
-  static void warning(String msg) => stdout.writeln('$_yellow⚠️  $msg$_reset');
+  static void _noop(String _) {}
 
-  static String _pad(int n) => n.toString().padLeft(2, '0');
+  String get _prefix => '  ' * _indentLevel;
 
-  /// Returns the current time formatted as `[HH:MM:SS]`.
-  static String get timeStamp {
+  String _ts() {
     final t = DateTime.now();
-    return '[${_pad(t.hour)}:${_pad(t.minute)}:${_pad(t.second)}]';
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
+    final s = t.second.toString().padLeft(2, '0');
+    return '[$h:$m:$s]';
   }
 
-  /// Prints an error message in red to stderr, optionally including the error object.
-  static void error(String msg, [Object? e]) {
-    stderr.writeln('$_red❌ $msg$_reset');
-    if (e != null) stderr.writeln('$_red   Error: $e$_reset');
+  static String _fmt(int seconds) =>
+      seconds >= 60
+          ? '${seconds ~/ 60}m${seconds % 60}s'
+          : '${seconds}s';
+
+  void indent() => _indentLevel++;
+  void outdent() {
+    if (_indentLevel > 0) _indentLevel--;
   }
 
-  /// Prints a bold section header with a separator line.
-  static void section(String title) {
-    stdout.writeln('\n$_bold$_cyan🚀 $title...$_reset');
-    stdout.writeln('$_gray${'—' * 40}$_reset');
+  void info(String msg) => _write(
+        '${_ts()} $_prefix${_color(_blue)}ℹ️  $msg$_resetC',
+      );
+
+  void success(String msg) => _write(
+        '$_prefix${_color(_green)}✅ $msg$_resetC',
+      );
+
+  void warning(String msg) => _write(
+        '$_prefix${_color(_yellow)}⚠️  $msg$_resetC',
+      );
+
+  void error(String msg) => _writeErr(
+        '$_prefix${_color(_red)}❌ $msg$_resetC',
+      );
+
+  /// Section header — prints title with 🚀 and auto-indents.
+  void section(String title) {
+    _write('\n${_ts()} $_prefix${_color(_cyan)}${_bold}🚀 $title...$_resetC');
+    _write('$_prefix$_gray${'─' * 40}$_resetC');
+    indent();
   }
 
-  /// Prints a shell command with a timestamp in green.
-  static void command(String cmd) {
-    final content = '$timeStamp$_green$cmd$_reset';
-    stdout.writeln(content);
+  /// Finishes a section: prints result, outdents.
+  void closeSection(bool ok, String name, Duration duration) {
+    outdent();
+    final time = _fmt(duration.inSeconds);
+    if (ok) {
+      success('Finished: $name ($time)');
+    } else {
+      error('Failed: $name ($time)');
+    }
   }
 
-  /// Prints a message with an optional ANSI [color] code.
-  static void print(String msg, {String color = _reset}) =>
-      stdout.writeln('$color$msg$_reset');
+  /// Prints a shell command with timestamp at current indent level.
+  void command(String cmd) => _write(
+        '${_ts()} $_prefix${_color(_green)}\$ $cmd$_resetC',
+      );
+
+  /// Shell output line; only printed when [isVerbose] is true.
+  void verbose(String line) {
+    if (isVerbose) _write(line);
+  }
+
+  String _color(String ansi) => noColor ? '' : ansi;
+  String get _resetC => noColor ? '' : _reset;
 }
