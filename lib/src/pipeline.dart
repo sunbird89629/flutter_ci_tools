@@ -3,19 +3,6 @@ import 'actions/pipeline_action.dart';
 import 'pipeline_context.dart';
 import 'utils/logger.dart';
 
-/// Executes [action] with standardized section logging and error handling.
-Future<T> runStep<T>(String name, Future<T> Function() action) async {
-  Logger.section(name);
-  try {
-    final result = await action();
-    Logger.success('Finished: $name');
-    return result;
-  } catch (e) {
-    Logger.error('Failed: $name', e);
-    rethrow;
-  }
-}
-
 /// Base class for CI build pipelines.
 ///
 /// Subclasses implement [body] to compose [PipelineAction]s; the base class
@@ -115,7 +102,7 @@ abstract class Pipeline {
     }
   }
 
-  /// Runs [action] wrapped in [runStep], records status and timing.
+  /// Runs [action] with section logging, timing, and status recording.
   /// Returns the action's typed result.
   Future<R> runAction<R>(PipelineAction<R> action) async {
     executedActions.add(action);
@@ -123,23 +110,25 @@ abstract class Pipeline {
   }
 
   /// Parallel executes multiple actions, returning their results in order.
-  Future<List<R>> runParallel<R>(List<PipelineAction<R>> actions) async {
+  Future<List<R>> runParallelActions<R>(List<PipelineAction<R>> actions) async {
     executedActions.addAll(actions);
     return Future.wait(actions.map(_runTracked));
   }
 
-  /// Extracted tracking logic for individual action execution.
   Future<R> _runTracked<R>(PipelineAction<R> action) async {
+    Logger.section(action.name);
     final stopwatch = Stopwatch()..start();
     try {
-      final result = await runStep(action.name, () => action.run(context));
+      final result = await action.run(context);
       stopwatch.stop();
+      Logger.success('Finished: ${action.name}');
       action
         ..status = ActionStatus.success
         ..duration = stopwatch.elapsed;
       return result;
     } catch (e, stackTrace) {
       stopwatch.stop();
+      Logger.error('Failed: ${action.name}', e);
       action
         ..status = ActionStatus.failed
         ..duration = stopwatch.elapsed

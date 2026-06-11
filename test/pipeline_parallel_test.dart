@@ -43,7 +43,7 @@ void main() {
       final pipeline = _TestPipeline();
       await pipeline.run([]);
 
-      final results = await pipeline.runParallel([
+      final results = await pipeline.runParallelActions([
         _TestAction(1, delay: const Duration(milliseconds: 50)),
         _TestAction(2, delay: const Duration(milliseconds: 10)),
         _TestAction(3, delay: const Duration(milliseconds: 30)),
@@ -58,7 +58,7 @@ void main() {
       final pipeline = _TestPipeline();
       await pipeline.run([]);
 
-      await pipeline.runParallel([
+      await pipeline.runParallelActions([
         _TestAction(1),
         _TestAction(2),
       ]);
@@ -77,7 +77,7 @@ void main() {
 
       Object? caughtError;
       try {
-        await pipeline.runParallel([
+        await pipeline.runParallelActions([
           _TestAction(1),
           _FailingAction(),
           _TestAction(3),

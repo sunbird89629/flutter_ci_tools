@@ -39,7 +39,7 @@ Usage: dart run ci/build.dart test
     ));
 
     // 并行上传
-    final urls = await runParallel([
+    final urls = await runParallelActions([
       PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: androidFile),
       PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: iosFile),
     ]);
