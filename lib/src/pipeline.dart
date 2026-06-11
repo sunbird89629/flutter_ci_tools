@@ -1,6 +1,7 @@
 import 'action_status.dart';
 import 'actions/pipeline_action.dart';
 import 'pipeline_context.dart';
+import 'utils/git_manager_impl.dart';
 import 'utils/logger.dart';
 
 /// Base class for CI build pipelines.
@@ -95,6 +96,10 @@ abstract class Pipeline {
       isVerbose: context.args.has('--verbose'),
     );
     context.logger = logger;
+    // Inject logger into default git manager singleton.
+    if (context.git is GitManagerImpl) {
+      (context.git as GitManagerImpl).logger = logger;
+    }
     try {
       await beforeBuild();
       await body();
