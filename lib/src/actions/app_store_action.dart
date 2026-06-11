@@ -3,7 +3,6 @@ import 'dart:io';
 
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
@@ -41,8 +40,8 @@ class AppStoreUploadAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final artifact = context.buildArtifact;
-    Logger.info('IPA: ${artifact.path}');
-    Logger.info('API Key: $apiKeyId');
+    context.logger.info('IPA: ${artifact.path}');
+    context.logger.info('API Key: $apiKeyId');
     if (!File(apiKeyPath).existsSync()) {
       throw DeployException(
         'App Store API Key (.p8) not found at $apiKeyPath',
@@ -72,6 +71,6 @@ class AppStoreUploadAction extends PipelineAction<void> {
     } finally {
       if (apiKeyJsonFile.existsSync()) apiKeyJsonFile.deleteSync();
     }
-    Logger.success('App Store upload successful!');
+    context.logger.success('App Store upload successful!');
   }
 }

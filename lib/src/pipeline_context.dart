@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'utils/args_parser.dart';
 import 'utils/git_manager.dart';
+import 'utils/logger.dart';
 
 /// State of the build version number.
 sealed class BuildVersion {}
@@ -28,10 +29,15 @@ class PipelineContext {
     required this.seedBuildNumber,
     this.rawArgs = const [],
     GitManager? git,
-  }) : git = git ?? GitManager.instance;
+    Logger? logger,
+  }) : git = git ?? GitManager.instance,
+       logger = logger ?? Logger.terminal();
 
   /// Git accessor shared across all pipeline actions.
   final GitManager git;
+
+  /// Logger for structured build output.
+  Logger logger;
 
   /// Display name of the application (used in notifications).
   final String appName;

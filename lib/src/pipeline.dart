@@ -1,7 +1,6 @@
 import 'action_status.dart';
 import 'actions/pipeline_action.dart';
 import 'pipeline_context.dart';
-import 'utils/logger.dart';
 
 /// Base class for CI build pipelines.
 ///
@@ -96,7 +95,7 @@ abstract class Pipeline {
       try {
         await afterBuild();
       } catch (e) {
-        Logger.error('afterBuild failed', e);
+        context.logger.error('afterBuild failed');
       }
       _printSummary();
     }
@@ -116,19 +115,20 @@ abstract class Pipeline {
   }
 
   Future<R> _runTracked<R>(PipelineAction<R> action) async {
-    Logger.section(action.name);
+    final log = context.logger;
+    log.section(action.name);
     final stopwatch = Stopwatch()..start();
     try {
       final result = await action.run(context);
       stopwatch.stop();
-      Logger.success('Finished: ${action.name}');
+      log.closeSection(true, action.name, stopwatch.elapsed);
       action
         ..status = ActionStatus.success
         ..duration = stopwatch.elapsed;
       return result;
     } catch (e, stackTrace) {
       stopwatch.stop();
-      Logger.error('Failed: ${action.name}', e);
+      log.closeSection(false, action.name, stopwatch.elapsed);
       action
         ..status = ActionStatus.failed
         ..duration = stopwatch.elapsed
@@ -140,10 +140,11 @@ abstract class Pipeline {
 
   void _printSummary() {
     if (executedActions.isEmpty) return;
+    final log = context.logger;
     const sep = '────────────────────────────────────';
-    Logger.info(sep);
-    Logger.info('执行摘要');
-    Logger.info(sep);
+    log.info(sep);
+    log.info('执行摘要');
+    log.info(sep);
     for (final action in executedActions) {
       final status = action.status;
       final duration = action.duration;
@@ -157,12 +158,12 @@ abstract class Pipeline {
       final ms = duration.inMilliseconds;
       final time =
           ms >= 1000 ? '${(ms / 1000).toStringAsFixed(1)}s' : '${ms}ms';
-      Logger.info('$icon ${action.name} ($time)');
+      log.info('$icon ${action.name} ($time)');
     }
-    Logger.info(sep);
+    log.info(sep);
     final failure = lastFailure;
     if (failure != null) {
-      Logger.error('失败: ${failure.name}', failure.error);
+      log.error('失败: ${failure.name}');
     }
   }
 }

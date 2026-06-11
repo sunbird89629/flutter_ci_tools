@@ -66,24 +66,25 @@ class PgyerUploadV2Action extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
+    final log = context.logger;
     final file = artifact ?? context.buildArtifact;
-    final domain = await _selectReachableDomain();
+    final domain = await _selectReachableDomain(log);
     final apiBaseUrl = 'http://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
 
-    final token = await _getCOSToken(apiBaseUrl, file);
-    await _uploadToCOS(token, file);
-    final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key);
+    final token = await _getCOSToken(apiBaseUrl, file, log);
+    await _uploadToCOS(token, file, log);
+    final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key, log);
     final downloadUrl = 'https://$webDomain/$shortcutUrl';
-    Logger.success('Pgyer build ready: $downloadUrl');
+    log.success('Pgyer build ready: $downloadUrl');
     return downloadUrl;
   }
 
-  Future<String> _selectReachableDomain() async {
-    Logger.info('Probing Pgyer API domains...');
+  Future<String> _selectReachableDomain(Logger log) async {
+    log.info('Probing Pgyer API domains...');
     for (final domain in apiDomains) {
       if (await _probeDomain(domain)) {
-        Logger.info('Using domain $domain');
+        log.info('Using domain $domain');
         return domain;
       }
     }
@@ -112,8 +113,9 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     }
   }
 
-  Future<_CosToken> _getCOSToken(String apiBaseUrl, File artifact) async {
-    Logger.info('Requesting COS upload token...');
+  Future<_CosToken> _getCOSToken(
+      String apiBaseUrl, File artifact, Logger log) async {
+    log.info('Requesting COS upload token...');
     final buildType = artifact.path.split('.').last;
     final result = await _shellRunner.runAndCapture('curl', [
       '-s',
@@ -169,10 +171,10 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     );
   }
 
-  Future<void> _uploadToCOS(_CosToken token, File artifact) async {
+  Future<void> _uploadToCOS(_CosToken token, File artifact, Logger log) async {
     final fileName = artifact.path.split('/').last;
     final size = artifact.lengthSync();
-    Logger.info('Uploading $fileName ($size bytes) to COS...');
+    log.info('Uploading $fileName ($size bytes) to COS...');
     final result = await _shellRunner.runAndCapture('curl', [
       '-o',
       '/dev/null',
@@ -203,11 +205,12 @@ class PgyerUploadV2Action extends PipelineAction<String> {
       throw DeployException(
           'COS upload returned HTTP $httpCode (expected 204)');
     }
-    Logger.success('Uploaded to COS.');
+    log.success('Uploaded to COS.');
   }
 
-  Future<String> _pollBuildInfo(String apiBaseUrl, String key) async {
-    Logger.info('Waiting for Pgyer to process the build...');
+  Future<String> _pollBuildInfo(
+      String apiBaseUrl, String key, Logger log) async {
+    log.info('Waiting for Pgyer to process the build...');
     const maxAttempts = 60;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       final result = await _shellRunner.runAndCapture('curl', [

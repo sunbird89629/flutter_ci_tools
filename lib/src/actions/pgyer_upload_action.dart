@@ -3,7 +3,6 @@ import 'dart:io';
 
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
@@ -42,12 +41,12 @@ class PgyerUploadAction extends PipelineAction<String> {
   Future<String> run(PipelineContext context) async {
     final file = artifact ?? context.buildArtifact;
     final filePath = file.path;
-    Logger.info('Uploading $filePath ...');
+    context.logger.info('Uploading $filePath ...');
     const maxAttempts = 3;
     ShellResult? result;
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       if (attempt > 1) {
-        Logger.info('Retrying upload (attempt $attempt/$maxAttempts)...');
+        context.logger.info('Retrying upload (attempt $attempt/$maxAttempts)...');
         await Future.delayed(const Duration(seconds: 5));
       }
       result = await _shellRunner.runAndCapture('curl', [
@@ -63,7 +62,7 @@ class PgyerUploadAction extends PipelineAction<String> {
         'https://api.xcxwo.com/apiv2/app/upload',
       ]);
       if (result.exitCode == 0) break;
-      Logger.error('Upload attempt $attempt failed: ${result.stderr}');
+      context.logger.error('Upload attempt $attempt failed: ${result.stderr}');
     }
     if (result!.exitCode != 0) {
       throw DeployException('Upload failed after $maxAttempts attempts');
@@ -72,7 +71,7 @@ class PgyerUploadAction extends PipelineAction<String> {
       final response = jsonDecode(result.stdout);
       if (response['code'] == 0) {
         final url = 'https://www.pgyer.com/${response['data']['buildKey']}';
-        Logger.success('Upload successful! Download URL: $url');
+        context.logger.success('Upload successful! Download URL: $url');
         return url;
       }
       throw DeployException(

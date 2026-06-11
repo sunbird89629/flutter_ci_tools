@@ -1,4 +1,3 @@
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/version_manager.dart';
 import '../utils/version_manager_impl.dart';
@@ -21,7 +20,7 @@ class ResolveBuildVersionAction extends PipelineAction<void> {
       context.seedBuildNumber,
     );
     context.resolveBuildVersion(number);
-    Logger.info(
+    context.logger.info(
       'Resolved buildNumber=${context.buildNumber}  buildName=${context.buildName}',
     );
   }

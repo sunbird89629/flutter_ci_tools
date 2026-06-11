@@ -2,7 +2,6 @@ import 'dart:io';
 
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
@@ -35,8 +34,8 @@ class GooglePlayUploadAction extends PipelineAction<void> {
   @override
   Future<void> run(PipelineContext context) async {
     final artifact = context.buildArtifact;
-    Logger.info('AAB: ${artifact.path}');
-    Logger.info('Package: $packageName');
+    context.logger.info('AAB: ${artifact.path}');
+    context.logger.info('Package: $packageName');
     if (!File(jsonKeyPath).existsSync()) {
       throw DeployException(
         'Google Play Service Account JSON not found at $jsonKeyPath',
@@ -56,6 +55,6 @@ class GooglePlayUploadAction extends PipelineAction<void> {
       '--skip_upload_images',
       '--skip_upload_screenshots',
     ]);
-    Logger.success('Google Play upload successful!');
+    context.logger.success('Google Play upload successful!');
   }
 }

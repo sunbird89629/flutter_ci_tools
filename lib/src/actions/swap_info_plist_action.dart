@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 
@@ -15,7 +14,7 @@ class SwapInfoPlistAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    Logger.info('Swapping Info.plist for product environment');
+    context.logger.info('Swapping Info.plist for product environment');
     File('ios/Runner/Info.plist').renameSync('ios/Runner/Info.plist.backup');
     File('ios/Runner/Info.plist.product').renameSync('ios/Runner/Info.plist');
   }

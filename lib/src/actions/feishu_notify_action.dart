@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import '../utils/shell_runner_impl.dart';
-import '../utils/logger.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
@@ -33,7 +32,7 @@ class FeishuNotifyAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    Logger.info('Sending Feishu notification...');
+    context.logger.info('Sending Feishu notification...');
     final jsonMessage = jsonEncode({
       'msg_type': 'text',
       'content': {'text': message},
@@ -48,9 +47,9 @@ class FeishuNotifyAction extends PipelineAction<void> {
       webhookUrl,
     ]);
     if (result.exitCode == 0) {
-      Logger.success('Feishu notification sent.');
+      context.logger.success('Feishu notification sent.');
     } else {
-      Logger.error('Failed to send Feishu notification: ${result.stderr}');
+      context.logger.error('Failed to send Feishu notification: ${result.stderr}');
     }
   }
 }
