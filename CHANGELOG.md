@@ -1,4 +1,17 @@
-## 0.2.0
+## 0.0.3
+
+### Bug Fixes
+
+- **remove hardcoded secrets, redact logs, use HTTPS, harden shell execution**
+  - Replace hardcoded Pgyer API key and Feishu webhook URL with env var reads
+  - Redact sensitive args (`_api_key`, `password`, `secret`, `token`) in shell command logs
+  - Move Pgyer API key from URL query param to POST form body
+  - Mask App Store API key ID in log output
+  - Use HTTPS instead of HTTP for Pgyer V2 API calls
+  - Disable `runInShell` to prevent shell metacharacter injection
+  - Use `Directory.systemTemp.createTempSync()` for secure temp file creation
+
+## 0.0.2
 
 ### Breaking Changes
 
@@ -15,6 +28,6 @@
 - `BuildVersion` sealed type for type-safe build number state tracking.
 - Dartdoc comments on all public API surfaces.
 
-## 0.1.0
+## 0.0.1
 
 - Initial release: Logger, ShellRunner, GitManager, VersionManager, BuildMetadata, DeployService, EnvBuilder (abstract), CIToolsConfig.
