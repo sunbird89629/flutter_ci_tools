@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 
@@ -20,9 +22,17 @@ class ShellRunnerImpl implements ShellRunner {
     };
   }();
 
+  final Logger logger;
+
+  /// Creates a [ShellRunnerImpl].
+  ///
+  /// [logger] defaults to [Logger.silent]; pass [Logger.terminal] for real CLI.
+  ShellRunnerImpl({Logger? logger})
+      : logger = logger ?? Logger.silent();
+
   @override
   Future<void> run(String executable, List<String> args) async {
-    Logger.command('$executable ${args.join(' ')}');
+    logger.command('$executable ${args.join(' ')}');
     final process = await Process.start(
       executable,
       args,
@@ -30,8 +40,14 @@ class ShellRunnerImpl implements ShellRunner {
       runInShell: true,
     );
 
-    final stdoutDone = process.stdout.forEach((data) => stdout.add(data));
-    final stderrDone = process.stderr.forEach((data) => stderr.add(data));
+    final stdoutDone = process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .forEach(logger.verbose);
+    final stderrDone = process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .forEach(logger.verbose);
 
     final exitCode = await process.exitCode;
     await Future.wait([stdoutDone, stderrDone]);
