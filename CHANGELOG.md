@@ -1,3 +1,15 @@
+## 0.0.4 (`77fad57`)
+
+### 🔧 Chores
+
+- opt claude (`4d68973`)
+- add Claude Code Review workflow agent (`d56f1c4`)
+- add Claude PR Assistant workflow agent (`55c0deb`)
+
+### 📚 Documentation
+
+- add commit SHAs to CHANGELOG versions (`41c3a2c`)
+
 ## 0.0.3 (`5537664`)
 
 ### Bug Fixes
