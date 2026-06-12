@@ -157,6 +157,35 @@ void main() {
     });
   });
 
+  group('KV bag', () {
+    late PipelineContext ctx;
+    setUp(() {
+      ctx = PipelineContext(appName: 'TestApp', seedBuildNumber: 12000);
+    });
+
+    test('get returns the value put under a key', () {
+      ctx.put('k', 42);
+      expect(ctx.get<int>('k'), 42);
+    });
+
+    test('get throws StateError with key name when key absent', () {
+      expect(
+        () => ctx.get<int>('missing'),
+        throwsA(isA<StateError>().having(
+            (e) => e.message, 'message', contains('missing'))),
+      );
+    });
+
+    test('tryGet returns null when key absent', () {
+      expect(ctx.tryGet<String>('missing'), isNull);
+    });
+
+    test('tryGet returns the value when present', () {
+      ctx.put('url', 'https://x');
+      expect(ctx.tryGet<String>('url'), 'https://x');
+    });
+  });
+
   group('projectRoot', () {
     test('定位到含 pubspec.yaml 的包根目录', () {
       final root = _ctx().projectRoot;

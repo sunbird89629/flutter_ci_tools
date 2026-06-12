@@ -51,6 +51,25 @@ class PipelineContext {
   /// Convenience argument parser built from [rawArgs].
   late final ArgsParser args = ArgsParser(rawArgs);
 
+  final Map<String, Object?> _bag = {};
+
+  /// Stores [value] under [key] for later retrieval by downstream actions.
+  void put(String key, Object? value) => _bag[key] = value;
+
+  /// Returns the value stored under [key].
+  ///
+  /// Throws [StateError] if [key] was never set — signalling that a producing
+  /// action must run earlier in the pipeline body.
+  T get<T>(String key) {
+    if (!_bag.containsKey(key)) {
+      throw StateError("context 中尚未设置 '$key'，请确认相关 action 已先执行。");
+    }
+    return _bag[key] as T;
+  }
+
+  /// Returns the value stored under [key], or `null` if it was never set.
+  T? tryGet<T>(String key) => _bag[key] as T?;
+
   BuildVersion _buildVersion = BuildVersionUnresolved();
 
   /// Resolved build number.
