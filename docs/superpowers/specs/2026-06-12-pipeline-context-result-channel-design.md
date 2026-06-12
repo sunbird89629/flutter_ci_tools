@@ -119,27 +119,40 @@ class ContextKeys {
 | `ResolveBuildVersionAction` | `context.resolveBuildVersion(n)` | `context.put(ContextKeys.buildNumber, n)` |
 | `BuildAndroidAction` | 返回 `File` + `setBuildArtifact(file)` | 只 `context.put(ContextKeys.buildArtifact, file)`，`run` 返回 `void` |
 | `BuildIOSAction` | 返回 `File` + `setBuildArtifact(file)` | 只 `context.put(ContextKeys.buildArtifact, file)`，`run` 返回 `void` |
-| `PgyerUploadAction` | `return downloadUrl` | `context.put(ContextKeys.pgyerDownloadUrl, url)`，`run` 返回 `void` |
-| `PgyerUploadV2Action` | `return downloadUrl` | `context.put(ContextKeys.pgyerDownloadUrl, url)`，`run` 返回 `void` |
+| `PgyerUploadAction` | `return downloadUrl` | `context.put(resultKey, url)`，`run` 返回 `void`（`resultKey` 默认 `ContextKeys.pgyerDownloadUrl`） |
+| `PgyerUploadV2Action` | `return downloadUrl` | `context.put(resultKey, url)`，`run` 返回 `void`（`resultKey` 默认 `ContextKeys.pgyerDownloadUrl`） |
 | `GooglePlayUploadAction` | 读 `context.buildArtifact` | 读 `context.get<File>(ContextKeys.buildArtifact)` |
 | `AppStoreUploadAction` | 读 `context.buildArtifact` | 读 `context.get<File>(ContextKeys.buildArtifact)` |
 | `PushBuildTagAction` | 读 `context.buildNumber` | 读 `context.get<int>(ContextKeys.buildNumber)` |
 
 上传 action 中以 `artifact ?? context.buildArtifact` 形式的 fallback，改为 `artifact ?? context.get<File>(ContextKeys.buildArtifact)`。
 
-### 6. FeishuBuildNotifyAction —— 链接通过 key 读
+#### Pgyer action 的 `resultKey`
 
-- 构造参数 `downloadUrl` / `downloadUrls` 替换为单个 `String? downloadUrlKey`。
-- `run()` 内：`final url = downloadUrlKey == null ? null : context.tryGet<String>(downloadUrlKey);`
-- `_formatMessage` 用该 `url`（为 null 时不显示下载行，行为同现状 GP/AppStore 通知）。
+`PgyerUploadAction` / `PgyerUploadV2Action` 新增可选构造参数 `String resultKey`，默认 `ContextKeys.pgyerDownloadUrl`。`run()` 末尾把下载链接 `context.put(resultKey, url)`。这样**并行上传多个产物**时，各 upload 可写入不同 key，互不覆盖（见 `test_env_pipeline`）。
+
+### 6. FeishuBuildNotifyAction —— 链接通过 key 列表读
+
+> 设计修订（2026-06-12）：原计划用单个 `downloadUrlKey`。但 `test_env_pipeline` 实际会并行上传两个产物、用一条通知带两个链接（旧 `downloadUrls` 参数）。故采用 key **列表**，保留多链接能力。
+
+- 构造参数 `downloadUrl` / `downloadUrls` 替换为 `List<String>? downloadUrlKeys`。
+- `run()` 内从每个 key 读链接、过滤 null：
+  ```dart
+  final urls = downloadUrlKeys == null
+      ? const <String>[]
+      : downloadUrlKeys
+          .map((k) => context.tryGet<String>(k))
+          .whereType<String>()
+          .toList();
+  ```
+- `_formatMessage` 渲染（沿用现有 UX）：0 个不显示下载行；1 个显示 `🔗 下载: <url>`；多个显示编号列表 `🔗 下载链接:` + `  1. ...`。
 - 调用方：
   ```dart
+  // 单链接
   FeishuBuildNotifyAction(target: DeployTarget.pgyer,
-                          downloadUrlKey: ContextKeys.pgyerDownloadUrl);
-  // Google Play / App Store：不传 downloadUrlKey → 无下载链接
+      downloadUrlKeys: [ContextKeys.pgyerDownloadUrl]);
+  // Google Play / App Store：不传 downloadUrlKeys → 无下载链接
   ```
-
-> 说明：原 `downloadUrls`（多链接列表）当前无调用方使用，本次简化为单链接 key。若未来需要多链接，可另加 `List<String>` key + `tryGet<List<String>>`，不在本次范围。
 
 ### 7. 调用方 / 示例更新
 
@@ -149,7 +162,29 @@ class ContextKeys {
   await runAction(FeishuBuildNotifyAction(
     webhookUrl: ctx.feishuWebhookUrl,
     target: DeployTarget.pgyer,
-    downloadUrlKey: ContextKeys.pgyerDownloadUrl,
+    downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
+  ));
+  ```
+- `example/ci/pipelines/test_env_pipeline.dart`：并行上传两个产物、一条通知带两个链接。产物用局部变量捕获，上传写入不同 `resultKey`：
+  ```dart
+  const androidUrlKey = 'pgyerAndroidUrl';
+  const iosUrlKey = 'pgyerIosUrl';
+
+  await runAction(BuildAndroidAction(...));
+  final androidFile = context.get<File>(ContextKeys.buildArtifact);
+  await runAction(BuildIOSAction(...));
+  final iosFile = context.get<File>(ContextKeys.buildArtifact);
+
+  await runParallelActions([
+    PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: androidFile,
+        resultKey: androidUrlKey),
+    PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: iosFile,
+        resultKey: iosUrlKey),
+  ]);
+  await runAction(FeishuBuildNotifyAction(
+    webhookUrl: feishuWebhookUrl,
+    target: DeployTarget.pgyer,
+    downloadUrlKeys: [androidUrlKey, iosUrlKey],
   ));
   ```
 - `prod_pipeline.dart`：`FeishuBuildNotifyAction` 调用无需传 key（GP/AppStore 无链接），其余不变。
@@ -166,11 +201,13 @@ class ContextKeys {
 - **迁移的 action**：
   - 写入型（`ResolveBuildVersionAction`、`BuildAndroid/IOS`、`Pgyer*`）断言执行后 `context.get(对应 key)` 为预期值
   - 读取型（`GooglePlay`、`AppStore`、`PushBuildTag`）测试用 `context.put(key, ...)` 预置状态
-  - `FeishuBuildNotifyAction`：传 `downloadUrlKey` 且 bag 有值时消息含链接；不传 key 时消息无链接
+  - `FeishuBuildNotifyAction`：`downloadUrlKeys` 含一个 key 且 bag 有值 → 单链接；含多个 key → 编号列表；不传 → 无下载行
+  - `PgyerUploadAction` / `V2`：默认写 `ContextKeys.pgyerDownloadUrl`；传 `resultKey` 时写入该 key
 - **Pipeline** (`test/pipeline_test.dart` / `pipeline_parallel_test.dart`)：`runAction` / `runParallelActions` 不再有返回值，断言改为通过 context 读取产出物。
 
 ## Out of Scope
 
-- 多下载链接（`List<String>`）通知 —— 当前无调用方，留待需要时再加。
 - typed key / 类型化容器 —— 本次明确选用字符串 key bag。
 - 把构造配置或注入基础设施（`git`/`logger`/`args` 等）迁入 bag —— 保持字段。
+
+> 修订记录（2026-06-12）：初稿曾把「多下载链接通知」列为 Out of Scope，理由是「无调用方」。复核发现 `test_env_pipeline` 正是调用方（并行上传两产物 + 一条双链接通知）。已改为 §6 的 `downloadUrlKeys` 列表 + Pgyer `resultKey` 方案，保留多链接能力。
