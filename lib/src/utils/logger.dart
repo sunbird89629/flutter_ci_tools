@@ -1,13 +1,12 @@
 import 'dart:io';
 
-/// Colored terminal logger with emoji indicators, timestamps, and indentation.
+/// Colored terminal logger with emoji indicators and timestamps.
 ///
 /// Use [Logger.terminal] for real CLI output (writes to stdout/stderr).
 /// Use [Logger.silent] for tests (discards all output).
 class Logger {
   final bool noColor;
   final bool isVerbose;
-  int _indentLevel = 0;
   final void Function(String) _write;
   final void Function(String) _writeErr;
 
@@ -36,8 +35,6 @@ class Logger {
 
   static void _noop(String _) {}
 
-  String get _prefix => '  ' * _indentLevel;
-
   String _ts() {
     final t = DateTime.now();
     final h = t.hour.toString().padLeft(2, '0');
@@ -51,37 +48,30 @@ class Logger {
           ? '${seconds ~/ 60}m${seconds % 60}s'
           : '${seconds}s';
 
-  void indent() => _indentLevel++;
-  void outdent() {
-    if (_indentLevel > 0) _indentLevel--;
-  }
-
   void info(String msg) => _write(
-        '${_ts()} $_prefix${_color(_blue)}ℹ️  $msg$_resetC',
+        '${_ts()} ${_color(_blue)}ℹ️  $msg$_resetC',
       );
 
   void success(String msg) => _write(
-        '$_prefix${_color(_green)}✅ $msg$_resetC',
+        '${_color(_green)}✅ $msg$_resetC',
       );
 
   void warning(String msg) => _write(
-        '$_prefix${_color(_yellow)}⚠️  $msg$_resetC',
+        '${_color(_yellow)}⚠️  $msg$_resetC',
       );
 
   void error(String msg) => _writeErr(
-        '$_prefix${_color(_red)}❌ $msg$_resetC',
+        '${_color(_red)}❌ $msg$_resetC',
       );
 
-  /// Section header — prints title with 🚀 and auto-indents.
+  /// Section header — prints title with 🚀.
   void section(String title) {
-    _write('\n${_ts()} $_prefix${_color(_cyan)}${_bold}🚀 $title...$_resetC');
-    _write('$_prefix$_gray${'─' * 40}$_resetC');
-    indent();
+    _write('\n${_ts()} ${_color(_cyan)}${_bold}🚀 $title...$_resetC');
+    _write('$_gray${'─' * 40}$_resetC');
   }
 
-  /// Finishes a section: prints result, outdents.
+  /// Finishes a section: prints result.
   void closeSection(bool ok, String name, Duration duration) {
-    outdent();
     final time = _fmt(duration.inSeconds);
     if (ok) {
       success('Finished: $name ($time)');
@@ -90,9 +80,9 @@ class Logger {
     }
   }
 
-  /// Prints a shell command with timestamp at current indent level.
+  /// Prints a shell command with timestamp.
   void command(String cmd) => _write(
-        '${_ts()} $_prefix${_color(_green)}\$ $cmd$_resetC',
+        '${_ts()} ${_color(_green)}\$ $cmd$_resetC',
       );
 
   /// Shell output line; only printed when [isVerbose] is true.
