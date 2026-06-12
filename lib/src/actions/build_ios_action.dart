@@ -11,8 +11,9 @@ import 'pipeline_action.dart';
 /// Reads `context.buildName` and `ContextKeys.buildNumber` from the context
 /// bag — requires `ResolveBuildVersionAction` earlier in the pipeline body.
 ///
-/// After completion, the output file is available via `context.buildArtifact`.
-class BuildIOSAction extends PipelineAction<File> {
+/// After completion, the output file is stored under `ContextKeys.buildArtifact`
+/// in the context bag.
+class BuildIOSAction extends PipelineAction<void> {
   /// Creates an iOS build action.
   ///
   /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).
@@ -35,7 +36,7 @@ class BuildIOSAction extends PipelineAction<File> {
   String get name => 'Build iOS';
 
   @override
-  Future<File> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     await _shellRunner.run('fvm', [
       'flutter',
       'build',
@@ -46,8 +47,7 @@ class BuildIOSAction extends PipelineAction<File> {
       '--dart-define=ENV=$envName',
     ]);
     final file = _findIpa();
-    context.setBuildArtifact(file);
-    return file;
+    context.put(ContextKeys.buildArtifact, file);
   }
 
   File _findIpa() {

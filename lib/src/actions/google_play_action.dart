@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../pipeline_context.dart';
@@ -8,7 +9,7 @@ import 'pipeline_action.dart';
 
 /// Uploads an AAB file to Google Play via Fastlane Supply.
 ///
-/// Reads the build artifact from [PipelineContext.buildArtifact].
+/// Reads the build artifact from `ContextKeys.buildArtifact` in the context bag.
 class GooglePlayUploadAction extends PipelineAction<void> {
   /// Creates a Google Play upload action.
   ///
@@ -33,7 +34,7 @@ class GooglePlayUploadAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final artifact = context.buildArtifact;
+    final artifact = context.get<File>(ContextKeys.buildArtifact);
     context.logger.info('AAB: ${artifact.path}');
     context.logger.info('Package: $packageName');
     if (!File(jsonKeyPath).existsSync()) {

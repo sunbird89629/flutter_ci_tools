@@ -103,18 +103,18 @@ void main() {
       });
     });
 
-    group('buildArtifact', () {
-      test('throws StateError when accessed before being set', () {
+    group('buildArtifact via bag', () {
+      test('get throws StateError when artifact absent', () {
         expect(
-          () => ctx.buildArtifact,
+          () => ctx.get<File>(ContextKeys.buildArtifact),
           throwsA(isA<StateError>()),
         );
       });
 
-      test('returns file after setBuildArtifact', () {
+      test('returns file after put', () {
         final file = File('test.apk');
-        ctx.setBuildArtifact(file);
-        expect(ctx.buildArtifact, file);
+        ctx.put(ContextKeys.buildArtifact, file);
+        expect(ctx.get<File>(ContextKeys.buildArtifact), file);
       });
     });
 

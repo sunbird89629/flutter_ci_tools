@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 
 import '../app_config.dart';
@@ -28,17 +30,19 @@ Usage: dart run ci/build.dart test
     await runAction(CheckGitStatusAction());
     await runAction(CleanProjectAction());
 
-    // 构建，显式拿到两个文件
-    final androidFile = await runAction(BuildAndroidAction(
+    // 构建，分别从 context 取出两个产物
+    await runAction(BuildAndroidAction(
       envName: 'test',
       buildType: AndroidBuildType.apk,
     ));
-    final iosFile = await runAction(BuildIOSAction(
+    final androidFile = context.get<File>(ContextKeys.buildArtifact);
+    await runAction(BuildIOSAction(
       envName: 'test',
       exportMethod: 'development',
     ));
+    final iosFile = context.get<File>(ContextKeys.buildArtifact);
 
-    // 并行上传
+    // 并行上传（显式传入各自产物）
     final urls = await runParallelActions([
       PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: androidFile),
       PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: iosFile),

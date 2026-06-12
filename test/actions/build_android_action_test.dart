@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 import 'package:test/test.dart';
 
@@ -26,20 +28,18 @@ void main() {
     )..put(ContextKeys.buildNumber, 12001);
   });
 
-  test('BuildAndroidAction(apk) returns file and stores in context', () async {
+  test('BuildAndroidAction(apk) stores file in context', () async {
     final action = BuildAndroidAction(
       envName: 'prod',
       buildType: AndroidBuildType.apk,
       shellRunner: shell,
     );
 
-    final result = await action.run(context);
+    await action.run(context);
 
     expect(action.name, 'Build Android');
-    expect(result.path, 'build/app/outputs/flutter-apk/app-release.apk');
-    expect(context.buildArtifact.path,
+    expect(context.get<File>(ContextKeys.buildArtifact).path,
         'build/app/outputs/flutter-apk/app-release.apk');
-    expect(result.path, context.buildArtifact.path);
     expect(
       shell.runCalls,
       contains(
@@ -57,7 +57,7 @@ void main() {
 
     await action.run(context);
 
-    expect(context.buildArtifact.path,
+    expect(context.get<File>(ContextKeys.buildArtifact).path,
         'build/app/outputs/bundle/release/app-release.aab');
     expect(
       shell.runCalls,

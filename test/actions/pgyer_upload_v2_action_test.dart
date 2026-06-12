@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_v2_action.dart';
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
@@ -92,7 +93,7 @@ void main() {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
-        final context = ctx()..setBuildArtifact(apk);
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
           probeDomain: (d) async => d == 'api.pgyer.com',
@@ -106,7 +107,7 @@ void main() {
     });
 
     test('throws when all probe domains fail', () async {
-      final context = ctx()..setBuildArtifact(File('test.apk'));
+      final context = ctx()..put(ContextKeys.buildArtifact, File('test.apk'));
       final action = PgyerUploadV2Action(
         apiKey: 'k',
         probeDomain: (_) async => false,
@@ -125,7 +126,7 @@ void main() {
                   stderr: '',
                 ));
 
-      final context = ctx()..setBuildArtifact(File('test.apk'));
+      final context = ctx()..put(ContextKeys.buildArtifact, File('test.apk'));
       final action = PgyerUploadV2Action(
         apiKey: 'k',
         probeDomain: (_) async => true,
@@ -151,7 +152,7 @@ void main() {
           ..on('bucket.cos.x.com',
               () => ShellResult(exitCode: 0, stdout: '500', stderr: ''));
 
-        final context = ctx()..setBuildArtifact(apk);
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
           probeDomain: (_) async => true,
@@ -188,7 +189,7 @@ void main() {
                     stderr: '',
                   ));
 
-        final context = ctx()..setBuildArtifact(apk);
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
           probeDomain: stub.probe,
@@ -228,7 +229,7 @@ void main() {
                     stderr: '',
                   ));
 
-        // Don't set context.buildArtifact — explicit should be used
+        // Don't set ContextKeys.buildArtifact — explicit artifact should be used
         final context = ctx();
         final action = PgyerUploadV2Action(
           apiKey: 'k',
@@ -274,7 +275,7 @@ void main() {
                     stderr: '',
                   ));
 
-        final context = ctx()..setBuildArtifact(apk);
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
           probeDomain: (d) async => d == 'api.pgyer.com',
@@ -287,7 +288,7 @@ void main() {
       }
     });
 
-    test('falls back to context.buildArtifact when artifact is null', () async {
+    test('falls back to ContextKeys.buildArtifact when artifact is null', () async {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/fallback.apk')..writeAsStringSync('fake');
       try {
@@ -311,7 +312,7 @@ void main() {
                     stderr: '',
                   ));
 
-        final context = ctx()..setBuildArtifact(apk);
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
           probeDomain: (_) async => true,

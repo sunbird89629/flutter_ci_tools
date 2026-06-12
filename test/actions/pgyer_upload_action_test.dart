@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_action.dart';
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
@@ -36,7 +37,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 1000,
     );
-    c.setBuildArtifact(File('test.apk'));
+    c.put(ContextKeys.buildArtifact, File('test.apk'));
     return c;
   }
 
@@ -134,7 +135,7 @@ void main() {
       shellRunner: shell,
     );
 
-    // Don't set context.buildArtifact — explicit should be used
+    // Don't set ContextKeys.buildArtifact — explicit artifact should be used
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 1000,
@@ -145,7 +146,7 @@ void main() {
     expect(shell.runCalls.first, contains('file=@explicit_artifact.apk'));
   });
 
-  test('falls back to context.buildArtifact when artifact is null', () async {
+  test('falls back to ContextKeys.buildArtifact when artifact is null', () async {
     final shell = _FakeShellRunner()
       ..stubAny(ShellResult(
         exitCode: 0,
@@ -157,7 +158,7 @@ void main() {
       shellRunner: shell,
     );
 
-    final context = ctx(); // sets buildArtifact to test.apk
+    final context = ctx(); // sets ContextKeys.buildArtifact to test.apk
     final url = await action.run(context);
     expect(url, 'https://www.pgyer.com/fallback456');
     expect(shell.runCalls.first, contains('file=@test.apk'));

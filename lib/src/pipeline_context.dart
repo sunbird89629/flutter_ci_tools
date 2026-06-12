@@ -8,7 +8,7 @@ import 'utils/logger.dart';
 /// Shared, mutable context passed through all pipeline steps.
 ///
 /// Holds both static configuration (app identity) provided at
-/// construction time and runtime state (build number, build artifact)
+/// construction time and runtime state (build number, build artifact, and other key-value bag entries)
 /// populated by lifecycle actions during a single pipeline run.
 ///
 /// Subclass this to bundle reusable configuration across multiple pipelines.
@@ -65,24 +65,6 @@ class PipelineContext {
     final str = get<int>(ContextKeys.buildNumber).toString();
     return '${str[0]}.${str[1]}.${str[2]}';
   }
-
-  File? _buildArtifact;
-
-  /// The build artifact file produced by a build action.
-  ///
-  /// Throws [StateError] if accessed before a build action sets it
-  /// (e.g. `BuildAndroidAction` or `BuildIOSAction`).
-  File get buildArtifact {
-    if (_buildArtifact == null) {
-      throw StateError(
-        'buildArtifact 尚未设置。请先执行 BuildAndroidAction 或 BuildIOSAction。',
-      );
-    }
-    return _buildArtifact!;
-  }
-
-  /// Sets the build artifact file. Called by build actions.
-  void setBuildArtifact(File file) => _buildArtifact = file;
 
   /// Flutter 项目根目录。
   ///

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/app_store_action.dart';
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
@@ -24,7 +25,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 1000,
     );
-    c.setBuildArtifact(File('build/ios/ipa/app.ipa'));
+    c.put(ContextKeys.buildArtifact, File('build/ios/ipa/app.ipa'));
     return c;
   }
 

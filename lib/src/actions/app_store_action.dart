@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../pipeline_context.dart';
@@ -9,7 +10,7 @@ import 'pipeline_action.dart';
 
 /// Uploads an IPA file to App Store Connect via Fastlane Pilot.
 ///
-/// Reads the IPA path from [PipelineContext.buildArtifact].
+/// Reads the IPA path from `ContextKeys.buildArtifact` in the context bag.
 class AppStoreUploadAction extends PipelineAction<void> {
   /// Creates an App Store upload action.
   ///
@@ -39,7 +40,7 @@ class AppStoreUploadAction extends PipelineAction<void> {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final artifact = context.buildArtifact;
+    final artifact = context.get<File>(ContextKeys.buildArtifact);
     context.logger.info('IPA: ${artifact.path}');
     context.logger.info('API Key: $apiKeyId');
     if (!File(apiKeyPath).existsSync()) {

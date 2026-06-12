@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../utils/logger.dart';
@@ -21,7 +22,7 @@ import 'pipeline_action.dart';
 ///    public download URL.
 ///
 /// The artifact file is read from the explicit [artifact] parameter if
-/// provided, otherwise from [PipelineContext.buildArtifact].
+/// provided, otherwise from `ContextKeys.buildArtifact` in the context bag.
 ///
 /// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
 class PgyerUploadV2Action extends PipelineAction<String> {
@@ -29,8 +30,8 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [buildUpdateDescription] is an optional build description shown on Pgyer.
-  /// [artifact] optionally specifies the file to upload; if null, uses
-  /// [PipelineContext.buildArtifact].
+  /// [artifact] optionally specifies the file to upload; if null, reads
+  /// `ContextKeys.buildArtifact` from the context bag.
   /// [apiDomains] overrides the default list of API hosts to probe.
   /// [probeDomain] overrides the default domain reachability check for testing.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
@@ -51,8 +52,8 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// Optional build update description shown on the Pgyer download page.
   final String? buildUpdateDescription;
 
-  /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
-  /// when `null`.
+  /// Explicit file to upload; falls back to `ContextKeys.buildArtifact`
+  /// from the context bag when `null`.
   final File? artifact;
 
   /// Ordered list of API hosts to probe. First reachable one is used.
@@ -67,7 +68,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   @override
   Future<String> run(PipelineContext context) async {
     final log = context.logger;
-    final file = artifact ?? context.buildArtifact;
+    final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final domain = await _selectReachableDomain(log);
     final apiBaseUrl = 'http://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;

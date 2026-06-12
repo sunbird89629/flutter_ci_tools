@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/exceptions.dart';
 import '../pipeline_context.dart';
@@ -13,8 +14,8 @@ class PgyerUploadAction extends PipelineAction<String> {
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [buildUpdateDescription] is an optional build description shown on Pgyer.
-  /// [artifact] optionally specifies the file to upload; if null, uses
-  /// [PipelineContext.buildArtifact].
+  /// [artifact] optionally specifies the file to upload; if null, reads
+  /// `ContextKeys.buildArtifact` from the context bag.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadAction({
     required this.apiKey,
@@ -29,8 +30,8 @@ class PgyerUploadAction extends PipelineAction<String> {
   /// Optional build update description shown on the Pgyer download page.
   final String? buildUpdateDescription;
 
-  /// Explicit file to upload; falls back to [PipelineContext.buildArtifact]
-  /// when `null`.
+  /// Explicit file to upload; falls back to `ContextKeys.buildArtifact`
+  /// from the context bag when `null`.
   final File? artifact;
   final ShellRunner _shellRunner;
 
@@ -39,7 +40,7 @@ class PgyerUploadAction extends PipelineAction<String> {
 
   @override
   Future<String> run(PipelineContext context) async {
-    final file = artifact ?? context.buildArtifact;
+    final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final filePath = file.path;
     context.logger.info('Uploading $filePath ...');
     const maxAttempts = 3;
