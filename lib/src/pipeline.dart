@@ -114,30 +114,28 @@ abstract class Pipeline {
   }
 
   /// Runs [action] with section logging, timing, and status recording.
-  /// Returns the action's typed result.
-  Future<R> runAction<R>(PipelineAction<R> action) async {
+  Future<void> runAction(PipelineAction action) async {
     executedActions.add(action);
-    return _runTracked(action);
+    await _runTracked(action);
   }
 
-  /// Parallel executes multiple actions, returning their results in order.
-  Future<List<R>> runParallelActions<R>(List<PipelineAction<R>> actions) async {
+  /// Runs multiple actions in parallel, recording each one's status.
+  Future<void> runParallelActions(List<PipelineAction> actions) async {
     executedActions.addAll(actions);
-    return Future.wait(actions.map(_runTracked));
+    await Future.wait(actions.map(_runTracked));
   }
 
-  Future<R> _runTracked<R>(PipelineAction<R> action) async {
+  Future<void> _runTracked(PipelineAction action) async {
     final log = context.logger;
     log.section(action.name);
     final stopwatch = Stopwatch()..start();
     try {
-      final result = await action.run(context);
+      await action.run(context);
       stopwatch.stop();
       log.closeSection(true, action.name, stopwatch.elapsed);
       action
         ..status = ActionStatus.success
         ..duration = stopwatch.elapsed;
-      return result;
     } catch (e, stackTrace) {
       stopwatch.stop();
       log.closeSection(false, action.name, stopwatch.elapsed);

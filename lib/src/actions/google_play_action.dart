@@ -10,7 +10,7 @@ import 'pipeline_action.dart';
 /// Uploads an AAB file to Google Play via Fastlane Supply.
 ///
 /// Reads the build artifact from `ContextKeys.buildArtifact` in the context bag.
-class GooglePlayUploadAction extends PipelineAction<void> {
+class GooglePlayUploadAction extends PipelineAction {
   /// Creates a Google Play upload action.
   ///
   /// [packageName] is the Android application ID (e.g. `"com.example.app"`).

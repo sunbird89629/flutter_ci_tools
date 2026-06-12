@@ -6,7 +6,7 @@ import 'pipeline_action.dart';
 
 /// Computes the next build number via [VersionManager] and stores it in
 /// [PipelineContext] under [ContextKeys.buildNumber].
-class ResolveBuildVersionAction extends PipelineAction<void> {
+class ResolveBuildVersionAction extends PipelineAction {
   ResolveBuildVersionAction({VersionManager? versionManager})
       : _versionManager = versionManager;
 

@@ -4,7 +4,7 @@ import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
 /// Runs `fvm flutter clean` followed by `fvm flutter pub get`.
-class CleanProjectAction extends PipelineAction<void> {
+class CleanProjectAction extends PipelineAction {
   CleanProjectAction({ShellRunner? shellRunner})
       : _shellRunner = shellRunner ?? ShellRunnerImpl();
 

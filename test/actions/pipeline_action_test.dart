@@ -3,7 +3,7 @@ import 'package:flutter_ci_tools/src/actions/pipeline_action.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
-class _TestAction extends PipelineAction<void> {
+class _TestAction extends PipelineAction {
   bool ran = false;
   PipelineContext? capturedContext;
 

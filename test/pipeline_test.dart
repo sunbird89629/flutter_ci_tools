@@ -4,7 +4,7 @@ import 'package:flutter_ci_tools/src/pipeline.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
-class _RecordingAction extends PipelineAction<void> {
+class _RecordingAction extends PipelineAction {
   _RecordingAction(this.label, this.log, {this.willThrow = false});
   final String label;
   final List<String> log;
@@ -56,39 +56,6 @@ class _TestPipeline extends Pipeline {
       );
 }
 
-class _SimpleAction extends PipelineAction<String> {
-  _SimpleAction(this.label, {this.result = 'ok', this.willThrow = false});
-  final String label;
-  final String result;
-  final bool willThrow;
-  @override
-  String get name => label;
-  @override
-  Future<String> run(PipelineContext context) async {
-    if (willThrow) throw StateError('fail from $label');
-    return result;
-  }
-}
-
-class _ValuePipeline extends Pipeline {
-  String? returnValue;
-  @override
-  String get name => 'value-test';
-  @override
-  String get description => 'test';
-  @override
-  String get help => 'help';
-  @override
-  PipelineContext createContext(List<String> args) => PipelineContext(
-        appName: 'A',
-        seedBuildNumber: 10000,
-      );
-  @override
-  Future<void> body() async {
-    returnValue = await runAction(_SimpleAction('s1', result: 'hello'));
-  }
-}
-
 class _FailActionPipeline extends Pipeline {
   @override
   String get name => 'fail-test';
@@ -103,8 +70,8 @@ class _FailActionPipeline extends Pipeline {
       );
   @override
   Future<void> body() async {
-    await runAction(_SimpleAction('ok-action'));
-    await runAction(_SimpleAction('will-fail', willThrow: true));
+    await runAction(_RecordingAction('ok-action', []));
+    await runAction(_RecordingAction('will-fail', [], willThrow: true));
   }
 }
 
@@ -194,11 +161,5 @@ void main() {
       expect(pipeline.executedActions.first.status, ActionStatus.success);
     });
 
-    test('runAction returns the action result', () async {
-      final pipeline = _ValuePipeline();
-      await pipeline.run([]);
-      expect(pipeline.returnValue, 'hello');
-      expect(pipeline.executedActions.first.status, ActionStatus.success);
-    });
   });
 }

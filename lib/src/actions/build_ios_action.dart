@@ -13,7 +13,7 @@ import 'pipeline_action.dart';
 ///
 /// After completion, the output file is stored under `ContextKeys.buildArtifact`
 /// in the context bag.
-class BuildIOSAction extends PipelineAction<void> {
+class BuildIOSAction extends PipelineAction {
   /// Creates an iOS build action.
   ///
   /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).

@@ -8,7 +8,7 @@ import 'pipeline_action.dart';
 ///
 /// Reads `ContextKeys.buildNumber` from the context bag — requires
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
-class PushBuildTagAction extends PipelineAction<void> {
+class PushBuildTagAction extends PipelineAction {
   PushBuildTagAction({VersionManager? versionManager})
       : _versionManager = versionManager;
 

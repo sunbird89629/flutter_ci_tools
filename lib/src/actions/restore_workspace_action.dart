@@ -7,7 +7,7 @@ import 'pipeline_action.dart';
 ///
 /// Typically returned from `BuildPipeline.afterBuild()` so it runs regardless
 /// of whether the main body succeeded.
-class RestoreWorkspaceAction extends PipelineAction<void> {
+class RestoreWorkspaceAction extends PipelineAction {
   RestoreWorkspaceAction({GitManager? gitManager})
       : _gitManager = gitManager ?? GitManagerImpl();
 

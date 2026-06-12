@@ -3,9 +3,9 @@ import '../pipeline_context.dart';
 
 /// A single deploy/notification step in a pipeline.
 ///
-/// Actions receive a [PipelineContext] and produce a typed [R] result.
-/// Use [R] = `void` when the action has no return value.
-abstract class PipelineAction<R> {
+/// Actions receive a [PipelineContext] and return no value — results are
+/// written into the context's key-value bag via [PipelineContext.put].
+abstract class PipelineAction {
   /// Human-readable name; used as the log section header by `Pipeline.runAction`.
   String get name => this.runtimeType.toString();
 
@@ -37,6 +37,7 @@ abstract class PipelineAction<R> {
   /// Whether this action has been executed (i.e. [status] is non-null).
   bool get hasRun => status != null;
 
-  /// Executes this action against [context] and returns its result.
-  Future<R> run(PipelineContext context);
+  /// Executes this action against [context].
+  /// Results should be stored via [PipelineContext.put].
+  Future<void> run(PipelineContext context);
 }

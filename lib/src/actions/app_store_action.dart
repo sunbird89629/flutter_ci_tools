@@ -11,7 +11,7 @@ import 'pipeline_action.dart';
 /// Uploads an IPA file to App Store Connect via Fastlane Pilot.
 ///
 /// Reads the IPA path from `ContextKeys.buildArtifact` in the context bag.
-class AppStoreUploadAction extends PipelineAction<void> {
+class AppStoreUploadAction extends PipelineAction {
   /// Creates an App Store upload action.
   ///
   /// [issuerId] is the App Store Connect API issuer ID.

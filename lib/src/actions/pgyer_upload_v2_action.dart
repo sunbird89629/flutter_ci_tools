@@ -23,7 +23,7 @@ import 'pipeline_action.dart';
 ///
 /// The artifact file is read from the explicit [artifact] parameter if
 /// provided, otherwise from `ContextKeys.buildArtifact` in the context bag.
-class PgyerUploadV2Action extends PipelineAction<void> {
+class PgyerUploadV2Action extends PipelineAction {
   /// Creates a Pgyer V2 upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.

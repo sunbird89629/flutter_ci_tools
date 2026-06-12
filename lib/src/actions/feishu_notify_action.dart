@@ -8,7 +8,7 @@ import 'pipeline_action.dart';
 /// Sends an arbitrary text message to a Feishu (Lark) webhook.
 ///
 /// For standard build notifications prefer [FeishuBuildNotifyAction].
-class FeishuNotifyAction extends PipelineAction<void> {
+class FeishuNotifyAction extends PipelineAction {
   /// Creates a Feishu notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.

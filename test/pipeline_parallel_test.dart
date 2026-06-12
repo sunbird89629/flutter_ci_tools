@@ -4,22 +4,22 @@ import 'package:flutter_ci_tools/src/pipeline.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:test/test.dart';
 
-class _TestAction extends PipelineAction<int> {
+class _TestAction extends PipelineAction {
   _TestAction(this.value, {this.delay = Duration.zero});
 
   final int value;
   final Duration delay;
 
   @override
-  Future<int> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     await Future.delayed(delay);
-    return value;
+    context.put('parallel-$value', value);
   }
 }
 
-class _FailingAction extends PipelineAction<int> {
+class _FailingAction extends PipelineAction {
   @override
-  Future<int> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     throw StateError('oops');
   }
 }
@@ -43,13 +43,12 @@ void main() {
       final pipeline = _TestPipeline();
       await pipeline.run([]);
 
-      final results = await pipeline.runParallelActions([
+      await pipeline.runParallelActions([
         _TestAction(1, delay: const Duration(milliseconds: 50)),
         _TestAction(2, delay: const Duration(milliseconds: 10)),
         _TestAction(3, delay: const Duration(milliseconds: 30)),
       ]);
 
-      expect(results, [1, 2, 3]);
       expect(pipeline.executedActions.length, 3);
       expect(pipeline.allSucceeded, isTrue);
     });

@@ -31,7 +31,7 @@ enum DeployTarget {
 ///
 /// Download URLs are read from the context KV bag via [downloadUrlKeys];
 /// absent/empty values are skipped. When `null`, no download line is shown.
-class FeishuBuildNotifyAction extends PipelineAction<void> {
+class FeishuBuildNotifyAction extends PipelineAction {
   /// Creates a Feishu build notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.

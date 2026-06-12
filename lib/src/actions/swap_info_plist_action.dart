@@ -8,7 +8,7 @@ import 'pipeline_action.dart';
 ///
 /// Used by pipelines that build a "product" variant of the iOS app.
 /// Pair with `RestoreWorkspaceAction` in `afterBuild` to undo the swap.
-class SwapInfoPlistAction extends PipelineAction<void> {
+class SwapInfoPlistAction extends PipelineAction {
   @override
   String get name => 'Swap Info.plist for Product Variant';
 

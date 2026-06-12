@@ -10,7 +10,7 @@ import 'pipeline_action.dart';
 
 /// Uploads the build artifact to Pgyer and stores the download URL in the
 /// context bag under [resultKey].
-class PgyerUploadAction extends PipelineAction<void> {
+class PgyerUploadAction extends PipelineAction {
   /// Creates a Pgyer upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.

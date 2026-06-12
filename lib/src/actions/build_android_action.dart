@@ -22,7 +22,7 @@ enum AndroidBuildType {
 ///
 /// After completion, the output file is stored under `ContextKeys.buildArtifact`
 /// in the context bag.
-class BuildAndroidAction extends PipelineAction<void> {
+class BuildAndroidAction extends PipelineAction {
   /// Creates an Android build action.
   ///
   /// [envName] is the `--dart-define=ENV` value (e.g. `"prod"`, `"staging"`).

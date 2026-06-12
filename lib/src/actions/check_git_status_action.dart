@@ -4,7 +4,7 @@ import '../pipeline_context.dart';
 import 'pipeline_action.dart';
 
 /// Aborts the pipeline if the working tree has uncommitted changes.
-class CheckGitStatusAction extends PipelineAction<void> {
+class CheckGitStatusAction extends PipelineAction {
   CheckGitStatusAction({GitManager? gitManager})
       : _gitManager = gitManager;
 
