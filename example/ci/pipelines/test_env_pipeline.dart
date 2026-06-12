@@ -42,17 +42,22 @@ Usage: dart run ci/build.dart test
     ));
     final iosFile = context.get<File>(ContextKeys.buildArtifact);
 
-    // 并行上传（显式传入各自产物）
-    final urls = await runParallelActions([
-      PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: androidFile),
-      PgyerUploadV2Action(apiKey: pgyerApiKey, artifact: iosFile),
+    const androidUrlKey = 'pgyerAndroidUrl';
+    const iosUrlKey = 'pgyerIosUrl';
+
+    // 并行上传（各写入不同 key，避免覆盖）
+    await runParallelActions([
+      PgyerUploadV2Action(
+          apiKey: pgyerApiKey, artifact: androidFile, resultKey: androidUrlKey),
+      PgyerUploadV2Action(
+          apiKey: pgyerApiKey, artifact: iosFile, resultKey: iosUrlKey),
     ]);
 
     // 一条通知包含两个链接
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: feishuWebhookUrl,
       target: DeployTarget.pgyer,
-      downloadUrls: urls,
+      downloadUrlKeys: [androidUrlKey, iosUrlKey],
     ));
 
     await runAction(PushBuildTagAction());

@@ -39,13 +39,13 @@ class AndroidTestPipeline extends Pipeline {
       envName: 'test',
       buildType: AndroidBuildType.apk,
     ));
-    final pgyerUrl = await runAction(PgyerUploadAction(
+    await runAction(PgyerUploadAction(
       apiKey: ctx.pgyerApiKey,
     ));
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: ctx.feishuWebhookUrl,
       target: DeployTarget.pgyer,
-      downloadUrl: pgyerUrl,
+      downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
     ));
 
     await runAction(PushBuildTagAction());

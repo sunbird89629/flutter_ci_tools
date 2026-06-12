@@ -53,8 +53,10 @@ void main() {
       shellRunner: shell,
     );
 
-    final url = await action.run(ctx());
-    expect(url, 'https://www.pgyer.com/abc123');
+    final context = ctx();
+    await action.run(context);
+    expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+        'https://www.pgyer.com/abc123');
   });
 
   test('includes description when provided', () async {
@@ -82,8 +84,10 @@ void main() {
       buildUpdateDescription: 'notes',
       shellRunner: shell,
     );
-    final url = await action.run(ctx());
-    expect(url, 'https://www.pgyer.com/xyz');
+    final context = ctx();
+    await action.run(context);
+    expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+        'https://www.pgyer.com/xyz');
   });
 
   test('throws DeployException on API error', () async {
@@ -141,8 +145,9 @@ void main() {
       seedBuildNumber: 1000,
     );
 
-    final url = await action.run(context);
-    expect(url, 'https://www.pgyer.com/explicit123');
+    await action.run(context);
+    expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+        'https://www.pgyer.com/explicit123');
     expect(shell.runCalls.first, contains('file=@explicit_artifact.apk'));
   });
 
@@ -159,8 +164,9 @@ void main() {
     );
 
     final context = ctx(); // sets ContextKeys.buildArtifact to test.apk
-    final url = await action.run(context);
-    expect(url, 'https://www.pgyer.com/fallback456');
+    await action.run(context);
+    expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+        'https://www.pgyer.com/fallback456');
     expect(shell.runCalls.first, contains('file=@test.apk'));
   });
 }

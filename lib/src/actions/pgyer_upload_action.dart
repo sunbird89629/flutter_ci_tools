@@ -8,19 +8,24 @@ import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
 import 'pipeline_action.dart';
 
-/// Uploads the build artifact to Pgyer and returns the download URL.
-class PgyerUploadAction extends PipelineAction<String> {
+/// Uploads the build artifact to Pgyer and stores the download URL in the
+/// context bag under [resultKey].
+class PgyerUploadAction extends PipelineAction<void> {
   /// Creates a Pgyer upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [buildUpdateDescription] is an optional build description shown on Pgyer.
   /// [artifact] optionally specifies the file to upload; if null, reads
   /// `ContextKeys.buildArtifact` from the context bag.
+  /// [resultKey] is the context key under which the download URL is stored.
+  /// Defaults to [ContextKeys.pgyerDownloadUrl]; override when uploading
+  /// multiple artifacts in parallel so each URL lands under a distinct key.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   PgyerUploadAction({
     required this.apiKey,
     this.buildUpdateDescription,
     this.artifact,
+    this.resultKey = ContextKeys.pgyerDownloadUrl,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -33,13 +38,19 @@ class PgyerUploadAction extends PipelineAction<String> {
   /// Explicit file to upload; falls back to `ContextKeys.buildArtifact`
   /// from the context bag when `null`.
   final File? artifact;
+
+  /// Context key under which the download URL is stored. Defaults to
+  /// [ContextKeys.pgyerDownloadUrl]; override when uploading multiple
+  /// artifacts in parallel so each URL lands under a distinct key.
+  final String resultKey;
+
   final ShellRunner _shellRunner;
 
   @override
   String get name => 'Upload to Pgyer';
 
   @override
-  Future<String> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final filePath = file.path;
     context.logger.info('Uploading $filePath ...');
@@ -73,7 +84,8 @@ class PgyerUploadAction extends PipelineAction<String> {
       if (response['code'] == 0) {
         final url = 'https://www.pgyer.com/${response['data']['buildKey']}';
         context.logger.success('Upload successful! Download URL: $url');
-        return url;
+        context.put(resultKey, url);
+        return;
       }
       throw DeployException(
         'Upload failed with API error: ${response['message']}',

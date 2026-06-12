@@ -67,7 +67,7 @@ void main() {
       expect(action.name, 'Upload to Pgyer (V2)');
     });
 
-    test('happy path: probe → token → upload → poll → return URL', () async {
+    test('happy path: probe → token → upload → poll → write URL to bag', () async {
       final shell = _ScriptedShellRunner()
         ..on(
             '--form-string _api_key=k',
@@ -99,8 +99,9 @@ void main() {
           probeDomain: (d) async => d == 'api.pgyer.com',
           shellRunner: shell,
         );
-        final url = await action.run(context);
-        expect(url, 'https://pgyer.com/abcd');
+        await action.run(context);
+        expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+            'https://pgyer.com/abcd');
       } finally {
         tmp.deleteSync(recursive: true);
       }
@@ -195,8 +196,9 @@ void main() {
           probeDomain: stub.probe,
           shellRunner: shell,
         );
-        final url = await action.run(context);
-        expect(url, 'https://xcxwo.com/x');
+        await action.run(context);
+        expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+            'https://xcxwo.com/x');
         // First domain probed and rejected, second probed and accepted.
         expect(stub.probed, ['api.pgyer.com', 'api.xcxwo.com']);
       } finally {
@@ -237,8 +239,9 @@ void main() {
           probeDomain: (_) async => true,
           shellRunner: shell,
         );
-        final url = await action.run(context);
-        expect(url, 'https://pgyer.com/explicit');
+        await action.run(context);
+        expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+            'https://pgyer.com/explicit');
         expect(
           shell.calls.any((c) => c.contains('file=@${explicitFile.path}')),
           isTrue,
@@ -281,8 +284,9 @@ void main() {
           probeDomain: (d) async => d == 'api.pgyer.com',
           shellRunner: shell,
         );
-        final url = await action.run(context);
-        expect(url, 'https://pgyer.com/nested');
+        await action.run(context);
+        expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+            'https://pgyer.com/nested');
       } finally {
         tmp.deleteSync(recursive: true);
       }
@@ -318,8 +322,9 @@ void main() {
           probeDomain: (_) async => true,
           shellRunner: shell,
         );
-        final url = await action.run(context);
-        expect(url, 'https://pgyer.com/fb');
+        await action.run(context);
+        expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
+            'https://pgyer.com/fb');
         expect(
           shell.calls.any((c) => c.contains('file=@${apk.path}')),
           isTrue,

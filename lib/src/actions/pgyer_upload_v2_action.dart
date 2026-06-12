@@ -18,20 +18,21 @@ import 'pipeline_action.dart';
 /// 2. Requests a Tencent COS upload token from Pgyer.
 /// 3. Uploads the artifact directly to COS (bypassing Pgyer's own servers
 ///    — much faster for large files).
-/// 4. Polls `buildInfo` until processing completes and returns the build's
-///    public download URL.
+/// 4. Polls `buildInfo` until processing completes and stores the build's
+///    public download URL in the context bag under [resultKey].
 ///
 /// The artifact file is read from the explicit [artifact] parameter if
 /// provided, otherwise from `ContextKeys.buildArtifact` in the context bag.
-///
-/// Returns the download URL (e.g. `https://www.pgyer.com/abc123`).
-class PgyerUploadV2Action extends PipelineAction<String> {
+class PgyerUploadV2Action extends PipelineAction<void> {
   /// Creates a Pgyer V2 upload action.
   ///
   /// [apiKey] is the Pgyer API key for authentication.
   /// [buildUpdateDescription] is an optional build description shown on Pgyer.
   /// [artifact] optionally specifies the file to upload; if null, reads
   /// `ContextKeys.buildArtifact` from the context bag.
+  /// [resultKey] is the context key under which the download URL is stored.
+  /// Defaults to [ContextKeys.pgyerDownloadUrl]; override when uploading
+  /// multiple artifacts in parallel so each URL lands under a distinct key.
   /// [apiDomains] overrides the default list of API hosts to probe.
   /// [probeDomain] overrides the default domain reachability check for testing.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
@@ -39,6 +40,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     required this.apiKey,
     this.buildUpdateDescription,
     this.artifact,
+    this.resultKey = ContextKeys.pgyerDownloadUrl,
     List<String>? apiDomains,
     Future<bool> Function(String domain)? probeDomain,
     ShellRunner? shellRunner,
@@ -56,6 +58,11 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   /// from the context bag when `null`.
   final File? artifact;
 
+  /// Context key under which the download URL is stored. Defaults to
+  /// [ContextKeys.pgyerDownloadUrl]; override when uploading multiple
+  /// artifacts in parallel so each URL lands under a distinct key.
+  final String resultKey;
+
   /// Ordered list of API hosts to probe. First reachable one is used.
   final List<String> apiDomains;
 
@@ -66,7 +73,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
   String get name => 'Upload to Pgyer (V2)';
 
   @override
-  Future<String> run(PipelineContext context) async {
+  Future<void> run(PipelineContext context) async {
     final log = context.logger;
     final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final domain = await _selectReachableDomain(log);
@@ -78,7 +85,7 @@ class PgyerUploadV2Action extends PipelineAction<String> {
     final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key, log);
     final downloadUrl = 'https://$webDomain/$shortcutUrl';
     log.success('Pgyer build ready: $downloadUrl');
-    return downloadUrl;
+    context.put(resultKey, downloadUrl);
   }
 
   Future<String> _selectReachableDomain(Logger log) async {

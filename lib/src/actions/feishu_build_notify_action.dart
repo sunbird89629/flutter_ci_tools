@@ -28,20 +28,21 @@ enum DeployTarget {
 /// Reads `context.buildName`, `ContextKeys.buildNumber` from the context bag,
 /// and `context.git` to format the message text. Requires
 /// `ResolveBuildVersionAction` earlier in the pipeline body.
+///
+/// Download URLs are read from the context KV bag via [downloadUrlKeys];
+/// absent/empty values are skipped. When `null`, no download line is shown.
 class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Creates a Feishu build notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.
   /// [target] is the deploy destination (Pgyer, Google Play, etc.).
-  /// [downloadUrl] is an optional single download link included in the message.
-  /// [downloadUrls] is an optional list of download links; when provided,
-  /// overrides [downloadUrl].
+  /// [downloadUrlKeys] are context keys to read download URLs from;
+  /// absent/empty values are skipped. `null` means no download line is shown.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuBuildNotifyAction({
     required this.webhookUrl,
     required this.target,
-    this.downloadUrl,
-    this.downloadUrls,
+    this.downloadUrlKeys,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -51,11 +52,9 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Deploy destination label (Pgyer, Google Play, or App Store).
   final DeployTarget target;
 
-  /// Optional single download link included in the notification message.
-  final String? downloadUrl;
-
-  /// Optional list of download links; when provided, overrides [downloadUrl].
-  final List<String>? downloadUrls;
+  /// Context keys to read download URLs from; absent/empty values are skipped.
+  /// `null` means no download line is shown.
+  final List<String>? downloadUrlKeys;
   final ShellRunner _shellRunner;
 
   @override
@@ -87,8 +86,14 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
       'versionCode: ${context.get<int>(ContextKeys.buildNumber)}',
       'git_hash:    $gitHash',
     ];
-    final urls = downloadUrls ?? (downloadUrl != null ? [downloadUrl!] : null);
-    if (urls != null && urls.isNotEmpty) {
+    final urls = downloadUrlKeys == null
+        ? const <String>[]
+        : downloadUrlKeys!
+            .map((k) => context.tryGet<String>(k))
+            .whereType<String>()
+            .where((u) => u.isNotEmpty)
+            .toList();
+    if (urls.isNotEmpty) {
       lines.add(sep);
       if (urls.length == 1) {
         lines.add('🔗 下载: ${urls.single}');

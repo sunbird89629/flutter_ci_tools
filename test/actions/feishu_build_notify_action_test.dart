@@ -46,12 +46,14 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..put(ContextKeys.buildNumber, 12042);
+    )
+      ..put(ContextKeys.buildNumber, 12042)
+      ..put(ContextKeys.pgyerDownloadUrl, 'https://example.com/dl');
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
-      downloadUrl: 'https://example.com/dl',
+      downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
       shellRunner: shell,
     );
     await action.run(context);
@@ -68,31 +70,31 @@ void main() {
     expect(shell.lastJson, contains('commit1'));
   });
 
-  test('formats message with multiple downloadUrls', () async {
+  test('formats message with multiple download URLs via keys', () async {
     final shell = _FakeShellRunner();
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..put(ContextKeys.buildNumber, 12042);
+    )
+      ..put(ContextKeys.buildNumber, 12042)
+      ..put('urlA', 'https://example.com/a')
+      ..put('urlB', 'https://example.com/b');
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
-      downloadUrls: [
-        'https://www.pgyer.com/android123',
-        'https://www.pgyer.com/ios456',
-      ],
+      downloadUrlKeys: ['urlA', 'urlB'],
       shellRunner: shell,
     );
     await action.run(context);
 
-    expect(shell.lastJson, contains('🔗 下载链接:'));
-    expect(shell.lastJson, contains('  1. https://www.pgyer.com/android123'));
-    expect(shell.lastJson, contains('  2. https://www.pgyer.com/ios456'));
+    expect(shell.lastJson, contains('https://example.com/a'));
+    expect(shell.lastJson, contains('https://example.com/b'));
+    expect(shell.lastJson, contains('🔗 下载链接'));
   });
 
-  test('formats message with single downloadUrl in downloadUrls', () async {
+  test('omits download line when no downloadUrlKeys provided', () async {
     final shell = _FakeShellRunner();
     final context = PipelineContext(
       appName: 'TestApp',
@@ -103,34 +105,10 @@ void main() {
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
-      downloadUrls: ['https://www.pgyer.com/only_one'],
       shellRunner: shell,
     );
     await action.run(context);
 
-    expect(shell.lastJson, contains('🔗 下载: https://www.pgyer.com/only_one'));
-    expect(shell.lastJson, isNot(contains('下载链接')));
-  });
-
-  test('downloadUrls overrides downloadUrl when both provided', () async {
-    final shell = _FakeShellRunner();
-    final context = PipelineContext(
-      appName: 'TestApp',
-      seedBuildNumber: 12000,
-      git: _FakeGitManager(),
-    )..put(ContextKeys.buildNumber, 12042);
-
-    final action = FeishuBuildNotifyAction(
-      webhookUrl: 'https://open.feishu.cn/hook',
-      target: DeployTarget.pgyer,
-      downloadUrl: 'https://old.example.com',
-      downloadUrls: ['https://new.example.com/1', 'https://new.example.com/2'],
-      shellRunner: shell,
-    );
-    await action.run(context);
-
-    expect(shell.lastJson, isNot(contains('old.example.com')));
-    expect(shell.lastJson, contains('1. https://new.example.com/1'));
-    expect(shell.lastJson, contains('2. https://new.example.com/2'));
+    expect(shell.lastJson, isNot(contains('🔗 下载')));
   });
 }
