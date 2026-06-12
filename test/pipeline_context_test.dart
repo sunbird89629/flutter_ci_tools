@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:test/test.dart';
@@ -73,35 +74,31 @@ void main() {
       });
     });
 
-    group('buildNumber (sealed)', () {
-      test('throws StateError when accessed before resolution', () {
+    group('buildNumber via bag', () {
+      test('get throws StateError when buildNumber absent', () {
         expect(
-          () => ctx.buildNumber,
-          throwsA(isA<StateError>().having(
-            (e) => e.message,
-            'message',
-            contains('buildNumber'),
-          )),
+          () => ctx.get<int>(ContextKeys.buildNumber),
+          throwsA(isA<StateError>()),
         );
       });
 
-      test('returns value after resolveBuildVersion', () {
-        ctx.resolveBuildVersion(12001);
-        expect(ctx.buildNumber, 12001);
+      test('returns value after put', () {
+        ctx.put(ContextKeys.buildNumber, 12001);
+        expect(ctx.get<int>(ContextKeys.buildNumber), 12001);
       });
 
       test('buildName formats buildNumber correctly', () {
-        ctx.resolveBuildVersion(12001);
+        ctx.put(ContextKeys.buildNumber, 12001);
         expect(ctx.buildName, '1.2.0');
       });
 
       test('buildName handles zeros', () {
-        ctx.resolveBuildVersion(10000);
+        ctx.put(ContextKeys.buildNumber, 10000);
         expect(ctx.buildName, '1.0.0');
       });
 
       test('buildName handles triple digits', () {
-        ctx.resolveBuildVersion(12345);
+        ctx.put(ContextKeys.buildNumber, 12345);
         expect(ctx.buildName, '1.2.3');
       });
     });

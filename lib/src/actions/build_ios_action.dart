@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/shell_runner.dart';
@@ -7,8 +8,8 @@ import 'pipeline_action.dart';
 
 /// Builds an iOS IPA and stores it in context.
 ///
-/// Reads `context.buildName` and `context.buildNumber` — requires
-/// `ResolveBuildVersionAction` earlier in the pipeline body.
+/// Reads `context.buildName` and `ContextKeys.buildNumber` from the context
+/// bag — requires `ResolveBuildVersionAction` earlier in the pipeline body.
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
 class BuildIOSAction extends PipelineAction<File> {
@@ -41,7 +42,7 @@ class BuildIOSAction extends PipelineAction<File> {
       'ipa',
       '--export-method=$exportMethod',
       '--build-name=${context.buildName}',
-      '--build-number=${context.buildNumber}',
+      '--build-number=${context.get<int>(ContextKeys.buildNumber)}',
       '--dart-define=ENV=$envName',
     ]);
     final file = _findIpa();

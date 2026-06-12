@@ -23,7 +23,7 @@ void main() {
     context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
-    )..resolveBuildVersion(12001);
+    )..put(ContextKeys.buildNumber, 12001);
   });
 
   test(

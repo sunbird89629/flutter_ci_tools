@@ -1,4 +1,5 @@
 import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart';
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
@@ -45,7 +46,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..resolveBuildVersion(12042);
+    )..put(ContextKeys.buildNumber, 12042);
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
@@ -73,7 +74,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..resolveBuildVersion(12042);
+    )..put(ContextKeys.buildNumber, 12042);
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
@@ -97,7 +98,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..resolveBuildVersion(12042);
+    )..put(ContextKeys.buildNumber, 12042);
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
@@ -117,7 +118,7 @@ void main() {
       appName: 'TestApp',
       seedBuildNumber: 12000,
       git: _FakeGitManager(),
-    )..resolveBuildVersion(12042);
+    )..put(ContextKeys.buildNumber, 12042);
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',

@@ -1,6 +1,7 @@
-import '../utils/shell_runner_impl.dart';
+import '../context_keys.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner.dart';
+import '../utils/shell_runner_impl.dart';
 import 'feishu_notify_action.dart';
 import 'pipeline_action.dart';
 
@@ -24,9 +25,9 @@ enum DeployTarget {
 
 /// Sends the standard "new build" message to Feishu.
 ///
-/// Reads `context.buildName`, `context.buildNumber`, and `context.git` to
-/// format the message text. Requires `ResolveBuildVersionAction` earlier in
-/// the pipeline body.
+/// Reads `context.buildName`, `ContextKeys.buildNumber` from the context bag,
+/// and `context.git` to format the message text. Requires
+/// `ResolveBuildVersionAction` earlier in the pipeline body.
 class FeishuBuildNotifyAction extends PipelineAction<void> {
   /// Creates a Feishu build notification action.
   ///
@@ -79,11 +80,11 @@ class FeishuBuildNotifyAction extends PipelineAction<void> {
     final recentCommits = await git.getRecentCommits(count: 15);
     final commitBody = await git.getLatestCommitBody();
     final lines = <String>[
-      '🚀 ${context.appName} 新版本 ${context.buildNumber} (${target.label})',
+      '🚀 ${context.appName} 新版本 ${context.get<int>(ContextKeys.buildNumber)} (${target.label})',
       'branch: $branch  by: $gitUser',
       sep,
       'versionName: ${context.buildName}',
-      'versionCode: ${context.buildNumber}',
+      'versionCode: ${context.get<int>(ContextKeys.buildNumber)}',
       'git_hash:    $gitHash',
     ];
     final urls = downloadUrls ?? (downloadUrl != null ? [downloadUrl!] : null);

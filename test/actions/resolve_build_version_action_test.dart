@@ -1,4 +1,5 @@
 import 'package:flutter_ci_tools/src/actions/resolve_build_version_action.dart';
+import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/version_manager.dart';
 import 'package:test/test.dart';
@@ -24,7 +25,7 @@ class _FakeVersionManager implements VersionManager {
 }
 
 void main() {
-  test('ResolveBuildVersionAction sets context.buildNumber from VersionManager',
+  test('ResolveBuildVersionAction stores buildNumber in context bag',
       () async {
     final version = _FakeVersionManager()..nextBuildNumber = 12001;
     final action = ResolveBuildVersionAction(versionManager: version);
@@ -37,6 +38,6 @@ void main() {
 
     expect(action.name, 'Resolve Build Version');
     expect(version.receivedSeed, 12000);
-    expect(context.buildNumber, 12001);
+    expect(context.get<int>(ContextKeys.buildNumber), 12001);
   });
 }

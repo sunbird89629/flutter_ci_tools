@@ -1,20 +1,9 @@
 import 'dart:io';
 
+import 'context_keys.dart';
 import 'utils/args_parser.dart';
 import 'utils/git_manager.dart';
 import 'utils/logger.dart';
-
-/// State of the build version number.
-sealed class BuildVersion {}
-
-/// Build version has not yet been resolved by [ResolveBuildVersionAction].
-class BuildVersionUnresolved extends BuildVersion {}
-
-/// Build version was resolved to a concrete [value].
-class BuildVersionResolved extends BuildVersion {
-  final int value;
-  BuildVersionResolved(this.value);
-}
 
 /// Shared, mutable context passed through all pipeline steps.
 ///
@@ -70,31 +59,10 @@ class PipelineContext {
   /// Returns the value stored under [key], or `null` if it was never set.
   T? tryGet<T>(String key) => _bag[key] as T?;
 
-  BuildVersion _buildVersion = BuildVersionUnresolved();
-
-  /// Resolved build number.
-  ///
-  /// Throws [StateError] if accessed before [resolveBuildVersion] is called
-  /// (typically by `ResolveBuildVersionAction`).
-  int get buildNumber {
-    switch (_buildVersion) {
-      case BuildVersionUnresolved():
-        throw StateError(
-          'buildNumber 尚未解析。请确保先执行 ResolveBuildVersionAction。',
-        );
-      case BuildVersionResolved(:final value):
-        return value;
-    }
-  }
-
-  /// Sets the build number. Called by `ResolveBuildVersionAction`.
-  void resolveBuildVersion(int version) {
-    _buildVersion = BuildVersionResolved(version);
-  }
-
-  /// Human-readable build name derived from [buildNumber] (e.g. `"1.2.0"`).
+  /// Human-readable build name derived from the resolved build number
+  /// (e.g. `"1.2.0"`). Requires `ResolveBuildVersionAction` to have run.
   String get buildName {
-    final str = buildNumber.toString();
+    final str = get<int>(ContextKeys.buildNumber).toString();
     return '${str[0]}.${str[1]}.${str[2]}';
   }
 

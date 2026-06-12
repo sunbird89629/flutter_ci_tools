@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../context_keys.dart';
 import '../pipeline_context.dart';
 import '../utils/shell_runner_impl.dart';
 import '../utils/shell_runner.dart';
@@ -16,8 +17,8 @@ enum AndroidBuildType {
 
 /// Builds an Android artifact (APK or AAB) and stores it in context.
 ///
-/// Reads `context.buildName` and `context.buildNumber` — requires
-/// `ResolveBuildVersionAction` earlier in the pipeline body.
+/// Reads `context.buildName` and `ContextKeys.buildNumber` from the context
+/// bag — requires `ResolveBuildVersionAction` earlier in the pipeline body.
 ///
 /// After completion, the output file is available via `context.buildArtifact`.
 class BuildAndroidAction extends PipelineAction<File> {
@@ -59,7 +60,7 @@ class BuildAndroidAction extends PipelineAction<File> {
       'build',
       subcommand,
       '--build-name=${context.buildName}',
-      '--build-number=${context.buildNumber}',
+      '--build-number=${context.get<int>(ContextKeys.buildNumber)}',
       '--dart-define=ENV=$envName',
     ]);
     final file = File(outputPath);
