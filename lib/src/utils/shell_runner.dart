@@ -1,3 +1,5 @@
+import 'logger.dart';
+
 /// Result of a captured shell command execution.
 class ShellResult {
   /// Process exit code (0 = success).
@@ -25,4 +27,7 @@ abstract class ShellRunner {
 
   /// Runs a command and captures its output without printing to the terminal.
   Future<ShellResult> runAndCapture(String executable, List<String> args);
+
+  /// Updates the logger used for command output. Default no-op.
+  void setLogger(Logger logger) {}
 }

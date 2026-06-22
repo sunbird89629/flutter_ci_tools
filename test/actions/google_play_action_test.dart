@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/google_play_action.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -8,6 +9,8 @@ import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
   final List<String> runCalls = [];
   @override
   Future<void> run(String exe, List<String> args) async {

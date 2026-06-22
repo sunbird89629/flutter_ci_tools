@@ -74,6 +74,7 @@ class PgyerUploadV2Action extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     final log = context.logger;
     final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final domain = await _selectReachableDomain(log);

@@ -22,17 +22,23 @@ class ShellRunnerImpl implements ShellRunner {
     };
   }();
 
-  final Logger logger;
+  /// Logger used for command output. Actions inject [PipelineContext.logger]
+  /// via [setLogger] at the start of [ShellRunner.run].
+  Logger _logger;
+
+  @override
+  void setLogger(Logger logger) => _logger = logger;
 
   /// Creates a [ShellRunnerImpl].
   ///
-  /// [logger] defaults to [Logger.silent]; pass [Logger.terminal] for real CLI.
+  /// [logger] defaults to [Logger.silent] when not injected at construction,
+  /// but should be overridden via [setLogger] before execution.
   ShellRunnerImpl({Logger? logger})
-      : logger = logger ?? Logger.silent();
+      : _logger = logger ?? Logger.silent();
 
   @override
   Future<void> run(String executable, List<String> args) async {
-    logger.command('$executable ${args.join(' ')}');
+    _logger.command('$executable ${args.join(' ')}');
     final process = await Process.start(
       executable,
       args,
@@ -43,11 +49,11 @@ class ShellRunnerImpl implements ShellRunner {
     final stdoutDone = process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .forEach(logger.verbose);
+        .forEach(_logger.verbose);
     final stderrDone = process.stderr
         .transform(utf8.decoder)
         .transform(const LineSplitter())
-        .forEach(logger.verbose);
+        .forEach(_logger.verbose);
 
     final exitCode = await process.exitCode;
     await Future.wait([stdoutDone, stderrDone]);

@@ -48,6 +48,7 @@ class AppStoreUploadAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     final artifact = this.artifact ?? context.get<File>(ContextKeys.buildArtifact);
     context.logger.info('IPA: ${artifact.path}');
     context.logger.info('API Key: $apiKeyId');

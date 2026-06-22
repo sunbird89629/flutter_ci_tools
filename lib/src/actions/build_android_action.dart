@@ -46,6 +46,7 @@ class BuildAndroidAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     final (subcommand, outputPath) = switch (buildType) {
       AndroidBuildType.apk => (
           'apk',

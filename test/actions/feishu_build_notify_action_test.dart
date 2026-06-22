@@ -1,4 +1,5 @@
 import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
   String? lastJson;
   @override
   Future<void> run(String exe, List<String> args) async {}

@@ -32,6 +32,7 @@ class FeishuNotifyAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     context.logger.info('Sending Feishu notification...');
     final jsonMessage = jsonEncode({
       'msg_type': 'text',

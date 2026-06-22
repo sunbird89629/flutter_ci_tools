@@ -37,6 +37,7 @@ class BuildIOSAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     await _shellRunner.run('fvm', [
       'flutter',
       'build',

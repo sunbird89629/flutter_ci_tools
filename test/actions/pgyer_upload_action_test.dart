@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_ci_tools/src/actions/pgyer_upload_action.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/exceptions.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
@@ -8,6 +9,8 @@ import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
   final Map<String, ShellResult> _responses = {};
   ShellResult? _fallback;
   final List<String> runCalls = [];

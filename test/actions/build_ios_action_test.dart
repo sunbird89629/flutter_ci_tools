@@ -1,7 +1,10 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
   final List<String> runCalls = [];
 
   @override

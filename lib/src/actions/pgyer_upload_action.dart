@@ -51,6 +51,7 @@ class PgyerUploadAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     final file = artifact ?? context.get<File>(ContextKeys.buildArtifact);
     final filePath = file.path;
     context.logger.info('Uploading $filePath ...');

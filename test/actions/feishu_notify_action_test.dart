@@ -1,9 +1,12 @@
 import 'package:flutter_ci_tools/src/actions/feishu_notify_action.dart';
+import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
 import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
   String? lastJson;
   String? lastUrl;
   @override

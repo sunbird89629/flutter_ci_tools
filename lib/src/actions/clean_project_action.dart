@@ -15,6 +15,7 @@ class CleanProjectAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
+    _shellRunner.setLogger(context.logger);
     await _shellRunner.run('fvm', ['flutter', 'clean']);
     await _shellRunner.run('fvm', ['flutter', 'pub', 'get']);
   }
