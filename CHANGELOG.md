@@ -1,3 +1,10 @@
+## 0.0.6
+
+### ✨ Features
+
+- `GooglePlayUploadAction` 新增可选 `File? artifact` 参数，支持并行上传时显式指定 AAB 文件 (`--`)
+- `AppStoreUploadAction` 新增可选 `File? artifact` 参数，支持并行上传时显式指定 IPA 文件 (`--`)
+
 ## 0.0.5 (`3bb3c82`)
 
 ### ⚠️ Breaking Changes

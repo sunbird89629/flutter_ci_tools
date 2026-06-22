@@ -9,16 +9,20 @@ import 'pipeline_action.dart';
 
 /// Uploads an AAB file to Google Play via Fastlane Supply.
 ///
-/// Reads the build artifact from `ContextKeys.buildArtifact` in the context bag.
+/// The artifact file is read from the explicit [artifact] parameter if
+/// provided, otherwise from `ContextKeys.buildArtifact` in the context bag.
 class GooglePlayUploadAction extends PipelineAction {
   /// Creates a Google Play upload action.
   ///
   /// [packageName] is the Android application ID (e.g. `"com.example.app"`).
   /// [jsonKeyPath] is the filesystem path to the Google Play service account JSON key.
+  /// [artifact] optionally specifies the AAB file to upload; if null, reads
+  /// `ContextKeys.buildArtifact` from the context bag.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   GooglePlayUploadAction({
     required this.packageName,
     required this.jsonKeyPath,
+    this.artifact,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -27,6 +31,10 @@ class GooglePlayUploadAction extends PipelineAction {
 
   /// Filesystem path to the Google Play service account JSON key file.
   final String jsonKeyPath;
+
+  /// Explicit AAB file to upload; falls back to `ContextKeys.buildArtifact`
+  /// from the context bag when `null`.
+  final File? artifact;
   final ShellRunner _shellRunner;
 
   @override
@@ -34,7 +42,7 @@ class GooglePlayUploadAction extends PipelineAction {
 
   @override
   Future<void> run(PipelineContext context) async {
-    final artifact = context.get<File>(ContextKeys.buildArtifact);
+    final artifact = this.artifact ?? context.get<File>(ContextKeys.buildArtifact);
     context.logger.info('AAB: ${artifact.path}');
     context.logger.info('Package: $packageName');
     if (!File(jsonKeyPath).existsSync()) {
