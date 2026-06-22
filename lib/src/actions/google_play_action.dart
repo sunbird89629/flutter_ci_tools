@@ -18,11 +18,13 @@ class GooglePlayUploadAction extends PipelineAction {
   /// [jsonKeyPath] is the filesystem path to the Google Play service account JSON key.
   /// [artifact] optionally specifies the AAB file to upload; if null, reads
   /// `ContextKeys.buildArtifact` from the context bag.
+  /// [maxRetries] is the maximum number of upload attempts (default: 5).
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   GooglePlayUploadAction({
     required this.packageName,
     required this.jsonKeyPath,
     this.artifact,
+    this.maxRetries = 5,
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -35,6 +37,10 @@ class GooglePlayUploadAction extends PipelineAction {
   /// Explicit AAB file to upload; falls back to `ContextKeys.buildArtifact`
   /// from the context bag when `null`.
   final File? artifact;
+
+  /// Maximum number of upload attempts before throwing.
+  final int maxRetries;
+
   final ShellRunner _shellRunner;
 
   @override
@@ -51,20 +57,39 @@ class GooglePlayUploadAction extends PipelineAction {
         'Google Play Service Account JSON not found at $jsonKeyPath',
       );
     }
-    await _shellRunner.run('fastlane', [
-      'supply',
-      '--aab',
-      artifact.path,
-      '--package_name',
-      packageName,
-      '--json_key',
-      jsonKeyPath,
-      '--track',
-      'internal',
-      '--skip_upload_metadata',
-      '--skip_upload_images',
-      '--skip_upload_screenshots',
-    ]);
+
+    ShellResult? result;
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+      if (attempt > 1) {
+        context.logger.info(
+          'Retrying Google Play upload (attempt $attempt/$maxRetries)...',
+        );
+        await Future.delayed(const Duration(seconds: 10));
+      }
+      result = await _shellRunner.runAndCapture('fastlane', [
+        'supply',
+        '--aab',
+        artifact.path,
+        '--package_name',
+        packageName,
+        '--json_key',
+        jsonKeyPath,
+        '--track',
+        'internal',
+        '--skip_upload_metadata',
+        '--skip_upload_images',
+        '--skip_upload_screenshots',
+      ]);
+      if (result.exitCode == 0) break;
+      context.logger.error(
+        'Google Play upload attempt $attempt failed: ${result.stderr}',
+      );
+    }
+    if (result!.exitCode != 0) {
+      throw DeployException(
+        'Google Play upload failed after $maxRetries attempts',
+      );
+    }
     context.logger.success('Google Play upload successful!');
   }
 }

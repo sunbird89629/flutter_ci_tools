@@ -11,15 +11,33 @@ import 'package:test/test.dart';
 class _FakeShellRunner implements ShellRunner {
   @override
   void setLogger(Logger logger) {}
-  final List<String> runCalls = [];
-  @override
-  Future<void> run(String exe, List<String> args) async {
-    runCalls.add('$exe ${args.join(' ')}');
-  }
+  final List<String> runAndCaptureCalls = [];
+  int callCount = 0;
 
   @override
-  Future<ShellResult> runAndCapture(String exe, List<String> args) async =>
-      ShellResult(exitCode: 0, stdout: '', stderr: '');
+  Future<void> run(String exe, List<String> args) async {}
+
+  @override
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    runAndCaptureCalls.add('$exe ${args.join(' ')}');
+    callCount++;
+    return ShellResult(exitCode: 0, stdout: '', stderr: '');
+  }
+}
+
+class _FailingShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
+  int callCount = 0;
+
+  @override
+  Future<void> run(String exe, List<String> args) async {}
+
+  @override
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    callCount++;
+    return ShellResult(exitCode: 1, stdout: '', stderr: 'network error');
+  }
 }
 
 void main() {
@@ -62,11 +80,33 @@ void main() {
     try {
       await action.run(ctx());
       expect(
-        shell.runCalls.single,
+        shell.runAndCaptureCalls.single,
         contains(
           'fastlane supply --aab build/app-release.aab --package_name com.example.app --json_key ${tmpKey.path} --track internal --skip_upload_metadata --skip_upload_images --skip_upload_screenshots',
         ),
       );
+    } finally {
+      tmpKey.parent.deleteSync(recursive: true);
+    }
+  });
+
+  test('retries on failure up to maxRetries times', () async {
+    final tmpKey =
+        File('${Directory.systemTemp.createTempSync().path}/key.json');
+    tmpKey.writeAsStringSync('{}');
+    final shell = _FailingShellRunner();
+    final action = GooglePlayUploadAction(
+      packageName: 'com.example.app',
+      jsonKeyPath: tmpKey.path,
+      maxRetries: 3,
+      shellRunner: shell,
+    );
+    try {
+      await expectLater(
+        () => action.run(ctx()),
+        throwsA(isA<DeployException>()),
+      );
+      expect(shell.callCount, 3);
     } finally {
       tmpKey.parent.deleteSync(recursive: true);
     }

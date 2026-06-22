@@ -11,15 +11,33 @@ import 'package:test/test.dart';
 class _FakeShellRunner implements ShellRunner {
   @override
   void setLogger(Logger logger) {}
-  final List<String> runCalls = [];
-  @override
-  Future<void> run(String exe, List<String> args) async {
-    runCalls.add('$exe ${args.join(' ')}');
-  }
+  final List<String> runAndCaptureCalls = [];
+  int callCount = 0;
 
   @override
-  Future<ShellResult> runAndCapture(String exe, List<String> args) async =>
-      ShellResult(exitCode: 0, stdout: '', stderr: '');
+  Future<void> run(String exe, List<String> args) async {}
+
+  @override
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    runAndCaptureCalls.add('$exe ${args.join(' ')}');
+    callCount++;
+    return ShellResult(exitCode: 0, stdout: '', stderr: '');
+  }
+}
+
+class _FailingShellRunner implements ShellRunner {
+  @override
+  void setLogger(Logger logger) {}
+  int callCount = 0;
+
+  @override
+  Future<void> run(String exe, List<String> args) async {}
+
+  @override
+  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    callCount++;
+    return ShellResult(exitCode: 1, stdout: '', stderr: 'network error');
+  }
 }
 
 void main() {
@@ -66,7 +84,7 @@ void main() {
     );
     try {
       await action.run(ctx());
-      final call = shell.runCalls.single;
+      final call = shell.runAndCaptureCalls.single;
       // The tmp JSON file path is generated at runtime under systemTemp,
       // so we match the surrounding command shape and verify the path
       // looks like a system-temp path that has since been cleaned up.
@@ -84,6 +102,30 @@ void main() {
       expect(tmpJsonPath, endsWith('.json'));
       // Cleaned up after the fastlane call returns.
       expect(File(tmpJsonPath).existsSync(), isFalse);
+    } finally {
+      tmpDir.deleteSync(recursive: true);
+    }
+  });
+
+  test('retries on failure up to maxRetries times', () async {
+    final tmpDir = Directory.systemTemp.createTempSync();
+    final p8 = File('${tmpDir.path}/AuthKey.p8');
+    p8.writeAsStringSync('FAKEKEY');
+
+    final shell = _FailingShellRunner();
+    final action = AppStoreUploadAction(
+      issuerId: 'iss',
+      apiKeyId: 'kid',
+      apiKeyPath: p8.path,
+      maxRetries: 3,
+      shellRunner: shell,
+    );
+    try {
+      await expectLater(
+        () => action.run(ctx()),
+        throwsA(isA<DeployException>()),
+      );
+      expect(shell.callCount, 3);
     } finally {
       tmpDir.deleteSync(recursive: true);
     }
