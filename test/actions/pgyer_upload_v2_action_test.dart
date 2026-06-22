@@ -133,6 +133,7 @@ void main() {
       final context = ctx()..put(ContextKeys.buildArtifact, File('test.apk'));
       final action = PgyerUploadV2Action(
         apiKey: 'k',
+        maxRetries: 1,
         probeDomain: (_) async => true,
         shellRunner: shell,
       );
@@ -159,6 +160,7 @@ void main() {
         final context = ctx()..put(ContextKeys.buildArtifact, apk);
         final action = PgyerUploadV2Action(
           apiKey: 'k',
+          maxRetries: 1,
           probeDomain: (_) async => true,
           shellRunner: shell,
         );
@@ -332,6 +334,40 @@ void main() {
           shell.calls.any((c) => c.contains('file=@${apk.path}')),
           isTrue,
         );
+      } finally {
+        tmp.deleteSync(recursive: true);
+      }
+    });
+
+    test('retries on failure up to maxRetries times', () async {
+      final tmp = Directory.systemTemp.createTempSync();
+      final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
+      try {
+        // Always return failure for getCOSToken
+        final shell = _ScriptedShellRunner()
+          ..on(
+              '--form-string _api_key=k',
+              () => ShellResult(
+                    exitCode: 1,
+                    stdout: '',
+                    stderr: 'network error',
+                  ));
+
+        final context = ctx()..put(ContextKeys.buildArtifact, apk);
+        final action = PgyerUploadV2Action(
+          apiKey: 'k',
+          maxRetries: 3,
+          probeDomain: (_) async => true,
+          shellRunner: shell,
+        );
+        await expectLater(
+          () => action.run(context),
+          throwsA(isA<DeployException>()),
+        );
+        // Should have attempted 3 times (getCOSToken called 3 times)
+        final cosTokenCalls =
+            shell.calls.where((c) => c.contains('getCOSToken')).length;
+        expect(cosTokenCalls, 3);
       } finally {
         tmp.deleteSync(recursive: true);
       }

@@ -33,6 +33,7 @@ class PgyerUploadV2Action extends PipelineAction {
   /// [resultKey] is the context key under which the download URL is stored.
   /// Defaults to [ContextKeys.pgyerDownloadUrl]; override when uploading
   /// multiple artifacts in parallel so each URL lands under a distinct key.
+  /// [maxRetries] is the maximum number of upload attempts (default: 5).
   /// [apiDomains] overrides the default list of API hosts to probe.
   /// [probeDomain] overrides the default domain reachability check for testing.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
@@ -41,6 +42,7 @@ class PgyerUploadV2Action extends PipelineAction {
     this.buildUpdateDescription,
     this.artifact,
     this.resultKey = ContextKeys.pgyerDownloadUrl,
+    this.maxRetries = 5,
     List<String>? apiDomains,
     Future<bool> Function(String domain)? probeDomain,
     ShellRunner? shellRunner,
@@ -63,6 +65,9 @@ class PgyerUploadV2Action extends PipelineAction {
   /// artifacts in parallel so each URL lands under a distinct key.
   final String resultKey;
 
+  /// Maximum number of upload attempts before throwing.
+  final int maxRetries;
+
   /// Ordered list of API hosts to probe. First reachable one is used.
   final List<String> apiDomains;
 
@@ -81,8 +86,29 @@ class PgyerUploadV2Action extends PipelineAction {
     final apiBaseUrl = 'http://$domain/apiv2';
     final webDomain = domain.startsWith('api.') ? domain.substring(4) : domain;
 
-    final token = await _getCOSToken(apiBaseUrl, file, log);
-    await _uploadToCOS(token, file, log);
+    _CosToken? token;
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+      if (attempt > 1) {
+        log.info(
+          'Retrying Pgyer upload (attempt $attempt/$maxRetries)...',
+        );
+        await Future.delayed(const Duration(seconds: 10));
+      }
+      try {
+        token = await _getCOSToken(apiBaseUrl, file, log);
+        await _uploadToCOS(token, file, log);
+        break;
+      } catch (e) {
+        log.error('Pgyer upload attempt $attempt failed: $e');
+        if (attempt == maxRetries) rethrow;
+        token = null;
+      }
+    }
+    if (token == null) {
+      throw DeployException(
+        'Pgyer upload failed after $maxRetries attempts',
+      );
+    }
     final shortcutUrl = await _pollBuildInfo(apiBaseUrl, token.key, log);
     final downloadUrl = 'https://$webDomain/$shortcutUrl';
     log.success('Pgyer build ready: $downloadUrl');
