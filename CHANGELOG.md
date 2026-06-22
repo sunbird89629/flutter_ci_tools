@@ -1,3 +1,9 @@
+## 0.0.7 (`ba11c51`)
+
+### ♻️ Refactoring
+
+- `ShellRunner` 新增 `setLogger` 方法，支持延迟 Logger 注入；各 action 在 `run()` 开头调用 `_shellRunner.setLogger(context.logger)`，`ShellRunnerImpl` 不再要求构造时传入 Logger (`ba11c51`)
+
 ## 0.0.6 (`57ab3ed`)
 
 ### ✨ Features
