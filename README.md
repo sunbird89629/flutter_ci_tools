@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/readme/hero.svg" alt="flutter_ci_tools — Reusable CI tooling for Flutter apps. Compose pipelines in Dart. Three building blocks: Pipeline, Action, Context." width="100%" />
+</p>
+
 # flutter_ci_tools
 
 Reusable CI tooling for Flutter apps. Provides a pipeline/action architecture
@@ -11,16 +15,18 @@ Every `runAction()` call records the action's `status`
 `error` / `stackTrace`. When the pipeline finishes (success or failure),
 a summary is printed automatically:
 
-```
-────────────────────────────────────
-执行摘要
-────────────────────────────────────
-✅ ResolveBuildVersionAction (12ms)
-✅ CleanProjectAction (3.1s)
-✅ BuildAndroidAction (47.2s)
-❌ PgyerUploadAction (1.8s)
-────────────────────────────────────
-```
+<p align="center">
+  <img src="assets/readme/execution-summary.svg" alt="Execution summary: ResolveBuildVersionAction 12ms ok, CleanProjectAction 3.1s ok, BuildAndroidAction 47.2s ok, PgyerUploadAction 1.8s failed." width="100%" />
+</p>
+
+<details>
+<summary>Real terminal output <sub>(from an actual build)</sub></summary>
+
+<p align="center">
+  <img src="assets/readme/screenshot-execution-summary.png" alt="Real terminal screenshot of the execution summary printed at the end of a pipeline run." width="100%" />
+</p>
+
+</details>
 
 The same information is available programmatically via
 `pipeline.executedActions`, `pipeline.allSucceeded`, and
