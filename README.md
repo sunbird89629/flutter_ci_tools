@@ -4,6 +4,29 @@ Reusable CI tooling for Flutter apps. Provides a pipeline/action architecture
 for build orchestration, git-tag-based versioning, deploy services (Pgyer,
 Feishu, Google Play, App Store), and structured terminal logging.
 
+## Execution Summary
+
+Every `runAction()` call records the action's `status`
+(`success` / `failed` / `skipped` / `interrupted`), `duration`, and any
+`error` / `stackTrace`. When the pipeline finishes (success or failure),
+a summary is printed automatically:
+
+```
+────────────────────────────────────
+执行摘要
+────────────────────────────────────
+✅ ResolveBuildVersionAction (12ms)
+✅ CleanProjectAction (3.1s)
+✅ BuildAndroidAction (47.2s)
+❌ PgyerUploadAction (1.8s)
+────────────────────────────────────
+```
+
+The same information is available programmatically via
+`pipeline.executedActions`, `pipeline.allSucceeded`, and
+`pipeline.lastFailure` — useful for custom post-build hooks (e.g. a
+Feishu notification that reports which step failed).
+
 ## Design Philosophy
 
 - **Minimal concepts.** Three building blocks: Pipeline, Action, Context. Nothing else to learn.
@@ -154,29 +177,6 @@ Future<void> body() async {
 `getOption('key')` for `--key=value`, and `positional` for the first
 non-flag argument. Pipelines are free to interpret args however they
 like — no full arg-parsing framework imposed.
-
-## Execution Summary
-
-Every `runAction()` call records the action's `status`
-(`success` / `failed` / `skipped` / `interrupted`), `duration`, and any
-`error` / `stackTrace`. When the pipeline finishes (success or failure),
-a summary is printed automatically:
-
-```
-────────────────────────────────────
-执行摘要
-────────────────────────────────────
-✅ ResolveBuildVersionAction (12ms)
-✅ CleanProjectAction (3.1s)
-✅ BuildAndroidAction (47.2s)
-❌ PgyerUploadAction (1.8s)
-────────────────────────────────────
-```
-
-The same information is available programmatically via
-`pipeline.executedActions`, `pipeline.allSucceeded`, and
-`pipeline.lastFailure` — useful for custom post-build hooks (e.g. a
-Feishu notification that reports which step failed).
 
 ## API
 
