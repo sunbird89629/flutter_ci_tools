@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="Execution summary: 3 actions succeeded, 1 action failed">
+  <title>flutter_ci_tools execution summary</title>
+  <desc>Terminal-style summary showing four pipeline actions: ResolveBuildVersionAction succeeded in 12 milliseconds, CleanProjectAction succeeded in 3.1 seconds, BuildAndroidAction succeeded in 47.2 seconds, PgyerUploadAction failed after 1.8 seconds.</desc>
+  <style>
+    .bg     { fill: #ffffff; }
+    .panel  { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
+    .fg     { fill: #1f2328; }
+    .muted  { fill: #59636e; }
+    .rule   { stroke: #d0d7de; stroke-width: 1; }
+    .ok     { fill: #1a7f37; }
+    .fail   { fill: #cf222e; }
+    .accent { fill: #0969da; }
+    .mono   { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 20px; }
+    .head   { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 22px; font-weight: 600; }
+    @media (prefers-color-scheme: dark) {
+      .bg     { fill: #0d1117; }
+      .panel  { fill: #161b22; stroke: #30363d; }
+      .fg     { fill: #e6edf3; }
+      .muted  { fill: #7d8590; }
+      .rule   { stroke: #30363d; }
+      .ok     { fill: #3fb950; }
+      .fail   { fill: #f85149; }
+      .accent { fill: #58a6ff; }
+    }
+  </style>
+
+  <rect class="bg" width="1200" height="360"/>
+  <rect class="panel" x="40" y="30" width="1120" height="300" rx="10"/>
+
+  <!-- top rule -->
+  <line class="rule" x1="72" y1="72" x2="1128" y2="72"/>
+
+  <!-- header -->
+  <text class="head fg" x="600" y="102" text-anchor="middle">执行摘要 · Execution Summary</text>
+
+  <!-- mid rule -->
+  <line class="rule" x1="72" y1="122" x2="1128" y2="122"/>
+
+  <!-- rows -->
+  <text class="mono ok"    x="88"  y="160">✅</text>
+  <text class="mono fg"    x="128" y="160">ResolveBuildVersionAction</text>
+  <text class="mono accent" x="1112" y="160" text-anchor="end">12ms</text>
+
+  <text class="mono ok"    x="88"  y="196">✅</text>
+  <text class="mono fg"    x="128" y="196">CleanProjectAction</text>
+  <text class="mono accent" x="1112" y="196" text-anchor="end">3.1s</text>
+
+  <text class="mono ok"    x="88"  y="232">✅</text>
+  <text class="mono fg"    x="128" y="232">BuildAndroidAction</text>
+  <text class="mono accent" x="1112" y="232" text-anchor="end">47.2s</text>
+
+  <text class="mono fail"  x="88"  y="268">❌</text>
+  <text class="mono fg"    x="128" y="268">PgyerUploadAction</text>
+  <text class="mono accent" x="1112" y="268" text-anchor="end">1.8s</text>
+
+  <!-- bottom rule -->
+  <line class="rule" x1="72" y1="292" x2="1128" y2="292"/>
+
+  <!-- caption outside panel -->
+  <text class="mono muted" x="600" y="345" text-anchor="middle">printed automatically after every pipeline run</text>
+</svg>
