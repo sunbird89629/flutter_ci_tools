@@ -4,6 +4,12 @@
 
 # flutter_ci_tools
 
+[![pub package](https://img.shields.io/pub/v/flutter_ci_tools.svg)](https://pub.dev/packages/flutter_ci_tools)
+[![pub points](https://img.shields.io/pub/points/flutter_ci_tools)](https://pub.dev/packages/flutter_ci_tools/score)
+[![Dart SDK](https://img.shields.io/badge/Dart_SDK-%E2%89%A5%203.4-0175C2.svg?logo=dart)](https://dart.dev)
+[![CI](https://github.com/sunbird89629/flutter_ci_tools/actions/workflows/ci.yml/badge.svg)](https://github.com/sunbird89629/flutter_ci_tools/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+
 Reusable CI tooling for Flutter apps. Provides a pipeline/action architecture
 for build orchestration, git-tag-based versioning, deploy services (Pgyer,
 Feishu, Google Play, App Store), and structured terminal logging.
@@ -158,6 +164,15 @@ dart run ci/build.dart                      # interactive selector
 dart run ci/build.dart test --help          # pipeline-specific help
 ```
 
+<details>
+<summary>Interactive pipeline selector <sub>(run <code>dart run ci/build.dart</code> with no arguments)</sub></summary>
+
+<p align="center">
+  <img src="assets/readme/screenshot-actions-list.png" alt="Terminal screenshot: interactive pipeline selector listing 'test', 'prod', 'android-test' pipelines with arrow-key navigation." width="100%" />
+</p>
+
+</details>
+
 ## CLI Arguments
 
 Everything after the pipeline name is forwarded to the pipeline via
@@ -184,6 +199,15 @@ Future<void> body() async {
 non-flag argument. Pipelines are free to interpret args however they
 like — no full arg-parsing framework imposed.
 
+<details>
+<summary>Pipeline-specific help output <sub>(<code>dart run ci/build.dart test --help</code>)</sub></summary>
+
+<p align="center">
+  <img src="assets/readme/screenshot-help.png" alt="Terminal screenshot: pipeline-specific help output showing usage, description, and available options for the 'test' pipeline." width="100%" />
+</p>
+
+</details>
+
 ## API
 
 | Symbol | Description |
@@ -207,6 +231,15 @@ Built-in actions include `ResolveBuildVersionAction`,
 `GooglePlayUploadAction`, `AppStoreUploadAction`, `FeishuBuildNotifyAction`,
 `FeishuNotifyAction`, `SwapInfoPlistAction`, `PushBuildTagAction`,
 and `RestoreWorkspaceAction`.
+
+<details>
+<summary>Live action-by-action output <sub>(what a real pipeline run looks like as it executes)</sub></summary>
+
+<p align="center">
+  <img src="assets/readme/screenshot-build-detail.png" alt="Terminal screenshot: pipeline running action-by-action, each step showing its status, timing, and streamed output as it executes." width="100%" />
+</p>
+
+</details>
 
 ## Example
 
