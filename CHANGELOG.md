@@ -1,3 +1,19 @@
+## 0.1.0 (`5c0cac1`)
+
+### ✨ Features
+
+- `PgyerUploadV2Action` 新增 `maxRetries` 参数 (`900d7c3`)
+- `GooglePlayUploadAction` / `AppStoreUploadAction` 新增 `maxRetries` 参数 (`00bc0a1`)
+
+### 📚 Documentation
+
+- README 新增 SVG hero、执行摘要与终端截图，嵌入 3 张截图并补充 status badges (#5, #6, #7, #8)
+- 用户文档移至 `doc/`，开发计划移至 `dev-docs/` (`84a2a6d`)
+
+### 🔧 Chores
+
+- pubspec 补充 `homepage` / `issue_tracker` 字段，版本对齐为 0.1.0 (`5c0cac1`)
+
 ## 0.0.7 (`ba11c51`)
 
 ### ♻️ Refactoring
