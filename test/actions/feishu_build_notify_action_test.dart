@@ -63,7 +63,7 @@ void main() {
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
       httpPoster: http,
     );
@@ -94,7 +94,7 @@ void main() {
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       downloadUrlKeys: ['urlA', 'urlB'],
       httpPoster: http,
     );
@@ -115,7 +115,7 @@ void main() {
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       httpPoster: http,
     );
     await action.run(context);
@@ -134,7 +134,7 @@ void main() {
 
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       maxAttempts: 2,
       retryDelay: Duration.zero,
       httpPoster: http,

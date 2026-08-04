@@ -56,7 +56,7 @@ Usage: dart run ci/build.dart test
     // 一条通知包含两个链接
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: feishuWebhookUrl,
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       downloadUrlKeys: [androidUrlKey, iosUrlKey],
     ));
 

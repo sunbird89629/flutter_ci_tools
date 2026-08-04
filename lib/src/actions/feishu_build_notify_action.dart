@@ -3,24 +3,6 @@ import '../pipeline_context.dart';
 import '../utils/http_poster.dart';
 import 'feishu_notify_action.dart';
 
-/// Destination where a build artifact will be uploaded.
-///
-/// Used to label the standard Feishu build-notification message.
-enum DeployTarget {
-  /// Pgyer beta distribution platform.
-  pgyer('Pgyer'),
-
-  /// Google Play Store.
-  googlePlay('Google Play'),
-
-  /// Apple App Store.
-  appStore('App Store');
-
-  /// Human-readable deploy target name.
-  final String label;
-  const DeployTarget(this.label);
-}
-
 /// Sends the standard "new build" message to Feishu.
 ///
 /// Reads `context.buildName`, `ContextKeys.buildNumber` from the context bag,
@@ -33,7 +15,9 @@ class FeishuBuildNotifyAction extends FeishuNotifyAction {
   /// Creates a Feishu build notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.
-  /// [target] is the deploy destination (Pgyer, Google Play, etc.).
+  /// [target] labels the deploy destination in the message title, e.g.
+  /// `'Pgyer'`, `'Google Play'`. Purely cosmetic — it does not affect what
+  /// gets uploaded where.
   /// [downloadUrlKeys] are context keys to read download URLs from;
   /// absent/empty values are skipped. `null` means no download line is shown.
   /// [maxAttempts] / [retryDelay] behave as on [FeishuNotifyAction];
@@ -48,8 +32,8 @@ class FeishuBuildNotifyAction extends FeishuNotifyAction {
     super.httpPoster,
   });
 
-  /// Deploy destination label (Pgyer, Google Play, or App Store).
-  final DeployTarget target;
+  /// Deploy destination label shown in the message title, e.g. `'Pgyer'`.
+  final String target;
 
   /// Context keys to read download URLs from; absent/empty values are skipped.
   /// `null` means no download line is shown.
@@ -68,7 +52,7 @@ class FeishuBuildNotifyAction extends FeishuNotifyAction {
     final recentCommits = await git.getRecentCommits(count: 15);
     final commitBody = await git.getLatestCommitBody();
     final lines = <String>[
-      '🚀 ${context.appName} 新版本 ${context.get<int>(ContextKeys.buildNumber)} (${target.label})',
+      '🚀 ${context.appName} 新版本 ${context.get<int>(ContextKeys.buildNumber)} ($target)',
       'branch: $branch  by: $gitUser',
       sep,
       'versionName: ${context.buildName}',

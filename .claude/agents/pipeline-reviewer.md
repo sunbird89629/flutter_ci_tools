@@ -84,17 +84,17 @@ Every public file in lib/src/ must be exported in lib/flutter_ci_tools.dart:
 export 'src/new_file.dart';  // Must exist if new_file.dart has public API
 ```
 
-### 6. Enum Extensions
+### 6. Enums
 
-New enums should follow the pattern with a `label` getter:
+Only introduce an enum when the code *branches* on the value. If the value is
+just text that ends up in a message or a log line, take a `String` instead — an
+enum there only forces callers to import it and buys nothing.
 
 ```dart
-enum DeployTarget {
-  pgyer('Pgyer'),
-  googlePlay('Google Play');
-
-  final String label;
-  const DeployTarget(this.label);
+/// Android build output format — the action switches on this.
+enum AndroidBuildType {
+  apk,
+  appbundle,
 }
 ```
 

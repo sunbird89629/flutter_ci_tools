@@ -44,7 +44,7 @@ class AndroidTestPipeline extends Pipeline {
     ));
     await runAction(FeishuBuildNotifyAction(
       webhookUrl: ctx.feishuWebhookUrl,
-      target: DeployTarget.pgyer,
+      target: 'Pgyer',
       downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
     ));
 

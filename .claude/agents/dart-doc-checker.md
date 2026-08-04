@@ -58,12 +58,12 @@ PgyerUploadAction({
 Each enum value should have a doc comment:
 
 ```dart
-enum DeployTarget {
-  /// Pgyer beta distribution platform.
-  pgyer('Pgyer'),
+enum AndroidBuildType {
+  /// Standard APK package.
+  apk,
 
-  /// Google Play Store.
-  googlePlay('Google Play');
+  /// Android App Bundle for Play Store upload.
+  appbundle,
 ```
 
 ## Output Format

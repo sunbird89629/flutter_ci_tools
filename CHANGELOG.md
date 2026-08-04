@@ -5,6 +5,12 @@
 - `FeishuNotifyAction` / `FeishuBuildNotifyAction` 的 `shellRunner` 参数换成
   `httpPoster`（类型 `HttpPoster`）。只影响为测试注入假对象的调用方，正常构造
   不受影响
+- 删除 `DeployTarget` 枚举，`FeishuBuildNotifyAction.target` 改收 `String`。
+  它唯一的用途是往通知标题里填一个括号里的名字（`🚀 App 新版本 12042
+  (Pgyer)`），没有任何代码 switch 它，枚举只是逼调用方多 import 一个类型、
+  且发到枚举里没有的渠道时还得先改库。迁移：`DeployTarget.pgyer` →
+  `'Pgyer'`，`DeployTarget.googlePlay` → `'Google Play'`，
+  `DeployTarget.appStore` → `'App Store'`
 
 ### ♻️ Refactoring
 
@@ -17,6 +23,14 @@
   HTTP 400 只能打出 `curl exited with 22`，现在是 `HTTP 400: <响应体>`；代价是
   `HttpClient` 默认不读代理环境变量，`HttpPosterImpl` 里已显式补上
   `findProxyFromEnvironment`。pgyer 的 multipart 文件上传仍走 curl
+
+### 📚 Documentation
+
+- 修正 `example/README.md`：流水线示例还停留在重构前的 API（`BuildPipeline`
+  基类、`context.platforms` / `AppPlatform` 分平台判断、Action 有返回值、
+  “没有字符串键的 context store”），另有 `exampleConfig`、`writeBuildInfo`、
+  `CollectMetadataAction`、`build_info_writer.dart`、`test_pipeline.dart`
+  等一批已不存在的符号。现按真实的 `ci/pipelines/prod_pipeline.dart` 重写
 
 ## 0.1.3
 
