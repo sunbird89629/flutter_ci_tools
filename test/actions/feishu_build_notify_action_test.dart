@@ -7,6 +7,11 @@ import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
+  _FakeShellRunner({this.exitCode = 0});
+
+  final int exitCode;
+  int calls = 0;
+
   @override
   void setLogger(Logger logger) {}
   String? lastJson;
@@ -14,9 +19,10 @@ class _FakeShellRunner implements ShellRunner {
   Future<void> run(String exe, List<String> args) async {}
   @override
   Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+    calls++;
     final dIdx = args.indexOf('-d');
     if (dIdx >= 0 && dIdx + 1 < args.length) lastJson = args[dIdx + 1];
-    return ShellResult(exitCode: 0, stdout: '', stderr: '');
+    return ShellResult(exitCode: exitCode, stdout: '', stderr: 'boom');
   }
 }
 
@@ -113,5 +119,26 @@ void main() {
     await action.run(context);
 
     expect(shell.lastJson, isNot(contains('🔗 下载')));
+  });
+
+  test('maxAttempts / retryDelay 透传给 FeishuNotifyAction', () async {
+    // 所有流水线用的都是 FeishuBuildNotifyAction，不透传的话这两个参数够不着
+    final shell = _FakeShellRunner(exitCode: 7);
+    final context = PipelineContext(
+      appName: 'TestApp',
+      seedBuildNumber: 12000,
+      git: _FakeGitManager(),
+    )..put(ContextKeys.buildNumber, 12042);
+
+    final action = FeishuBuildNotifyAction(
+      webhookUrl: 'https://open.feishu.cn/hook',
+      target: DeployTarget.pgyer,
+      maxAttempts: 2,
+      retryDelay: Duration.zero,
+      shellRunner: shell,
+    );
+    await action.run(context);
+
+    expect(shell.calls, 2, reason: 'maxAttempts 没生效说明没透传');
   });
 }

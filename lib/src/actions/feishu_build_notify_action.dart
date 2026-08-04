@@ -38,11 +38,15 @@ class FeishuBuildNotifyAction extends PipelineAction {
   /// [target] is the deploy destination (Pgyer, Google Play, etc.).
   /// [downloadUrlKeys] are context keys to read download URLs from;
   /// absent/empty values are skipped. `null` means no download line is shown.
+  /// [maxAttempts] / [retryDelay] are forwarded to [FeishuNotifyAction];
+  /// see it for the resulting worst-case duration.
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuBuildNotifyAction({
     required this.webhookUrl,
     required this.target,
     this.downloadUrlKeys,
+    this.maxAttempts = 3,
+    this.retryDelay = const Duration(seconds: 3),
     ShellRunner? shellRunner,
   }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
 
@@ -55,6 +59,13 @@ class FeishuBuildNotifyAction extends PipelineAction {
   /// Context keys to read download URLs from; absent/empty values are skipped.
   /// `null` means no download line is shown.
   final List<String>? downloadUrlKeys;
+
+  /// Maximum send attempts before giving up. Forwarded to [FeishuNotifyAction].
+  final int maxAttempts;
+
+  /// Pause between attempts. Forwarded to [FeishuNotifyAction].
+  final Duration retryDelay;
+
   final ShellRunner _shellRunner;
 
   @override
@@ -66,6 +77,8 @@ class FeishuBuildNotifyAction extends PipelineAction {
     await FeishuNotifyAction(
       webhookUrl: webhookUrl,
       message: message,
+      maxAttempts: maxAttempts,
+      retryDelay: retryDelay,
       shellRunner: _shellRunner,
     ).run(context);
   }

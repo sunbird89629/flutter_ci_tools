@@ -1,3 +1,11 @@
+## 0.1.3
+
+### 🐛 Bug Fixes
+
+- `FeishuBuildNotifyAction` 补上 `maxAttempts` / `retryDelay` 并透传给
+  `FeishuNotifyAction`。此前这两个参数只存在于 `FeishuNotifyAction` 上，而所有
+  流水线用的都是 `FeishuBuildNotifyAction`，等于**够不着**，只能吃默认值
+
 ## 0.1.2
 
 ### ♻️ Refactoring
