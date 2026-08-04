@@ -1,126 +1,128 @@
 ---
 name: release-notes
-description: Generate CHANGELOG entries from git history
+description: Cut a release — promote the CHANGELOG's Unreleased section into a version, bump pubspec, commit, tag, push
 disable-model-invocation: true
 ---
 
-# Release Notes Generator
+# Release Notes
 
-Generate CHANGELOG entries for a new release based on git commit history.
-
-## Usage
+Cuts a release for this package: `## Unreleased` → `## X.Y.Z`, bump `pubspec.yaml`,
+commit, annotated tag, push.
 
 ```
-/release-notes v0.2.0
+/release-notes 0.2.0        # 'v0.2.0' works too — both normalize the same way
 ```
+
+**CHANGELOG headers are bare (`## 0.2.0`); git tags carry the `v` (`v0.2.0`).**
+Don't add a date or SHA to the header — versions ≤ 0.1.0 have a trailing SHA,
+that convention was dropped, don't reintroduce it.
+
+## The CHANGELOG is written by hand, not generated
+
+Entries land **with the change that caused them**, under `## Unreleased`. By
+release time the notes already exist. So this skill *promotes* them — it does
+not regenerate prose from `git log --oneline`.
+
+Git history is only a **gap check**: find changes that shipped without an entry.
 
 ## Process
 
-1. **Get the version tag**: Use the provided version argument (e.g., `v0.2.0`)
+### 1. Preflight — refuse to release if any of these fail
 
-2. **Find the previous release**:
-   ```bash
-   git describe --tags --abbrev=0 HEAD~1 2>/dev/null || git log --reverse --format="%H" | head -1
-   ```
-
-3. **Get commits since last release**:
-   ```bash
-   git log <prev-tag>..HEAD --oneline --no-merges
-   ```
-
-4. **Categorize commits** by conventional commit prefix:
-   - `feat:` → ✨ Features
-   - `fix:` → 🐛 Bug Fixes
-   - `refactor:` → ♻️ Refactoring
-   - `docs:` → 📚 Documentation
-   - `test:` → ✅ Tests
-   - `chore:` → 🔧 Chores
-   - `style:` → 💅 Style
-   - `perf:` → ⚡ Performance
-
-5. **Generate the CHANGELOG entry**:
-
-```markdown
-## v0.2.0 (2026-06-09)
-
-### ✨ Features
-- PgyerUploadAction supports explicit artifact parameter
-- FeishuBuildNotifyAction supports multiple downloadUrls
-
-### ♻️ Refactoring
-- BuildAndroidAction returns File (backward compatible)
-- extract _runTracked and add runParallel
-
-### 🐛 Bug Fixes
-- handle nested params in Pgyer COS token response
-
-### 📚 Documentation
-- add explicit artifact upload implementation plan
-
-### ✅ Tests
-- add tests for explicit artifact and parallel execution
+```bash
+git status --porcelain          # must be empty; stop if the tree is dirty
+git rev-parse --abbrev-ref HEAD # expect main
+dart analyze lib test           # must be clean
+dart test                       # must be green
+dart pub publish --dry-run      # catches missing files / bad pubspec before the tag
 ```
 
-6. **Determine the commit SHA** for the release:
-   - Use `HEAD` SHA (short form) for the current branch:
-     ```bash
-     git rev-parse --short HEAD
-     ```
-   - Include it in the version header: `## v0.0.3 (commit-sha)`
+Also confirm the version moves **forward** from `pubspec.yaml`'s current value,
+and that `git tag -l v<version>` is empty.
 
-7. **Update pubspec.yaml version**:
-   - Read the existing `pubspec.yaml`
-   - Update the `version:` field to match the new version
-   - This is the canonical version source for Dart packages
+### 2. Gap check
 
-8. **Update CHANGELOG.md**:
-   - Read the existing `CHANGELOG.md`
-   - Prepend the new entry (with SHA) after the title
-   - Renumber existing versions if needed to match the current versioning scheme
-   - Write the updated file
+```bash
+git log $(git describe --tags --abbrev=0)..HEAD --no-merges --format='%h %s'
+```
 
-9. **Create a git tag**:
-   ```bash
-   git tag -a v0.0.3 -m "v0.0.3: <brief description>" <commit-sha>
-   ```
+Cross-reference against `## Unreleased`. For any commit with no entry, decide:
+write one in house style, or skip it as not user-visible (internal test/chore
+churn usually is). Ask the user when a commit's user impact is unclear.
 
-## Output
+### 3. Compose the entry
 
-- Print the generated release notes to the user
-- Ask if they want to update `CHANGELOG.md` and `pubspec.yaml`
-- If yes, update both files and commit:
-  ```bash
-  git add CHANGELOG.md pubspec.yaml
-  git commit -m "docs: update CHANGELOG for v0.0.3 and bump version"
-  ```
-- Ask if they want to create and push the git tag:
-  ```bash
-  git tag -a <version> -m "<version>: <brief description>" <commit-sha>
-  git push origin <version>
-  git push origin --tags
-  ```
+Rename `## Unreleased` → `## <version>`, merging in anything from step 2. Leave
+no empty `## Unreleased` behind — the next change recreates it.
 
-## Example
+Sections, in this order, omitting empty ones:
 
-User: `/release-notes v0.0.3`
+| Section | Commit prefix |
+|---|---|
+| `### ⚠️ Breaking Changes` | `!` suffix or `BREAKING CHANGE:` footer |
+| `### ✨ Features` | `feat:` |
+| `### 🐛 Bug Fixes` | `fix:` |
+| `### ♻️ Refactoring` | `refactor:` |
+| `### ⚡ Performance` | `perf:` |
+| `### 📚 Documentation` | `docs:` |
+| `### ✅ Tests` | `test:` |
+| `### 🔧 Chores` | `chore:` |
 
-Claude:
-1. Gets commits since v0.0.2
-2. Categorizes them
-3. Generates formatted release notes with SHA
-4. Shows the preview
-5. Asks to update CHANGELOG.md, pubspec.yaml, and create tag
-6. Updates CHANGELOG.md (version header with SHA), bumps pubspec.yaml version
-7. Commits both files
-8. Creates git tag and pushes
+Breaking changes go first and **must state the migration** (`X` → `Y`), because
+this package is published to pub.dev and the entry is what consumers read.
+
+### 4. Apply, commit, tag — in this order
+
+```bash
+# a. edit pubspec.yaml version: and CHANGELOG.md, then:
+git add CHANGELOG.md pubspec.yaml
+git commit -m "chore: bump to <version>"
+
+# b. tag AFTER the commit exists, so the tag contains the bump
+git tag -a v<version> -m "v<version>: <一句中文简述>"
+
+# c. push
+git push origin main
+git push origin v<version>
+```
+
+Tagging before committing points the tag at the previous commit — a released
+`v0.2.0` whose `pubspec.yaml` still says `0.1.9`. Always commit first.
+
+Show the composed entry and stop for confirmation before step 4. Pushing and
+tagging are the irreversible parts.
+
+## House style for entries
+
+Match the existing entries — read `## 0.1.1`–`## 0.1.3` before writing.
+
+- **Chinese**, wrapped at ~80 columns.
+- **Say why, not just what.** A reader who hits the bug should recognize it.
+  Commit subjects are a starting point, not the entry — rewrite them.
+- Backtick every identifier: `` `FeishuNotifyAction` ``, `` `maxAttempts` ``.
+- Concrete numbers over adjectives: "3×3=9 次请求、最坏约 2.5 分钟" beats
+  "重试太多".
+
+Good — explains the trap, not just the diff:
+
+```markdown
+- `FeishuBuildNotifyAction` 补上 `maxAttempts` / `retryDelay` 并透传给
+  `FeishuNotifyAction`。此前这两个参数只存在于 `FeishuNotifyAction` 上，而所有
+  流水线用的都是 `FeishuBuildNotifyAction`，等于**够不着**，只能吃默认值
+```
+
+Too thin — restates the subject line:
+
+```markdown
+- 修复 FeishuBuildNotifyAction 的重试参数
+```
 
 ## Notes
 
-- **Version header format**: `## 0.0.3 (commit-sha)` — include the short SHA
-- Only include meaningful commits (skip `chore:` commits like "apply dart format" unless they're significant)
-- Group related commits together
-- Use the commit message as-is (don't rewrite)
-- If a commit has a body, use the body as the description
-- **pubspec.yaml** is the canonical version source for Dart packages — always update it
-- **git tags** should be annotated (`-a`) with a brief description message
-- Push tags separately after the commit is pushed
+- **Never edit released entries.** Fix a wrong past entry by noting the
+  correction in the new version, not by rewriting history.
+- `dart pub publish` itself is a separate, manual step — this skill stops at
+  pushing the tag.
+- If history shows the bump riding along inside a feature commit (v0.1.1–v0.1.3
+  did this), that's the older one-change-per-release cadence. With an
+  accumulated `## Unreleased`, use the separate `chore: bump` commit above.
