@@ -19,6 +19,8 @@ export 'src/utils/args_parser.dart';
 export 'src/utils/shell_runner_impl.dart';
 export 'src/utils/exceptions.dart';
 export 'src/utils/git_manager.dart';
+export 'src/utils/http_poster.dart';
+export 'src/utils/http_poster_impl.dart';
 export 'src/utils/git_manager_impl.dart';
 export 'src/utils/logger.dart';
 export 'src/pipeline.dart';

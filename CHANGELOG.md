@@ -1,3 +1,23 @@
+## Unreleased
+
+### ⚠️ Breaking Changes
+
+- `FeishuNotifyAction` / `FeishuBuildNotifyAction` 的 `shellRunner` 参数换成
+  `httpPoster`（类型 `HttpPoster`）。只影响为测试注入假对象的调用方，正常构造
+  不受影响
+
+### ♻️ Refactoring
+
+- `FeishuBuildNotifyAction` 改为继承 `FeishuNotifyAction`，只覆写新增的
+  `buildMessage()` 生成正文。此前它在 `run()` 里 new 一个平级 Action 再调用，
+  两个 `PipelineAction` 嵌套执行，参数也要一个个手工透传。子类只做“消息怎么写”，
+  发送、重试、错误处理都留在父类
+- 飞书通知改用 `dart:io` 的 `HttpClient` 发送，不再 fork curl 进程。新增
+  `HttpPoster` / `HttpPosterImpl`（`postJson`）。收益是拿得到真实状态码——此前
+  HTTP 400 只能打出 `curl exited with 22`，现在是 `HTTP 400: <响应体>`；代价是
+  `HttpClient` 默认不读代理环境变量，`HttpPosterImpl` 里已显式补上
+  `findProxyFromEnvironment`。pgyer 的 multipart 文件上传仍走 curl
+
 ## 0.1.3
 
 ### 🐛 Bug Fixes

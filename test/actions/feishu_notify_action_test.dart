@@ -1,38 +1,43 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_ci_tools/src/actions/feishu_notify_action.dart';
-import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
-import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/http_poster.dart';
 import 'package:test/test.dart';
 
-class _FakeShellRunner implements ShellRunner {
-  _FakeShellRunner({this.results = const []});
+class _FakeHttpPoster implements HttpPoster {
+  _FakeHttpPoster({this.results = const []});
 
-  /// 依次返回的结果；用完后重复最后一个。空列表表示一律成功。
-  final List<ShellResult> results;
+  /// 依次返回的结果；用完后重复最后一个。空列表表示一律返回 200。
+  /// 元素是 [HttpResponse] 时按响应返回，是 [Object] 异常时抛出。
+  final List<Object> results;
 
   int calls = 0;
-  String? lastJson;
-  String? lastUrl;
-  List<String> lastArgs = const [];
+  Uri? lastUrl;
+  Object? lastBody;
+  Duration? lastConnectTimeout;
+  Duration? lastTimeout;
 
   @override
-  void setLogger(Logger logger) {}
-
-  @override
-  Future<void> run(String exe, List<String> args) async {}
-
-  @override
-  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
-    final dIdx = args.indexOf('-d');
-    if (dIdx >= 0 && dIdx + 1 < args.length) lastJson = args[dIdx + 1];
-    lastUrl = args.last;
-    lastArgs = args;
+  Future<HttpResponse> postJson(
+    Uri url,
+    Object body, {
+    Duration connectTimeout = const Duration(seconds: 5),
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    lastUrl = url;
+    lastBody = body;
+    lastConnectTimeout = connectTimeout;
+    lastTimeout = timeout;
     final index = calls;
     calls++;
     if (results.isEmpty) {
-      return const ShellResult(exitCode: 0, stdout: '', stderr: '');
+      return const HttpResponse(statusCode: 200, body: '{"code":0}');
     }
-    return results[index < results.length ? index : results.length - 1];
+    final result = results[index < results.length ? index : results.length - 1];
+    if (result is HttpResponse) return result;
+    throw result;
   }
 }
 
@@ -40,7 +45,7 @@ PipelineContext _context() =>
     PipelineContext(appName: 'TestApp', seedBuildNumber: 1000);
 
 FeishuNotifyAction _action(
-  _FakeShellRunner shell, {
+  _FakeHttpPoster http, {
   int maxAttempts = 3,
   String url = 'https://open.feishu.cn/hook',
 }) =>
@@ -49,91 +54,107 @@ FeishuNotifyAction _action(
       message: 'hello world',
       maxAttempts: maxAttempts,
       retryDelay: Duration.zero,
-      shellRunner: shell,
+      httpPoster: http,
     );
 
 void main() {
   test('FeishuNotifyAction posts the given message to the configured webhook',
       () async {
-    final shell = _FakeShellRunner();
-    final action = _action(shell);
+    final http = _FakeHttpPoster();
+    final action = _action(http);
 
     await action.run(_context());
 
     expect(action.name, 'Send Feishu Notification');
-    expect(shell.lastUrl, 'https://open.feishu.cn/hook');
-    expect(shell.lastJson, contains('hello world'));
-    expect(shell.lastJson, contains('text'));
-    expect(shell.calls, 1, reason: '成功时不该重试');
+    expect(http.lastUrl, Uri.parse('https://open.feishu.cn/hook'));
+    expect(http.lastBody, {
+      'msg_type': 'text',
+      'content': {'text': 'hello world'},
+    });
+    expect(http.calls, 1, reason: '成功时不该重试');
   });
 
-  test('curl 带上超时参数，避免挑中坏节点后干等', () async {
-    final shell = _FakeShellRunner();
+  test('带上超时，避免挑中坏节点后干等', () async {
+    final http = _FakeHttpPoster();
 
-    await _action(shell).run(_context());
+    await _action(http).run(_context());
 
-    expect(shell.lastArgs, containsAll(['-sS', '-f']));
-    expect(shell.lastArgs, containsAllInOrder(['--connect-timeout', '5']));
-    expect(shell.lastArgs, containsAllInOrder(['--max-time', '15']));
+    expect(http.lastConnectTimeout, const Duration(seconds: 5));
+    expect(http.lastTimeout, const Duration(seconds: 15));
   });
 
-  test('不开 curl 自带重试，避免与外层重试相乘', () async {
-    // 两层重试会变成 maxAttempts × (1 + --retry) 次请求，最坏耗时成倍放大，
-    // 而且 curl 内部重试是静默的，日志上看不出试了几次
-    final shell = _FakeShellRunner();
-
-    await _action(shell).run(_context());
-
-    expect(shell.lastArgs, isNot(contains('--retry')));
-  });
-
-  test('curl 失败时重试到上限，且不抛异常', () async {
-    final shell = _FakeShellRunner(
-      results: const [
-        ShellResult(exitCode: 7, stdout: '', stderr: 'connection timed out'),
-      ],
+  test('网络异常时重试到上限，且不抛异常', () async {
+    final http = _FakeHttpPoster(
+      results: [const SocketException('connection timed out')],
     );
 
-    await _action(shell, maxAttempts: 3).run(_context());
+    await _action(http, maxAttempts: 3).run(_context());
 
-    expect(shell.calls, 3);
+    expect(http.calls, 3);
+  });
+
+  test('超时也当成可重试的失败，不外抛', () async {
+    final http = _FakeHttpPoster(results: [TimeoutException('too slow')]);
+
+    await _action(http, maxAttempts: 2).run(_context());
+
+    expect(http.calls, 2);
+  });
+
+  test('非 2xx 状态码视为失败并重试', () async {
+    final http = _FakeHttpPoster(
+      results: const [HttpResponse(statusCode: 500, body: 'oops')],
+    );
+
+    await _action(http, maxAttempts: 2).run(_context());
+
+    expect(http.calls, 2);
   });
 
   test('前几次失败、后续成功时停止重试', () async {
-    final shell = _FakeShellRunner(
+    final http = _FakeHttpPoster(
       results: const [
-        ShellResult(exitCode: 35, stdout: '', stderr: 'recv failure'),
-        ShellResult(exitCode: 0, stdout: '{"code":0}', stderr: ''),
+        HttpResponse(statusCode: 502, body: ''),
+        HttpResponse(statusCode: 200, body: '{"code":0}'),
       ],
     );
 
-    await _action(shell, maxAttempts: 3).run(_context());
+    await _action(http, maxAttempts: 3).run(_context());
 
-    expect(shell.calls, 2, reason: '成功后不该继续重试');
+    expect(http.calls, 2, reason: '成功后不该继续重试');
   });
 
   test('HTTP 200 但业务码非零视为失败并重试', () async {
-    // 飞书对 token 失效之类的错误返回 200 + 非零 code，只看退出码会误判成功
-    final shell = _FakeShellRunner(
+    // 飞书对 token 失效之类的错误返回 200 + 非零 code，只看状态码会误判成功
+    final http = _FakeHttpPoster(
       results: const [
-        ShellResult(
-          exitCode: 0,
-          stdout: '{"code":9499,"msg":"bad request"}',
-          stderr: '',
+        HttpResponse(
+          statusCode: 200,
+          body: '{"code":9499,"msg":"bad request"}',
         ),
       ],
     );
 
-    await _action(shell, maxAttempts: 2).run(_context());
+    await _action(http, maxAttempts: 2).run(_context());
 
-    expect(shell.calls, 2);
+    expect(http.calls, 2);
+  });
+
+  test('响应不是 JSON 时不误报失败', () async {
+    final http = _FakeHttpPoster(
+      results: const [HttpResponse(statusCode: 200, body: 'ok')],
+    );
+
+    await _action(http, maxAttempts: 3).run(_context());
+
+    expect(http.calls, 1);
   });
 
   test('webhook 未配置时直接跳过，不发请求', () async {
-    final shell = _FakeShellRunner();
+    final http = _FakeHttpPoster();
 
-    await _action(shell, url: '  ').run(_context());
+    await _action(http, url: '  ').run(_context());
 
-    expect(shell.calls, 0);
+    expect(http.calls, 0);
   });
 }

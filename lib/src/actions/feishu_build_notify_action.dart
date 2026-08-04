@@ -1,9 +1,7 @@
 import '../context_keys.dart';
 import '../pipeline_context.dart';
-import '../utils/shell_runner.dart';
-import '../utils/shell_runner_impl.dart';
+import '../utils/http_poster.dart';
 import 'feishu_notify_action.dart';
-import 'pipeline_action.dart';
 
 /// Destination where a build artifact will be uploaded.
 ///
@@ -31,27 +29,24 @@ enum DeployTarget {
 ///
 /// Download URLs are read from the context KV bag via [downloadUrlKeys];
 /// absent/empty values are skipped. When `null`, no download line is shown.
-class FeishuBuildNotifyAction extends PipelineAction {
+class FeishuBuildNotifyAction extends FeishuNotifyAction {
   /// Creates a Feishu build notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL.
   /// [target] is the deploy destination (Pgyer, Google Play, etc.).
   /// [downloadUrlKeys] are context keys to read download URLs from;
   /// absent/empty values are skipped. `null` means no download line is shown.
-  /// [maxAttempts] / [retryDelay] are forwarded to [FeishuNotifyAction];
+  /// [maxAttempts] / [retryDelay] behave as on [FeishuNotifyAction];
   /// see it for the resulting worst-case duration.
-  /// [shellRunner] overrides the default [ShellRunner] for testing.
+  /// [httpPoster] overrides the default [HttpPoster] for testing.
   FeishuBuildNotifyAction({
-    required this.webhookUrl,
+    required super.webhookUrl,
     required this.target,
     this.downloadUrlKeys,
-    this.maxAttempts = 3,
-    this.retryDelay = const Duration(seconds: 3),
-    ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
-
-  /// Feishu bot webhook URL.
-  final String webhookUrl;
+    super.maxAttempts,
+    super.retryDelay,
+    super.httpPoster,
+  });
 
   /// Deploy destination label (Pgyer, Google Play, or App Store).
   final DeployTarget target;
@@ -60,30 +55,11 @@ class FeishuBuildNotifyAction extends PipelineAction {
   /// `null` means no download line is shown.
   final List<String>? downloadUrlKeys;
 
-  /// Maximum send attempts before giving up. Forwarded to [FeishuNotifyAction].
-  final int maxAttempts;
-
-  /// Pause between attempts. Forwarded to [FeishuNotifyAction].
-  final Duration retryDelay;
-
-  final ShellRunner _shellRunner;
-
   @override
   String get name => 'Send Feishu Build Notification';
 
   @override
-  Future<void> run(PipelineContext context) async {
-    final message = await _formatMessage(context);
-    await FeishuNotifyAction(
-      webhookUrl: webhookUrl,
-      message: message,
-      maxAttempts: maxAttempts,
-      retryDelay: retryDelay,
-      shellRunner: _shellRunner,
-    ).run(context);
-  }
-
-  Future<String> _formatMessage(PipelineContext context) async {
+  Future<String> buildMessage(PipelineContext context) async {
     const sep = '──────────────────────────';
     final git = context.git;
     final branch = await git.getBranch();

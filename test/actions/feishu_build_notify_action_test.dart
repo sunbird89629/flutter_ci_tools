@@ -1,28 +1,30 @@
 import 'package:flutter_ci_tools/src/actions/feishu_build_notify_action.dart';
-import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:flutter_ci_tools/src/context_keys.dart';
 import 'package:flutter_ci_tools/src/utils/git_manager.dart';
 import 'package:flutter_ci_tools/src/pipeline_context.dart';
-import 'package:flutter_ci_tools/src/utils/shell_runner.dart';
+import 'package:flutter_ci_tools/src/utils/http_poster.dart';
 import 'package:test/test.dart';
 
-class _FakeShellRunner implements ShellRunner {
-  _FakeShellRunner({this.exitCode = 0});
+class _FakeHttpPoster implements HttpPoster {
+  _FakeHttpPoster({this.statusCode = 200});
 
-  final int exitCode;
+  final int statusCode;
   int calls = 0;
 
+  /// 发出去的消息正文。
+  String? lastText;
+
   @override
-  void setLogger(Logger logger) {}
-  String? lastJson;
-  @override
-  Future<void> run(String exe, List<String> args) async {}
-  @override
-  Future<ShellResult> runAndCapture(String exe, List<String> args) async {
+  Future<HttpResponse> postJson(
+    Uri url,
+    Object body, {
+    Duration connectTimeout = const Duration(seconds: 5),
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
     calls++;
-    final dIdx = args.indexOf('-d');
-    if (dIdx >= 0 && dIdx + 1 < args.length) lastJson = args[dIdx + 1];
-    return ShellResult(exitCode: exitCode, stdout: '', stderr: 'boom');
+    final content = (body as Map)['content'] as Map;
+    lastText = content['text'] as String;
+    return HttpResponse(statusCode: statusCode, body: '{"code":0}');
   }
 }
 
@@ -50,7 +52,7 @@ class _FakeGitManager implements GitManager {
 void main() {
   test('FeishuBuildNotifyAction sends formatted build message via webhook',
       () async {
-    final shell = _FakeShellRunner();
+    final http = _FakeHttpPoster();
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
@@ -63,24 +65,24 @@ void main() {
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
       downloadUrlKeys: [ContextKeys.pgyerDownloadUrl],
-      shellRunner: shell,
+      httpPoster: http,
     );
     await action.run(context);
 
     expect(action.name, 'Send Feishu Build Notification');
-    expect(shell.lastJson, contains('TestApp'));
-    expect(shell.lastJson, contains('12042'));
-    expect(shell.lastJson, contains('Pgyer'));
-    expect(shell.lastJson, contains('https://example.com/dl'));
-    expect(shell.lastJson, contains('release notes'));
-    expect(shell.lastJson, contains('main'));
-    expect(shell.lastJson, contains('abc1234'));
-    expect(shell.lastJson, contains('Alice'));
-    expect(shell.lastJson, contains('commit1'));
+    expect(http.lastText, contains('TestApp'));
+    expect(http.lastText, contains('12042'));
+    expect(http.lastText, contains('Pgyer'));
+    expect(http.lastText, contains('https://example.com/dl'));
+    expect(http.lastText, contains('release notes'));
+    expect(http.lastText, contains('main'));
+    expect(http.lastText, contains('abc1234'));
+    expect(http.lastText, contains('Alice'));
+    expect(http.lastText, contains('commit1'));
   });
 
   test('formats message with multiple download URLs via keys', () async {
-    final shell = _FakeShellRunner();
+    final http = _FakeHttpPoster();
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
@@ -94,17 +96,17 @@ void main() {
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
       downloadUrlKeys: ['urlA', 'urlB'],
-      shellRunner: shell,
+      httpPoster: http,
     );
     await action.run(context);
 
-    expect(shell.lastJson, contains('https://example.com/a'));
-    expect(shell.lastJson, contains('https://example.com/b'));
-    expect(shell.lastJson, contains('🔗 下载链接'));
+    expect(http.lastText, contains('https://example.com/a'));
+    expect(http.lastText, contains('https://example.com/b'));
+    expect(http.lastText, contains('🔗 下载链接'));
   });
 
   test('omits download line when no downloadUrlKeys provided', () async {
-    final shell = _FakeShellRunner();
+    final http = _FakeHttpPoster();
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
@@ -114,16 +116,16 @@ void main() {
     final action = FeishuBuildNotifyAction(
       webhookUrl: 'https://open.feishu.cn/hook',
       target: DeployTarget.pgyer,
-      shellRunner: shell,
+      httpPoster: http,
     );
     await action.run(context);
 
-    expect(shell.lastJson, isNot(contains('🔗 下载')));
+    expect(http.lastText, isNot(contains('🔗 下载')));
   });
 
-  test('maxAttempts / retryDelay 透传给 FeishuNotifyAction', () async {
-    // 所有流水线用的都是 FeishuBuildNotifyAction，不透传的话这两个参数够不着
-    final shell = _FakeShellRunner(exitCode: 7);
+  test('maxAttempts / retryDelay 在子类上同样生效', () async {
+    // 所有流水线用的都是 FeishuBuildNotifyAction，这两个参数得能从子类构造进来
+    final http = _FakeHttpPoster(statusCode: 500);
     final context = PipelineContext(
       appName: 'TestApp',
       seedBuildNumber: 12000,
@@ -135,10 +137,10 @@ void main() {
       target: DeployTarget.pgyer,
       maxAttempts: 2,
       retryDelay: Duration.zero,
-      shellRunner: shell,
+      httpPoster: http,
     );
     await action.run(context);
 
-    expect(shell.calls, 2, reason: 'maxAttempts 没生效说明没透传');
+    expect(http.calls, 2, reason: 'maxAttempts 没生效说明没透传');
   });
 }

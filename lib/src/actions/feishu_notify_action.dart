@@ -1,13 +1,16 @@
 import 'dart:convert';
 
-import '../utils/shell_runner_impl.dart';
 import '../pipeline_context.dart';
-import '../utils/shell_runner.dart';
+import '../utils/http_poster.dart';
+import '../utils/http_poster_impl.dart';
 import 'pipeline_action.dart';
 
 /// Sends an arbitrary text message to a Feishu (Lark) webhook.
 ///
-/// For standard build notifications prefer [FeishuBuildNotifyAction].
+/// For standard build notifications prefer `FeishuBuildNotifyAction`.
+///
+/// Subclasses that need to compose the text from the pipeline context override
+/// [buildMessage] instead of passing a fixed [message].
 ///
 /// **This action never throws.** A notification is a side channel — losing it
 /// must not fail a build that already produced its artifacts. Failures are
@@ -16,26 +19,27 @@ class FeishuNotifyAction extends PipelineAction {
   /// Creates a Feishu notification action.
   ///
   /// [webhookUrl] is the Feishu bot webhook URL. Empty means "skip silently".
-  /// [message] is the plain-text message body to send.
+  /// [message] is the plain-text message body to send; subclasses that build
+  /// the text from the context leave it empty and override [buildMessage].
   /// [maxAttempts] is how many times to try before giving up (default: 3).
   /// [retryDelay] is the pause between attempts (default: 3s).
   ///
   /// 最坏耗时 ≈ `maxAttempts × 15s + (maxAttempts - 1) × retryDelay`
   /// （默认约 51 秒）。飞书长时间不可用时不想让流水线干等这么久，就调小
   /// [maxAttempts]。
-  /// [shellRunner] overrides the default [ShellRunner] for testing.
+  /// [httpPoster] overrides the default [HttpPoster] for testing.
   FeishuNotifyAction({
     required this.webhookUrl,
-    required this.message,
+    this.message = '',
     this.maxAttempts = 3,
     this.retryDelay = const Duration(seconds: 3),
-    ShellRunner? shellRunner,
-  }) : _shellRunner = shellRunner ?? ShellRunnerImpl();
+    HttpPoster? httpPoster,
+  }) : _http = httpPoster ?? HttpPosterImpl();
 
   /// Feishu bot webhook URL.
   final String webhookUrl;
 
-  /// Plain-text message body to send.
+  /// Plain-text message body to send. Empty when [buildMessage] is overridden.
   final String message;
 
   /// Maximum number of attempts before giving up.
@@ -44,14 +48,24 @@ class FeishuNotifyAction extends PipelineAction {
   /// Pause between attempts.
   final Duration retryDelay;
 
-  final ShellRunner _shellRunner;
+  final HttpPoster _http;
+
+  /// open.feishu.cn 有十几个 GSLB 节点，挑中不健康的会一直干等到系统默认超时。
+  /// 这里快速失败，换节点交给外层重试。
+  static const _connectTimeout = Duration(seconds: 5);
+  static const _requestTimeout = Duration(seconds: 15);
 
   @override
   String get name => 'Send Feishu Notification';
 
+  /// Builds the text to send. Defaults to the fixed [message].
+  ///
+  /// Override in a subclass to compose the body from [context] — the retry and
+  /// error handling in [run] then apply unchanged.
+  Future<String> buildMessage(PipelineContext context) async => message;
+
   @override
   Future<void> run(PipelineContext context) async {
-    _shellRunner.setLogger(context.logger);
     final log = context.logger;
 
     if (webhookUrl.trim().isEmpty) {
@@ -59,10 +73,10 @@ class FeishuNotifyAction extends PipelineAction {
       return;
     }
 
-    final jsonMessage = jsonEncode({
+    final payload = {
       'msg_type': 'text',
-      'content': {'text': message},
-    });
+      'content': {'text': await buildMessage(context)},
+    };
 
     log.info('Sending Feishu notification...');
 
@@ -72,23 +86,20 @@ class FeishuNotifyAction extends PipelineAction {
         await Future.delayed(retryDelay);
       }
 
-      final result = await _shellRunner.runAndCapture('curl', [
-        // 静默进度条但保留错误输出，否则进度表会糊进 CI 日志
-        '-sS',
-        // HTTP 4xx/5xx 时以非零码退出；默认 curl 会把它当成功
-        '-f',
-        // open.feishu.cn 有十几个 GSLB 节点，挑中不健康的会一直干等到系统默认
-        // 超时。这里快速失败，换节点交给外层重试——curl 自己的 --retry 也能换 IP，
-        // 但它是静默的，而且会和外层相乘（3×3=9 次、最坏 2.5 分钟），故不用。
-        '--connect-timeout', '5',
-        '--max-time', '15',
-        '-X', 'POST',
-        '-H', 'Content-Type: application/json',
-        '-d', jsonMessage,
-        webhookUrl,
-      ]);
+      String? failure;
+      try {
+        final response = await _http.postJson(
+          Uri.parse(webhookUrl.trim()),
+          payload,
+          connectTimeout: _connectTimeout,
+          timeout: _requestTimeout,
+        );
+        failure = _failureReason(response);
+      } catch (e) {
+        // 通知是旁路，任何异常（超时、DNS、TLS、URL 格式）都只记录不外抛
+        failure = e.toString();
+      }
 
-      final failure = _failureReason(result);
       if (failure == null) {
         log.success('Feishu notification sent.');
         return;
@@ -106,15 +117,15 @@ class FeishuNotifyAction extends PipelineAction {
 
   /// 返回失败原因；真正成功时返回 `null`。
   ///
-  /// 只看退出码不够：飞书对业务错误（token 失效、机器人被移除、限流）返回的是
-  /// **HTTP 200** 加一个非零的 `code`，curl 会当成功。
-  String? _failureReason(ShellResult result) {
-    if (result.exitCode != 0) {
-      final stderr = result.stderr.trim();
-      return stderr.isEmpty ? 'curl exited with ${result.exitCode}' : stderr;
+  /// 只看状态码不够：飞书对业务错误（token 失效、机器人被移除、限流）返回的是
+  /// **HTTP 200** 加一个非零的 `code`。
+  String? _failureReason(HttpResponse response) {
+    final body = response.body.trim();
+    if (!response.isSuccess) {
+      return body.isEmpty
+          ? 'HTTP ${response.statusCode}'
+          : 'HTTP ${response.statusCode}: $body';
     }
-
-    final body = result.stdout.trim();
     if (body.isEmpty) return null;
 
     try {
