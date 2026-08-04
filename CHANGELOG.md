@@ -1,3 +1,16 @@
+## 0.1.1
+
+### ✨ Features
+
+- `FeishuNotifyAction` 大幅加固：新增 `maxAttempts` / `retryDelay` 参数，curl 补上
+  `-sS -f --connect-timeout 5 --max-time 15 --retry 2 --retry-connrefused`，
+  并解析响应体识别飞书的「HTTP 200 + 非零 code」业务错误；webhook 为空时跳过。
+  明确保证**永不抛异常**，通知失败不影响已产出的构建产物
+
+### 🐛 Bug Fixes
+
+- `pipeline_context_test` 不再写死版本号，改为校验 semver 形态（0.0.4 → 0.1.0 时曾误报失败）
+
 ## 0.1.0 (`5c0cac1`)
 
 ### ✨ Features

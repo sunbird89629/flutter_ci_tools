@@ -136,7 +136,9 @@ void main() {
     test('读取本包 name 与 version', () {
       final ctx = _ctx();
       expect(ctx.pubspecName, equals('flutter_ci_tools'));
-      expect(ctx.pubspecVersion, equals('0.0.4'));
+      // 不写死版本号：这里验的是「能从 pubspec 读出版本」，
+      // 写死会让每次 bump 都误报失败（0.0.4 → 0.1.0 时就断过一次）
+      expect(ctx.pubspecVersion, matches(RegExp(r'^\d+\.\d+\.\d+')));
     });
 
     test('字段缺失时抛 StateError', () {
