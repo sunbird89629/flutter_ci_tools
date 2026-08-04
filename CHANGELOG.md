@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 ### ⚠️ Breaking Changes
 
@@ -31,6 +31,13 @@
   “没有字符串键的 context store”），另有 `exampleConfig`、`writeBuildInfo`、
   `CollectMetadataAction`、`build_info_writer.dart`、`test_pipeline.dart`
   等一批已不存在的符号。现按真实的 `ci/pipelines/prod_pipeline.dart` 重写
+
+### ✅ Tests
+
+- 单元测试 134 → 99。砍掉的是「测语言本身」的用例（断言 enum 有几个值、
+  `status = X` 后再断言 `status == X`、`expect(action, isA<自己>())`）和同一
+  分支重复测多遍的（`get()` 缺 key 抛 `StateError` 测了 3 遍），断言覆盖没有
+  减少
 
 ## 0.1.3
 
