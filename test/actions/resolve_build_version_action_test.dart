@@ -25,8 +25,7 @@ class _FakeVersionManager implements VersionManager {
 }
 
 void main() {
-  test('ResolveBuildVersionAction stores buildNumber in context bag',
-      () async {
+  test('ResolveBuildVersionAction stores buildNumber in context bag', () async {
     final version = _FakeVersionManager()..nextBuildNumber = 12001;
     final action = ResolveBuildVersionAction(versionManager: version);
     final context = PipelineContext(

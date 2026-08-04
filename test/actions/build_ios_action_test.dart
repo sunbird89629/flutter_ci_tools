@@ -1,5 +1,4 @@
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
-import 'package:flutter_ci_tools/src/utils/logger.dart';
 import 'package:test/test.dart';
 
 class _FakeShellRunner implements ShellRunner {
@@ -63,10 +62,5 @@ void main() {
     );
 
     await expectLater(action.run(context), throwsStateError);
-  });
-
-  test('BuildIOSAction default constructor does not throw', () {
-    final action = BuildIOSAction(envName: 'prod', exportMethod: 'app-store');
-    expect(action, isA<BuildIOSAction>());
   });
 }

@@ -83,22 +83,17 @@ void main() {
     expect(http.lastTimeout, const Duration(seconds: 15));
   });
 
-  test('网络异常时重试到上限，且不抛异常', () async {
-    final http = _FakeHttpPoster(
-      results: [const SocketException('connection timed out')],
-    );
+  test('网络异常与超时都当成可重试的失败，不外抛', () async {
+    for (final error in [
+      const SocketException('connection timed out'),
+      TimeoutException('too slow'),
+    ]) {
+      final http = _FakeHttpPoster(results: [error]);
 
-    await _action(http, maxAttempts: 3).run(_context());
+      await _action(http, maxAttempts: 3).run(_context());
 
-    expect(http.calls, 3);
-  });
-
-  test('超时也当成可重试的失败，不外抛', () async {
-    final http = _FakeHttpPoster(results: [TimeoutException('too slow')]);
-
-    await _action(http, maxAttempts: 2).run(_context());
-
-    expect(http.calls, 2);
+      expect(http.calls, 3, reason: '$error 应重试到上限');
+    }
   });
 
   test('非 2xx 状态码视为失败并重试', () async {

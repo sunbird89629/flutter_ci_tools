@@ -50,15 +50,6 @@ void main() {
     return c;
   }
 
-  test('name is correct', () {
-    final action = AppStoreUploadAction(
-      issuerId: 'issuer',
-      apiKeyId: 'key-id',
-      apiKeyPath: '/some/AuthKey.p8',
-    );
-    expect(action.name, 'Upload to App Store');
-  });
-
   test('throws when api key file does not exist', () async {
     final action = AppStoreUploadAction(
       issuerId: 'issuer',
@@ -84,6 +75,7 @@ void main() {
     );
     try {
       await action.run(ctx());
+      expect(action.name, 'Upload to App Store');
       final call = shell.runAndCaptureCalls.single;
       // The tmp JSON file path is generated at runtime under systemTemp,
       // so we match the surrounding command shape and verify the path

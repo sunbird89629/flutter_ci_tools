@@ -30,106 +30,77 @@ class _FakeGitManager implements GitManager {
 }
 
 void main() {
-  group('PipelineContext', () {
-    late PipelineContext ctx;
+  group('construction', () {
+    test('暴露配置字段，rawArgs 默认为空', () {
+      final ctx = PipelineContext(appName: 'TestApp', seedBuildNumber: 12000);
+      expect(ctx.appName, 'TestApp');
+      expect(ctx.seedBuildNumber, 12000);
+      expect(ctx.rawArgs, isEmpty);
+    });
 
-    setUp(() {
-      ctx = PipelineContext(
+    test('args getter 包装 rawArgs', () {
+      final ctx = PipelineContext(
+        appName: 'TestApp',
+        seedBuildNumber: 10000,
+        rawArgs: ['android', '--env=test'],
+      );
+      expect(ctx.rawArgs, ['android', '--env=test']);
+      expect(ctx.args.has('android'), isTrue);
+      expect(ctx.args.getOption('env'), 'test');
+    });
+
+    test('暴露注入的 GitManager', () async {
+      final git = _FakeGitManager();
+      final ctx = PipelineContext(
         appName: 'TestApp',
         seedBuildNumber: 12000,
+        git: git,
+      );
+      expect(identical(ctx.git, git), isTrue);
+      expect(await ctx.git.getBranch(), 'main');
+    });
+  });
+
+  group('KV bag', () {
+    late PipelineContext ctx;
+    setUp(() {
+      ctx = PipelineContext(appName: 'TestApp', seedBuildNumber: 12000);
+    });
+
+    test('put / get 按类型取回值', () {
+      final file = File('test.apk');
+      ctx
+        ..put('k', 42)
+        ..put(ContextKeys.buildArtifact, file);
+      expect(ctx.get<int>('k'), 42);
+      expect(ctx.get<File>(ContextKeys.buildArtifact), file);
+    });
+
+    test('get 缺 key 时抛 StateError，且带上 key 名', () {
+      expect(
+        () => ctx.get<int>('missing'),
+        throwsA(isA<StateError>()
+            .having((e) => e.message, 'message', contains('missing'))),
       );
     });
 
-    group('construction', () {
-      test('exposes config fields', () {
-        expect(ctx.appName, 'TestApp');
-        expect(ctx.seedBuildNumber, 12000);
-      });
-
-      test('exposes rawArgs', () {
-        final ctx = PipelineContext(
-          appName: 'TestApp',
-          seedBuildNumber: 10000,
-          rawArgs: ['android', '--debug'],
-        );
-        expect(ctx.rawArgs, ['android', '--debug']);
-      });
-
-      test('args getter returns ArgsParser wrapping rawArgs', () {
-        final ctx = PipelineContext(
-          appName: 'TestApp',
-          seedBuildNumber: 10000,
-          rawArgs: ['android', '--env=test'],
-        );
-        expect(ctx.args.has('android'), isTrue);
-        expect(ctx.args.getOption('env'), 'test');
-      });
-
-      test('rawArgs defaults to empty list', () {
-        final ctx = PipelineContext(
-          appName: 'TestApp',
-          seedBuildNumber: 10000,
-        );
-        expect(ctx.rawArgs, isEmpty);
-      });
+    test('tryGet 缺 key 时返回 null', () {
+      ctx.put('url', 'https://x');
+      expect(ctx.tryGet<String>('url'), 'https://x');
+      expect(ctx.tryGet<String>('missing'), isNull);
     });
+  });
 
-    group('buildNumber via bag', () {
-      test('get throws StateError when buildNumber absent', () {
-        expect(
-          () => ctx.get<int>(ContextKeys.buildNumber),
-          throwsA(isA<StateError>()),
-        );
-      });
-
-      test('returns value after put', () {
-        ctx.put(ContextKeys.buildNumber, 12001);
-        expect(ctx.get<int>(ContextKeys.buildNumber), 12001);
-      });
-
-      test('buildName formats buildNumber correctly', () {
-        ctx.put(ContextKeys.buildNumber, 12001);
-        expect(ctx.buildName, '1.2.0');
-      });
-
-      test('buildName handles zeros', () {
-        ctx.put(ContextKeys.buildNumber, 10000);
-        expect(ctx.buildName, '1.0.0');
-      });
-
-      test('buildName handles triple digits', () {
-        ctx.put(ContextKeys.buildNumber, 12345);
-        expect(ctx.buildName, '1.2.3');
-      });
-    });
-
-    group('buildArtifact via bag', () {
-      test('get throws StateError when artifact absent', () {
-        expect(
-          () => ctx.get<File>(ContextKeys.buildArtifact),
-          throwsA(isA<StateError>()),
-        );
-      });
-
-      test('returns file after put', () {
-        final file = File('test.apk');
-        ctx.put(ContextKeys.buildArtifact, file);
-        expect(ctx.get<File>(ContextKeys.buildArtifact), file);
-      });
-    });
-
-    group('git', () {
-      test('exposes the injected GitManager', () async {
-        final git = _FakeGitManager();
-        final c = PipelineContext(
-          appName: 'TestApp',
-          seedBuildNumber: 12000,
-          git: git,
-        );
-        expect(identical(c.git, git), isTrue);
-        expect(await c.git.getBranch(), 'main');
-      });
-    });
+  test('buildName 由 buildNumber 拆成 x.y.z', () {
+    final ctx = PipelineContext(appName: 'TestApp', seedBuildNumber: 12000);
+    for (final (number, name) in [
+      (10000, '1.0.0'),
+      (12001, '1.2.0'),
+      (12345, '1.2.3'),
+    ]) {
+      ctx.put(ContextKeys.buildNumber, number);
+      expect(ctx.buildName, name, reason: '$number 应格式化为 $name');
+    }
   });
 
   group('pubspec 字段', () {
@@ -156,50 +127,20 @@ void main() {
     });
   });
 
-  group('KV bag', () {
-    late PipelineContext ctx;
-    setUp(() {
-      ctx = PipelineContext(appName: 'TestApp', seedBuildNumber: 12000);
-    });
-
-    test('get returns the value put under a key', () {
-      ctx.put('k', 42);
-      expect(ctx.get<int>('k'), 42);
-    });
-
-    test('get throws StateError with key name when key absent', () {
-      expect(
-        () => ctx.get<int>('missing'),
-        throwsA(isA<StateError>().having(
-            (e) => e.message, 'message', contains('missing'))),
-      );
-    });
-
-    test('tryGet returns null when key absent', () {
-      expect(ctx.tryGet<String>('missing'), isNull);
-    });
-
-    test('tryGet returns the value when present', () {
-      ctx.put('url', 'https://x');
-      expect(ctx.tryGet<String>('url'), 'https://x');
-    });
-  });
-
   group('projectRoot', () {
-    test('定位到含 pubspec.yaml 的包根目录', () {
-      final root = _ctx().projectRoot;
-      expect(File('${root.path}/pubspec.yaml').existsSync(), isTrue);
-    });
+    test('从嵌套子目录向上找到含 pubspec.yaml 的包根', () {
+      expect(
+        File('${_ctx().projectRoot.path}/pubspec.yaml').existsSync(),
+        isTrue,
+      );
 
-    test('从嵌套子目录向上查找', () {
       final original = Directory.current;
       final tmp = Directory.systemTemp.createTempSync('pctx_');
       try {
         File('${tmp.path}/pubspec.yaml').writeAsStringSync('name: tmp_pkg\n');
-        final nested = Directory('${tmp.path}/a/b/c')
-          ..createSync(recursive: true);
-        Directory.current = nested;
-        // canonicalize 消除 macOS /private/var 与 /var 符号链接差异
+        Directory('${tmp.path}/a/b/c').createSync(recursive: true);
+        Directory.current = '${tmp.path}/a/b/c';
+        // resolveSymbolicLinks 消除 macOS /private/var 与 /var 符号链接差异
         expect(
           _ctx().projectRoot.resolveSymbolicLinksSync(),
           equals(tmp.resolveSymbolicLinksSync()),

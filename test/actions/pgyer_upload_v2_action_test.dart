@@ -63,14 +63,8 @@ void main() {
       );
 
   group('PgyerUploadV2Action', () {
-    test('name is correct', () {
-      final action = PgyerUploadV2Action(
-        apiKey: 'k',
-      );
-      expect(action.name, 'Upload to Pgyer (V2)');
-    });
-
-    test('happy path: probe → token → upload → poll → write URL to bag', () async {
+    test('happy path: probe → token → upload → poll → write URL to bag',
+        () async {
       final shell = _ScriptedShellRunner()
         ..on(
             '--form-string _api_key=k',
@@ -103,6 +97,7 @@ void main() {
           shellRunner: shell,
         );
         await action.run(context);
+        expect(action.name, 'Upload to Pgyer (V2)');
         expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
             'https://pgyer.com/abcd');
       } finally {
@@ -256,7 +251,8 @@ void main() {
       }
     });
 
-    test('handles nested params in getCOSToken response (new API format)', () async {
+    test('handles nested params in getCOSToken response (new API format)',
+        () async {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/test.apk')..writeAsStringSync('fake');
       try {
@@ -297,7 +293,8 @@ void main() {
       }
     });
 
-    test('falls back to ContextKeys.buildArtifact when artifact is null', () async {
+    test('falls back to ContextKeys.buildArtifact when artifact is null',
+        () async {
       final tmp = Directory.systemTemp.createTempSync();
       final apk = File('${tmp.path}/fallback.apk')..writeAsStringSync('fake');
       try {

@@ -50,14 +50,6 @@ void main() {
     return c;
   }
 
-  test('name is correct', () {
-    final action = GooglePlayUploadAction(
-      packageName: 'com.example.app',
-      jsonKeyPath: '/some/key.json',
-    );
-    expect(action.name, 'Upload to Google Play');
-  });
-
   test('throws when json key file does not exist', () async {
     final action = GooglePlayUploadAction(
       packageName: 'com.example.app',
@@ -79,6 +71,7 @@ void main() {
     );
     try {
       await action.run(ctx());
+      expect(action.name, 'Upload to Google Play');
       expect(
         shell.runAndCaptureCalls.single,
         contains(

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_ci_tools/src/utils/logger.dart';
 
 import 'package:flutter_ci_tools/flutter_ci_tools.dart';
 import 'package:test/test.dart';
@@ -68,13 +67,5 @@ void main() {
         'fvm flutter build appbundle --build-name=1.2.0 --build-number=12001 --dart-define=ENV=prod',
       ),
     );
-  });
-
-  test('BuildAndroidAction default constructor does not throw', () {
-    final action = BuildAndroidAction(
-      envName: 'prod',
-      buildType: AndroidBuildType.apk,
-    );
-    expect(action, isA<BuildAndroidAction>());
   });
 }

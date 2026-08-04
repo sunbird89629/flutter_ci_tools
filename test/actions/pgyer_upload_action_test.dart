@@ -58,6 +58,7 @@ void main() {
 
     final context = ctx();
     await action.run(context);
+    expect(action.name, 'Upload to Pgyer');
     expect(context.get<String>(ContextKeys.pgyerDownloadUrl),
         'https://www.pgyer.com/abc123');
   });
@@ -121,13 +122,6 @@ void main() {
     expect(() => action.run(ctx()), throwsA(isA<DeployException>()));
   });
 
-  test('name is correct', () {
-    final action = PgyerUploadAction(
-      apiKey: 'k',
-    );
-    expect(action.name, 'Upload to Pgyer');
-  });
-
   test('uses explicit artifact when provided', () async {
     final shell = _FakeShellRunner()
       ..stubAny(ShellResult(
@@ -154,7 +148,8 @@ void main() {
     expect(shell.runCalls.first, contains('file=@explicit_artifact.apk'));
   });
 
-  test('falls back to ContextKeys.buildArtifact when artifact is null', () async {
+  test('falls back to ContextKeys.buildArtifact when artifact is null',
+      () async {
     final shell = _FakeShellRunner()
       ..stubAny(ShellResult(
         exitCode: 0,

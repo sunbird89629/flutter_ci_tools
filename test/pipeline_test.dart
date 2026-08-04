@@ -160,6 +160,5 @@ void main() {
       expect(pipeline.executedActions.first.name, 'ok-action');
       expect(pipeline.executedActions.first.status, ActionStatus.success);
     });
-
   });
 }
