@@ -67,14 +67,24 @@ void main() {
     expect(shell.calls, 1, reason: '成功时不该重试');
   });
 
-  test('curl 带上超时与重试参数，避免挑中坏节点后干等', () async {
+  test('curl 带上超时参数，避免挑中坏节点后干等', () async {
     final shell = _FakeShellRunner();
 
     await _action(shell).run(_context());
 
-    expect(shell.lastArgs, containsAll(['-sS', '-f', '--retry-connrefused']));
+    expect(shell.lastArgs, containsAll(['-sS', '-f']));
     expect(shell.lastArgs, containsAllInOrder(['--connect-timeout', '5']));
     expect(shell.lastArgs, containsAllInOrder(['--max-time', '15']));
+  });
+
+  test('不开 curl 自带重试，避免与外层重试相乘', () async {
+    // 两层重试会变成 maxAttempts × (1 + --retry) 次请求，最坏耗时成倍放大，
+    // 而且 curl 内部重试是静默的，日志上看不出试了几次
+    final shell = _FakeShellRunner();
+
+    await _action(shell).run(_context());
+
+    expect(shell.lastArgs, isNot(contains('--retry')));
   });
 
   test('curl 失败时重试到上限，且不抛异常', () async {

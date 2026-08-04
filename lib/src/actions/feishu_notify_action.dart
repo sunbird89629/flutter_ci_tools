@@ -19,6 +19,10 @@ class FeishuNotifyAction extends PipelineAction {
   /// [message] is the plain-text message body to send.
   /// [maxAttempts] is how many times to try before giving up (default: 3).
   /// [retryDelay] is the pause between attempts (default: 3s).
+  ///
+  /// 最坏耗时 ≈ `maxAttempts × 15s + (maxAttempts - 1) × retryDelay`
+  /// （默认约 51 秒）。飞书长时间不可用时不想让流水线干等这么久，就调小
+  /// [maxAttempts]。
   /// [shellRunner] overrides the default [ShellRunner] for testing.
   FeishuNotifyAction({
     required this.webhookUrl,
@@ -73,12 +77,11 @@ class FeishuNotifyAction extends PipelineAction {
         '-sS',
         // HTTP 4xx/5xx 时以非零码退出；默认 curl 会把它当成功
         '-f',
-        // open.feishu.cn 有十几个 GSLB 节点，挑中不健康的会一直干等。
-        // 快速失败后让 curl 换 IP 重试，比等系统默认超时强得多。
+        // open.feishu.cn 有十几个 GSLB 节点，挑中不健康的会一直干等到系统默认
+        // 超时。这里快速失败，换节点交给外层重试——curl 自己的 --retry 也能换 IP，
+        // 但它是静默的，而且会和外层相乘（3×3=9 次、最坏 2.5 分钟），故不用。
         '--connect-timeout', '5',
         '--max-time', '15',
-        '--retry', '2',
-        '--retry-connrefused',
         '-X', 'POST',
         '-H', 'Content-Type: application/json',
         '-d', jsonMessage,
