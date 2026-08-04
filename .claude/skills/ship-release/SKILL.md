@@ -1,17 +1,19 @@
 ---
-name: release-notes
-description: Cut a release — promote the CHANGELOG's Unreleased section into a version, bump pubspec, commit, tag, push
+name: ship-release
+description: Cut a release for this pub.dev package — promote the CHANGELOG's Unreleased section into a version, bump pubspec, commit, tag, push
 disable-model-invocation: true
 ---
 
-# Release Notes
+# Ship Release (pub.dev package)
 
 Cuts a release for this package: `## Unreleased` → `## X.Y.Z`, bump `pubspec.yaml`,
 commit, annotated tag, push.
 
 ```
-/release-notes 0.2.0        # 'v0.2.0' works too — both normalize the same way
+/ship-release 0.2.0        # 'v0.2.0' works too — both normalize the same way
 ```
+
+Not to be confused with `hao:ship`, which releases Claude plugins (`plugin.json`).
 
 **CHANGELOG headers are bare (`## 0.2.0`); git tags carry the `v` (`v0.2.0`).**
 Don't add a date or SHA to the header — versions ≤ 0.1.0 have a trailing SHA,

@@ -49,5 +49,5 @@ Publish flutter_ci_tools to pub.dev with pre-flight checks.
 
 - Always run pre-flight checks before publishing — pub.dev does not allow overwriting versions
 - If any check fails, fix it before proceeding
-- The version in `pubspec.yaml` must be updated beforehand (use the `release-notes` skill for this)
-- Tags should already exist from the `release-notes` workflow; this step only ensures they're pushed
+- The version in `pubspec.yaml` must be updated beforehand (use the `ship-release` skill for this)
+- Tags should already exist from the `ship-release` workflow; this step only ensures they're pushed
